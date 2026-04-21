@@ -23,9 +23,9 @@ in future adapters such as `eventa`.
 Current public Godot-facing names should stay close to that low-level role:
 
 - `create_webview(options := {})`
-- `destroy_webview(webview_id)`
-- `load_url(webview_id, url)`
-- `send_ipc_message(webview_id, message)`
+- `destroy_webview()`
+- `load_url(url)`
+- `send_ipc_message(message)`
 
 Current signals should also stay narrow:
 
@@ -35,3 +35,7 @@ Current signals should also stay narrow:
 
 Browser lifecycle events and higher-level invocation APIs are intentionally
 deferred until there is a real need for them.
+
+For the current milestone, Kirie intentionally supports a single active WebView.
+Multi-WebView support is deferred until the single-WebView bridge is working end
+to end.

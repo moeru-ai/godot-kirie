@@ -9,8 +9,6 @@ signal ipc_error(error: String)
 @export var auto_create := true
 @export var auto_destroy := true
 
-var webview_id: StringName = &""
-
 
 func _ready() -> void:
 	if not auto_create:
@@ -21,9 +19,6 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	if not auto_destroy:
-		return
-
-	if webview_id == &"":
 		return
 
 	push_warning("KirieView auto destroy is not implemented yet")
