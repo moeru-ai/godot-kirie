@@ -66,6 +66,20 @@ is a standard Godot plugin:
 During bring-up, avoid locking the repo into a distribution model that makes the
 example project harder to run.
 
+## iOS Packaging Direction
+
+For the current milestone, prefer the standard Godot iOS plugin layout and do
+not block iOS bridge work on installer ergonomics:
+
+- keep the real iOS plugin description in `.gdip`
+- assume Godot discovers iOS plugins through `res://ios/plugins`
+- do not introduce a custom editor-time sync layer unless it is explicitly part
+  of the task at hand
+
+A future editor plugin may generate a thin `ios/plugins/kirie/Kirie.gdip` shim
+from addon-owned data so users can update mostly through `addons/kirie`, but
+that is deferred work and should not complicate the current IPC milestone.
+
 ## Working Style
 
 - Keep changes aligned with the current milestone.
@@ -183,5 +197,7 @@ infrastructure.
   not exist yet.
 - Binary distribution policy is not finalized yet for Android Maven artifacts,
   local `.aar` files, or iOS plugin packaging outputs.
+- An editor-driven generated `gdip` shim flow is being considered for future
+  iOS packaging, but it is not implemented yet.
 - The example project is planned as the main integration target, but the actual
   runnable Godot example has not been created yet.

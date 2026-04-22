@@ -46,3 +46,17 @@ to end.
 
 Kirie is also expected to support loading offline web content from Godot project
 resources in the future, including content authored under `res://`.
+
+## iOS packaging direction
+
+For the current milestone, iOS should follow Godot's standard iOS plugin flow:
+
+- the actual iOS plugin description remains a `.gdip` file
+- the editor-recognized location remains `res://ios/plugins`
+- Kirie should not depend on a custom editor integration to make the iOS bridge
+  function
+
+A future editor plugin may generate a thin `res://ios/plugins/kirie/Kirie.gdip`
+shim from data stored under `addons/kirie` so users can keep installation and
+updates centered on the addon directory. That workflow is deferred until after
+the iOS bridge itself is working.
