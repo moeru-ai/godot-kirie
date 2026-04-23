@@ -38,6 +38,10 @@ theme_override_constants/separation = 12
 layout_mode = 2
 text = "Create WebView"
 
+[node name="ProbeButton" type="Button" parent="VBoxContainer/ButtonRow" unique_id=116847312]
+layout_mode = 2
+text = "Run Probe"
+
 [node name="DestroyButton" type="Button" parent="VBoxContainer/ButtonRow" unique_id=1477057754]
 layout_mode = 2
 text = "Destroy WebView"
@@ -57,5 +61,6 @@ text = "Log:"
 autowrap_mode = 3
 
 [connection signal="pressed" from="VBoxContainer/ButtonRow/CreateButton" to="." method="_on_create_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonRow/ProbeButton" to="." method="_on_probe_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonRow/DestroyButton" to="." method="_on_destroy_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonRow/SendButton" to="." method="_on_send_button_pressed"]

@@ -40,6 +40,7 @@
   </section>
 
   <script>
+    const mode = globalThis.__KIRIE_MODE__ === "probe" ? "probe" : "manual";
     const logNode = document.getElementById("log");
 
     function appendLog(line) {
@@ -67,7 +68,18 @@
     }
 
     window.addEventListener("kirie:ipc-message", (event) => {
-      appendLog(`Received from Godot: ${JSON.stringify(event.detail)}`);
+      const message = event.detail;
+      appendLog(`Received from Godot: ${JSON.stringify(message)}`);
+
+      if (mode === "probe" && message?.type === "godot_ready") {
+        postToGodot({
+          type: "web_ack",
+          payload: {
+            source: "probe",
+            acknowledgedType: message.type,
+          },
+        });
+      }
     });
 
     document.getElementById("sendButton").addEventListener("click", () => {
@@ -79,9 +91,12 @@
       });
     });
 
+    appendLog(`Mode: ${mode}`);
+
     postToGodot({
       type: "web_ready",
       payload: {
+        source: mode,
         userAgent: navigator.userAgent,
       },
     });

@@ -9,6 +9,11 @@ It is intentionally small and focuses on one path:
 3. Godot replies with `godot_ready`
 4. both sides log the exchanged payloads
 
+The example now supports two ways to exercise that path:
+
+1. a manual remote page loaded from `web/index.html`
+2. a minimal inline probe loaded through `load_html_string()`
+
 ## Layout
 
 - `project.godot`
@@ -37,6 +42,17 @@ Then open the Godot project and use:
 `http://10.0.2.2:8000/`
 
 for an Android emulator, or an appropriate LAN/local address for a device.
+
+## Running the inline probe
+
+Open the Godot project and press `Run Probe`.
+
+This creates a WebView if needed, loads a tiny inline HTML page through
+`load_html_string()`, and performs a minimal round-trip:
+
+1. probe sends `web_ready`
+2. Godot replies with `godot_ready`
+3. probe replies with `web_ack`
 
 ## Running the Godot side
 

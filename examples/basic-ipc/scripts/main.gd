@@ -6,6 +6,9 @@ const DEFAULT_OUTBOUND_MESSAGE := {
 		"source": "godot",
 	},
 }
+const PROBE_BASE_URL := "https://kirie.test/"
+const PAGE_HTML_PATH := "res://web/index.html"
+const PROBE_MODE_SCRIPT := "<script>globalThis.__KIRIE_MODE__ = \"probe\";</script>"
 
 @onready var _url_input: LineEdit = $VBoxContainer/UrlInput
 @onready var _status_label: Label = $VBoxContainer/StatusLabel
@@ -13,6 +16,8 @@ const DEFAULT_OUTBOUND_MESSAGE := {
 
 var _kirie := GdKirie.new()
 var _log_lines: PackedStringArray = PackedStringArray()
+var _probe_pending := false
+var _webview_is_ready := false
 
 
 func _ready() -> void:
@@ -41,10 +46,27 @@ func _on_create_button_pressed() -> void:
 	})
 
 
+func _on_probe_button_pressed() -> void:
+	if not _kirie.is_available():
+		return
+
+	_probe_pending = true
+	_set_status("Status: starting probe")
+	_append_log("run_probe")
+
+	if _webview_is_ready:
+		_load_probe_html()
+		return
+
+	_kirie.create_webview()
+
+
 func _on_destroy_button_pressed() -> void:
 	if not _kirie.is_available():
 		return
 
+	_probe_pending = false
+	_webview_is_ready = false
 	_set_status("Status: destroying WebView")
 	_append_log("destroy_webview")
 	_kirie.destroy_webview()
@@ -55,8 +77,12 @@ func _on_send_button_pressed() -> void:
 
 
 func _on_webview_ready() -> void:
+	_webview_is_ready = true
 	_set_status("Status: WebView ready")
 	_append_log("signal webview_ready")
+
+	if _probe_pending:
+		_load_probe_html()
 
 
 func _on_ipc_message_received(message: Variant) -> void:
@@ -74,6 +100,11 @@ func _on_ipc_message_received(message: Variant) -> void:
 				"message": "Hello from Godot",
 			},
 		})
+		return
+
+	if message_type == "web_ack":
+		_probe_pending = false
+		_set_status("Status: probe passed")
 
 
 func _on_ipc_error(error: String) -> void:
@@ -87,6 +118,38 @@ func _send_test_message() -> void:
 
 	_append_log("send_ipc_message %s" % JSON.stringify(DEFAULT_OUTBOUND_MESSAGE))
 	_kirie.send_ipc_message(DEFAULT_OUTBOUND_MESSAGE)
+
+
+func _load_probe_html() -> void:
+	var page_html := _build_probe_html()
+	if page_html.is_empty():
+		return
+
+	_probe_pending = false
+	_set_status("Status: loading probe HTML")
+	_append_log("load_html_string probe")
+	_kirie.load_html_string(page_html, PROBE_BASE_URL)
+
+
+func _build_probe_html() -> String:
+	var html_file := FileAccess.open(PAGE_HTML_PATH, FileAccess.READ)
+	if html_file == null:
+		var error := "Failed to open %s" % PAGE_HTML_PATH
+		_set_status("Status: probe failed")
+		_append_log(error)
+		return ""
+
+	var html := html_file.get_as_text()
+	if html.is_empty():
+		var error := "Probe page is empty: %s" % PAGE_HTML_PATH
+		_set_status("Status: probe failed")
+		_append_log(error)
+		return ""
+
+	if html.contains("</head>"):
+		return html.replace("</head>", "%s\n</head>" % PROBE_MODE_SCRIPT)
+
+	return "%s\n%s" % [PROBE_MODE_SCRIPT, html]
 
 
 func _append_log(line: String) -> void:
