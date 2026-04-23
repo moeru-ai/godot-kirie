@@ -48,6 +48,20 @@ public func kirie_swift_load_url(_ urlPointer: UnsafePointer<CChar>?) {
     }
 }
 
+@_cdecl("kirie_swift_load_html_string")
+public func kirie_swift_load_html_string(_ htmlPointer: UnsafePointer<CChar>?, _ baseURLPointer: UnsafePointer<CChar>?) {
+    guard let htmlPointer else {
+        return
+    }
+
+    let html = String(cString: htmlPointer)
+    let baseURL = baseURLPointer.map { String(cString: $0) }
+
+    DispatchQueue.main.async {
+        KirieManager.shared.loadHTMLString(html, baseURLString: baseURL?.isEmpty == true ? nil : baseURL)
+    }
+}
+
 @_cdecl("kirie_swift_send_ipc_message")
 public func kirie_swift_send_ipc_message(_ messageJSONPointer: UnsafePointer<CChar>?) {
     guard let messageJSONPointer else {

@@ -97,6 +97,24 @@ class KirieWebViewManager(
         }
     }
 
+    fun loadHtmlString(html: String, baseUrl: String?) {
+        val activity = activityProvider()
+        if (activity == null) {
+            onIpcError("Cannot load HTML string because the host activity is not available")
+            return
+        }
+
+        runOnUiThread {
+            val existingWebView = webView
+            if (existingWebView == null) {
+                onIpcError("Cannot load HTML string because the WebView does not exist")
+                return@runOnUiThread
+            }
+
+            existingWebView.loadDataWithBaseURL(baseUrl, html, "text/html", "utf-8", null)
+        }
+    }
+
     fun sendIpcMessage(messageJson: String) {
         val activity = activityProvider()
         if (activity == null) {

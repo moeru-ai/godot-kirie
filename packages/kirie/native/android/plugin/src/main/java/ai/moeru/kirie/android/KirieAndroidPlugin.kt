@@ -43,6 +43,11 @@ class KirieAndroidPlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
+    fun loadHtmlString(html: String, baseUrl: String) {
+        webViewManager.loadHtmlString(html, baseUrl.ifBlank { null })
+    }
+
+    @UsedByGodot
     fun sendIpcMessage(messageJson: String) {
         webViewManager.sendIpcMessage(messageJson)
     }

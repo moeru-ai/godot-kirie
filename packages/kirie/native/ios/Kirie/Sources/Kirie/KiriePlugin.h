@@ -22,6 +22,7 @@ public:
 	void createWebView(String initial_url);
 	void destroyWebView();
 	void loadUrl(String url);
+	void loadHtmlString(String html, String base_url);
 	void sendIpcMessage(String message_json);
 
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;

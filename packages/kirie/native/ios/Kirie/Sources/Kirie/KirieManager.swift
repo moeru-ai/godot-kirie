@@ -80,6 +80,28 @@ final class KirieManager: NSObject {
         load(url, in: webView)
     }
 
+    func loadHTMLString(_ html: String, baseURLString: String?) {
+        guard let webView else {
+            emitIpcError("Cannot load HTML string because the WebView does not exist")
+            return
+        }
+
+        let baseURL: URL?
+        if let baseURLString, !baseURLString.isEmpty {
+            guard let parsedBaseURL = URL(string: baseURLString) else {
+                emitIpcError("Cannot load HTML string with invalid base URL: \(baseURLString)")
+                return
+            }
+
+            baseURL = parsedBaseURL
+        } else {
+            baseURL = nil
+        }
+
+        logInfo("Loading HTML string; baseURL=\(baseURL?.absoluteString ?? "<nil>")")
+        webView.loadHTMLString(html, baseURL: baseURL)
+    }
+
     func sendIpcMessage(_ messageJSON: String) {
         guard let webView else {
             emitIpcError("Cannot send IPC message because the WebView does not exist")

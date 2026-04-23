@@ -5,6 +5,7 @@
 extern "C" void kirie_swift_create_webview(const char *initial_url);
 extern "C" void kirie_swift_destroy_webview(void);
 extern "C" void kirie_swift_load_url(const char *url);
+extern "C" void kirie_swift_load_html_string(const char *html, const char *base_url);
 extern "C" void kirie_swift_send_ipc_message(const char *message_json);
 
 static NSString *const KirieWebViewReadyNotification = @"KirieWebViewReady";
@@ -73,6 +74,12 @@ void KiriePlugin::loadUrl(String url) {
 	kirie_swift_load_url(encoded_url.get_data());
 }
 
+void KiriePlugin::loadHtmlString(String html, String base_url) {
+	CharString encoded_html = html.utf8();
+	CharString encoded_base_url = base_url.utf8();
+	kirie_swift_load_html_string(encoded_html.get_data(), encoded_base_url.get_data());
+}
+
 void KiriePlugin::sendIpcMessage(String message_json) {
 	CharString encoded_message_json = message_json.utf8();
 	kirie_swift_send_ipc_message(encoded_message_json.get_data());
@@ -118,6 +125,15 @@ Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, i
 		}
 
 		loadUrl(String(*p_args[0]));
+		return Variant();
+	}
+
+	if (p_method == StringName("loadHtmlString")) {
+		if (!require_arg_count(r_error, p_argcount, 2)) {
+			return Variant();
+		}
+
+		loadHtmlString(String(*p_args[0]), String(*p_args[1]));
 		return Variant();
 	}
 

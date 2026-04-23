@@ -41,6 +41,13 @@ func load_url(url: String) -> void:
 	_plugin_singleton.loadUrl(url)
 
 
+func load_html_string(html: String, base_url: String = "") -> void:
+	if not _ensure_plugin_singleton("load_html_string"):
+		return
+
+	_plugin_singleton.loadHtmlString(html, base_url)
+
+
 func send_ipc_message(message: Variant) -> void:
 	if not _ensure_plugin_singleton("send_ipc_message"):
 		return
