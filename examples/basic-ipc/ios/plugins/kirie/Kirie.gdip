@@ -1,0 +1,25 @@
+[config]
+name="Kirie"
+binary="Kirie.xcframework"
+initialization="init_kirie"
+deinitialization="deinit_kirie"
+
+[dependencies]
+linked=[]
+embedded=[]
+system=["Foundation.framework", "UIKit.framework", "WebKit.framework"]
+capabilities=[]
+files=[]
+linker_flags=[]
+
+[plist]
+NSAppTransportSecurity:raw="
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <true/>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+</dict>
+"

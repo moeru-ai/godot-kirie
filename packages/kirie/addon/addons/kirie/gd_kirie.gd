@@ -56,6 +56,14 @@ func _connect_plugin_signals() -> void:
 	if _plugin_singleton == null:
 		return
 
+	if OS.get_name() == "iOS":
+		_plugin_singleton.registerCallbacks(
+			Callable(self, "_on_plugin_webview_ready"),
+			Callable(self, "_on_plugin_ipc_message_received"),
+			Callable(self, "_on_plugin_ipc_error"),
+		)
+		return
+
 	if _plugin_singleton.has_signal(&"webview_ready"):
 		_plugin_singleton.webview_ready.connect(_on_plugin_webview_ready)
 
@@ -70,7 +78,7 @@ func _ensure_plugin_singleton(method_name: String) -> bool:
 	if _plugin_singleton != null:
 		return true
 
-	var error := "Kirie Android singleton is not available for %s()" % method_name
+	var error := "Kirie platform singleton is not available for %s()" % method_name
 	push_warning(error)
 	ipc_error.emit(error)
 	return false

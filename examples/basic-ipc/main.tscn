@@ -27,8 +27,8 @@ text = "Page URL"
 
 [node name="UrlInput" type="LineEdit" parent="VBoxContainer" unique_id=791927916]
 layout_mode = 2
-text = "http://localhost:8000/"
-placeholder_text = "http://localhost:8000/"
+text = "http://192.168.123.152:8000/"
+placeholder_text = "http://192.168.123.152:8000/"
 
 [node name="ButtonRow" type="HBoxContainer" parent="VBoxContainer" unique_id=116519320]
 layout_mode = 2

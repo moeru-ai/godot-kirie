@@ -48,15 +48,22 @@
     }
 
     function postToGodot(message) {
-      const bridge = globalThis.KirieAndroidBridge;
-      if (!bridge || typeof bridge.postMessage !== "function") {
-        appendLog("KirieAndroidBridge.postMessage is unavailable");
+      const encoded = JSON.stringify(message);
+      const androidBridge = globalThis.KirieAndroidBridge;
+      if (androidBridge && typeof androidBridge.postMessage === "function") {
+        androidBridge.postMessage(encoded);
+        appendLog(`Sent to Godot: ${encoded}`);
         return;
       }
 
-      const encoded = JSON.stringify(message);
-      bridge.postMessage(encoded);
-      appendLog(`Sent to Godot: ${encoded}`);
+      const iosBridge = globalThis.webkit?.messageHandlers?.kirie;
+      if (iosBridge && typeof iosBridge.postMessage === "function") {
+        iosBridge.postMessage(encoded);
+        appendLog(`Sent to Godot: ${encoded}`);
+        return;
+      }
+
+      appendLog("Kirie native bridge is unavailable");
     }
 
     window.addEventListener("kirie:ipc-message", (event) => {

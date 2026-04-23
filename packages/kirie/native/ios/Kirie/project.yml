@@ -1,0 +1,39 @@
+name: Kirie
+
+options:
+  minimumXcodeGenVersion: 2.38.0
+  developmentLanguage: en
+  createIntermediateGroups: false
+
+targets:
+  Kirie:
+    type: framework
+    platform: iOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/Kirie
+    settings:
+      PRODUCT_NAME: Kirie
+      PRODUCT_BUNDLE_IDENTIFIER: ai.moeru.godot.kirie.ios
+      GENERATE_INFOPLIST_FILE: YES
+      CURRENT_PROJECT_VERSION: 1
+      MARKETING_VERSION: 0.1.0
+      SWIFT_VERSION: 6.0
+      DEFINES_MODULE: YES
+      BUILD_LIBRARY_FOR_DISTRIBUTION: YES
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
+      SKIP_INSTALL: NO
+      MACH_O_TYPE: staticlib
+      TARGETED_DEVICE_FAMILY: "1,2"
+      SUPPORTS_MACCATALYST: NO
+      SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+      CLANG_CXX_LANGUAGE_STANDARD: gnu++17
+      HEADER_SEARCH_PATHS:
+        - "$(GODOT_SOURCE_ROOT)"
+        - "$(GODOT_SOURCE_ROOT)/platform/ios"
+        - "$(GODOT_SOURCE_ROOT)/bin/obj/platform/ios"
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: UIKit.framework
+      - sdk: WebKit.framework
