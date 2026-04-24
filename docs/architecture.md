@@ -84,6 +84,24 @@ to end.
 Kirie is also expected to support loading offline web content from Godot project
 resources in the future, including content authored under `res://`.
 
+## Packaged web resource loading
+
+`res://` web loading is scoped to resources that are exported with the
+application package itself.
+
+For Android, Kirie should resolve `res://` web URLs against files exported into
+the APK/AAB assets. For iOS, Kirie should resolve `res://` web URLs against
+files exported into the app bundle. Runtime-mounted Godot packs are explicitly
+out of scope for this path.
+
+When loading `http://`, `https://`, or `file://` URLs, Kirie should keep using
+the platform WebView's default loading behavior instead of intercepting or
+rewriting those URLs.
+
+An editor export hook may later help projects include a configured web root,
+such as `res://web`, in the correct platform package locations. That helper is
+deferred; the current plugin design should not depend on it.
+
 ## iOS packaging direction
 
 For the current milestone, iOS should follow Godot's standard iOS plugin flow:
