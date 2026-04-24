@@ -10,6 +10,7 @@ build/
 *.apk
 *.aab
 *.aar
+!packages/kirie/addon/addons/kirie/libraries/android/Kirie-debug.aar
 *.xcframework
 
 .build_version
