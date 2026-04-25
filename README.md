@@ -22,7 +22,7 @@ The repository starts with a deliberately small structure:
 - `examples/basic-ipc`: the first integration example
 - `docs`: project notes and design decisions
 
-Primary references live in [docs/references.md](/Users/lemonneko/Projects/godot-kirie/docs/references.md).
+Primary references live in [docs/references.md](docs/references.md).
 
 The first milestone is limited to:
 
