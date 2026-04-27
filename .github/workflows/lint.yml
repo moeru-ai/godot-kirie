@@ -25,10 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install project tools
+      - name: Install lint tools
         uses: jdx/mise-action@v3
         with:
           install: true
+          install_args: node python java ktlint swiftlint 'pipx:gdtoolkit'
           cache: true
 
       - name: Get pnpm store path
@@ -46,16 +47,5 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
-      - name: Run Biome
-        run: mise x -- corepack pnpm run lint:biome
-
-      - name: Run GDScript lint
-        run: mise x -- corepack pnpm run lint:gdscript
-
-      - name: Run Kotlin lint
-        run: mise x -- corepack pnpm run lint:kotlin
-
-      - name: Run SwiftLint
-        uses: docker://ghcr.io/realm/swiftlint:0.62.2
-        with:
-          args: lint --strict --no-cache --config .swiftlint.yml
+      - name: Run lint
+        run: mise x -- corepack pnpm run lint
