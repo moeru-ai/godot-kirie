@@ -106,10 +106,11 @@ that is deferred work and should not complicate the current IPC milestone.
 - Godot editor is managed by mise through the project `godot` tool. Use
   `mise x -- godot ...`; use `mise which godot` when a direct executable path is
   needed.
+- The Godot mise alias may temporarily point at a forked `asdf-godot` ref until
+  upstream supports macOS mono installs. Do not replace this with an `http`
+  tool workaround.
 - Keep Gradle wrapper and Xcode usage as-is; mise only provides the Java runtime
   and command-line tools around them.
-- Do not use GodotEnv or vfox for this repository unless a task explicitly asks
-  to compare or repair those flows.
 
 ## Engineering Rules
 

@@ -3,14 +3,17 @@ lockfile = true
 legacy_version_file = false
 
 [tool_alias]
-godot = "asdf:mkungla/asdf-godot"
+# Temporary fork until mkungla/asdf-godot includes the macOS mono app fix.
+# Upstream currently links Godot.app, but mono macOS releases extract Godot_mono.app.
+godot = "asdf:LemonNekoGH/asdf-godot#lemonnekogh/fix-macos-mono-app"
 
 [tools]
-godot = "4.6.2-stable"
+godot = "4.6.2-stable-mono"
 node = "24.14.1"
 python = "3.13.13"
 uv = "0.11.7"
 java = "21"
+dotnet = "8"
 ktlint = "1.8.0"
 swiftlint = "0.62.2"
 "pipx:gdtoolkit" = "4.5.0"

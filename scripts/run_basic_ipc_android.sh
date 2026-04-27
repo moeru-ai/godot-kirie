@@ -17,7 +17,7 @@ packages/kirie/native/android/gradlew \
     --project-dir packages/kirie/native/android \
     :plugin:assembleDebug
 
-"$(godotenv godot env path)" \
+mise x -- godot \
     --headless \
     --path examples/basic-ipc \
     --export-debug "Android" \

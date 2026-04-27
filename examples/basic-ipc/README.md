@@ -60,22 +60,16 @@ This creates a WebView if needed, loads
 
 ## Running the Godot side
 
-Recommended to use [GodotEnv](https://github.com/chickensoft-games/GodotEnv) to manage Godot versions.
+Recommended to use [mise](https://mise.jdx.dev/) to manage Godot versions.
 
-You can use the command below to set current Godot version for this project:
-
-```bash
-godotenv godot use 4.6.2
-```
-
-Then run the Godot editor with the current project:
+Run the Godot editor with the current project:
 
 ```bash
-"$(godotenv godot env path)" ./examples/basic-ipc/project.godot
+mise x -- godot ./examples/basic-ipc/project.godot
 ```
 
 You can also run the game directly from the command line:
 
 ```bash
-"$(godotenv godot env path)" --path ./examples/basic-ipc
+mise x -- godot --path ./examples/basic-ipc
 ```
