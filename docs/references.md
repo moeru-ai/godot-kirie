@@ -70,6 +70,20 @@ packaging, or platform WebView bridge details.
   Reference for warning categories that flag code patterns that may fail under
   Native AOT.
 
+## JavaScript packaging
+
+- [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
+  Reference for publishing npm packages from GitHub Actions through OIDC instead
+  of long-lived npm tokens.
+- [GitHub Actions OIDC reference](https://docs.github.com/en/actions/reference/security/oidc)
+  Reference for the `id-token: write` permission required to request OIDC
+  tokens from GitHub Actions.
+- [bumpp](https://github.com/antfu-collective/bumpp)
+  Reference for recursive monorepo version bumps, release commits, and tags.
+- [pnpm publish](https://pnpm.io/cli/publish)
+  Reference for pnpm workspace publishing behavior, including `publishConfig`
+  manifest overrides.
+
 ## Suggested usage in this repo
 
 - When changing Android plugin packaging, start with the Godot Android plugin
@@ -80,3 +94,5 @@ packaging, or platform WebView bridge details.
   `WKScriptMessageHandler`.
 - When considering C# test or adapter discovery on mobile, start with Godot
   C#/.NET platform support and .NET reflection or AOT documentation.
+- When changing npm package publishing, start with npm trusted publishing,
+  GitHub Actions OIDC, bumpp, and pnpm publish behavior.

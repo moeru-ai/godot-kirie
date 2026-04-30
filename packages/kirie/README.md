@@ -1,4 +1,4 @@
-# @kirie/kirie
+# @gd-kirie/kirie
 
 This package contains the Kirie plugin sources and platform-specific native
 implementations.

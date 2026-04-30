@@ -12,7 +12,7 @@ We are standardizing only the minimum plugin shape needed to support:
 
 Anything beyond that, such as CLI tooling, app-level event adapters, or
 invocation APIs, is deferred until the IPC model is proven. The current
-`@kirie/ipc` package is intentionally only a browser-side transport wrapper on
+`@gd-kirie/ipc` package is intentionally only a browser-side transport wrapper on
 top of the raw native bridge.
 
 ## Deferred debugging and automation direction
@@ -53,7 +53,7 @@ automation interfaces.
 
 Higher-level semantics such as event routing, richer message contracts, or
 request/response abstractions are expected to live above this layer, for example
-in future app-specific adapters above Kirie or `@kirie/ipc`.
+in future app-specific adapters above Kirie or `@gd-kirie/ipc`.
 
 Current public Godot-facing names should stay close to that low-level role:
 

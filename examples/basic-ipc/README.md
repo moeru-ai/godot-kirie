@@ -32,7 +32,7 @@ Run the Vite dev server and use that URL in the project UI.
 Example:
 
 ```sh
-mise x -- corepack pnpm --filter @kirie/basic-ipc-web run dev
+mise x -- corepack pnpm --filter @gd-kirie/basic-ipc-web run dev
 ```
 
 Then open the Godot project and use:
@@ -46,7 +46,7 @@ for an Android emulator, or an appropriate LAN/local address for a device.
 Build the web app first:
 
 ```sh
-mise x -- corepack pnpm --filter @kirie/basic-ipc-web run build
+mise x -- corepack pnpm --filter @gd-kirie/basic-ipc-web run build
 ```
 
 Open the Godot project and press `Run Probe`.

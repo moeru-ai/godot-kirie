@@ -11,7 +11,7 @@ APK_PATH="dist/basic-ipc/android_debug.apk"
 
 mkdir -p "$(dirname "${APK_PATH}")"
 
-pnpm --filter @kirie/basic-ipc-web run build
+pnpm --filter @gd-kirie/basic-ipc-web run build
 
 packages/kirie/native/android/gradlew \
     --project-dir packages/kirie/native/android \

@@ -1,4 +1,4 @@
-import { onIpcMessageReceived, sendIpcMessage } from "@kirie/ipc";
+import { onIpcMessageReceived, sendIpcMessage } from "@gd-kirie/ipc";
 
 import "./style.css";
 

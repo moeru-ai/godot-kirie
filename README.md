@@ -37,6 +37,6 @@ The first milestone is limited to:
 4. Stabilize the minimum Kirie plugin shape before adding adapters and tooling.
 
 At this stage, Kirie is intended to stay a low-level WebView and IPC bridge. A
-small `@kirie/ipc` browser package exists as a convenience transport wrapper,
+small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper,
 but higher-level application semantics are still deferred to future layers such
 as adapters above Kirie.

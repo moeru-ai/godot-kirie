@@ -1,5 +1,6 @@
 {
-  "name": "@kirie/basic-ipc-web",
+  "name": "@gd-kirie/basic-ipc-web",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@kirie/ipc": "workspace:*"
+    "@gd-kirie/ipc": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

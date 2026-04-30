@@ -13,7 +13,7 @@ The current milestone is limited to:
 4. stabilize the Kirie plugin shape before adding larger tooling layers
 
 Do not introduce extra packages, adapters, or CLI workflows unless they are
-required to make the current IPC milestone work. The existing `@kirie/ipc`
+required to make the current IPC milestone work. The existing `@gd-kirie/ipc`
 package is a thin browser-side transport wrapper; do not expand it into an
 application event or invocation layer unless the user explicitly asks for that
 higher-level work.
@@ -61,7 +61,7 @@ label them as anecdotal when they influence a decision.
   application event layer.
 - Defer higher-level semantics such as invocation APIs and richer event models
   to layers above `kirie`, such as future adapters.
-- Keep `@kirie/ipc` as a thin browser-side transport wrapper around the raw
+- Keep `@gd-kirie/ipc` as a thin browser-side transport wrapper around the raw
   native bridge. Defer richer browser SDKs until there is a real app-level use
   case.
 - For the current milestone, assume a single active WebView unless the user
@@ -249,11 +249,11 @@ The following directions are intentional, but they are not fully set up in the
 repository yet. Agents should treat them as targets, not as already-enforced
 infrastructure.
 
-- GitHub Actions are not configured yet for lint, build, or example smoke
-  checks.
+- GitHub Actions are configured for lint, Android platform integration, and npm
+  package publishing. A broader release/build matrix is still not configured.
 - Code generation pipelines for future C# wrappers or shared API declarations do
   not exist yet.
-- Richer app-level adapters or invocation APIs above `@kirie/ipc` are not
+- Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not
   implemented yet.
 - Binary distribution policy is not finalized yet for Android Maven artifacts,
   local `.aar` files, or iOS plugin packaging outputs.

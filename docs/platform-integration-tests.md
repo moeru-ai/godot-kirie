@@ -26,7 +26,7 @@ The current focus is:
 - resource loading through `res://`
 - exported app behavior, not editor-only behavior
 
-The tests intentionally do not depend on the browser-facing `@kirie/ipc`
+The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
 package. That package is a convenience SDK above the raw bridge contract and
 should be tested separately.
 

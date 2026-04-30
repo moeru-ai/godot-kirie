@@ -1,4 +1,4 @@
-# @kirie/ipc
+# @gd-kirie/ipc
 
 Thin browser-side IPC transport for Kirie WebView pages.
 
@@ -8,7 +8,7 @@ level bridge on `globalThis`, and this package only wraps that bridge with a sma
 ## API
 
 ```ts
-import { onIpcMessageReceived, sendIpcMessage } from "@kirie/ipc";
+import { onIpcMessageReceived, sendIpcMessage } from "@gd-kirie/ipc";
 
 sendIpcMessage({
   type: "web_ready",

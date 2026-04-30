@@ -202,7 +202,7 @@ the better entry point.
 
 ## Deferred Questions
 
-- What is the smallest useful `@kirie/testkit` web API?
+- What is the smallest useful `@gd-kirie/testkit` web API?
 - Should the first web test runner use an existing test assertion library or a
   tiny Kirie-owned assertion surface?
 - How should generated web bundles be produced without forcing a specific

@@ -1,7 +1,12 @@
 {
-  "name": "@kirie/ipc",
+  "name": "@gd-kirie/ipc",
   "version": "0.1.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moeru-ai/godot-kirie.git",
+    "directory": "packages/ipc"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -22,6 +27,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "registry": "https://registry.npmjs.org",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",

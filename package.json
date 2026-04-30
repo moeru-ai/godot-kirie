@@ -1,9 +1,11 @@
 {
   "name": "godot-kirie",
+  "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "build:packages": "pnpm -r --filter './packages/*' run build",
     "format": "pnpm run format:biome && pnpm run format:gdscript && pnpm run format:kotlin && pnpm run format:swift",
     "format:biome": "biome check --write .",
     "format:gdscript": "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts",
@@ -14,9 +16,11 @@
     "lint:gdscript": "gdlint packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts",
     "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
     "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
+    "release": "bumpp",
     "typecheck": "pnpm -r run typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4"
+    "@biomejs/biome": "2.2.4",
+    "bumpp": "^11.0.1"
   }
 }
