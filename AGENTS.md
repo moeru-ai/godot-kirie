@@ -80,13 +80,16 @@ The repository is allowed to evolve internally, but the intended external shape
 is a standard Godot plugin:
 
 - users consume `addons/kirie`
-- Android dependencies should eventually be injected through
-  `EditorExportPlugin`
-- Maven-based Android delivery is preferred over committing local `.aar` files
-  when it becomes practical
+- Android binaries are exported through `EditorExportPlugin`
+- during bring-up, local `.aar` files under the addon are acceptable because the
+  current Android bridge does not require Kirie-owned Maven-delivered runtime
+  dependencies
+- Maven-based Android delivery can be revisited if Kirie gains Android
+  dependencies that need Gradle metadata or transitive resolution
 
-During bring-up, avoid locking the repo into a distribution model that makes the
-example project harder to run.
+When producing a downloadable addon tree, ensure Android `.aar` files are real
+files in the generated output, not repository-local symlinks into Gradle build
+directories.
 
 ## iOS Packaging Direction
 

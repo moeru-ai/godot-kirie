@@ -44,10 +44,11 @@ func _get_android_libraries(
 	_platform: EditorExportPlatform,
 	_debug: bool
 ) -> PackedStringArray:
-	if _debug:
-		return PackedStringArray(["kirie/libraries/android/Kirie-debug.aar"])
+	# if _debug:
+	# 	return PackedStringArray(["kirie/libraries/android/Kirie-debug.aar"])
 
-	return PackedStringArray()
+	# Now we don't have transitive dependencies, let's publish to maven later
+	return PackedStringArray(["kirie/libraries/android/Kirie-debug.aar"])
 
 
 func _add_ios_web_bundle_files(root_path: String) -> void:
