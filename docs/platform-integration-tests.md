@@ -24,11 +24,16 @@ The current focus is:
 - WebView lifecycle behavior from Godot
 - raw JavaScript bridge IPC
 - resource loading through `res://`
+- C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
 The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
 package. That package is a convenience SDK above the raw bridge contract and
 should be tested separately.
+
+The C# wrapper should be covered by a small exported-app smoke test that uses
+`KirieClient` events and verifies the same WebView IPC round-trip as the
+GDScript probe. That test is not implemented yet.
 
 ## Project Layout
 
@@ -146,6 +151,7 @@ coverage categories:
 - IPC round trips through the raw JavaScript bridge
 - WebView lifecycle transitions driven from Godot
 - exported `res://` web resource loading
+- C# `KirieClient` event forwarding over the same native singleton path
 
 New tests should add a focused case under `scripts/test_cases/` when they need
 different lifecycle operations, a different loaded URL, or a different platform

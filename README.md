@@ -8,7 +8,7 @@ building IPC between Godot and web content.
 ```mermaid
 flowchart LR
     A["Godot Project"] --> B["addons/kirie"]
-    B --> C["Kirie / KirieView"]
+    B --> C["Kirie / KirieView / KirieClient"]
     C --> D["Android native implementation"]
     C --> E["iOS native implementation"]
     D <--> F["WebView"]
@@ -19,7 +19,8 @@ flowchart LR
 The repository is still deliberately small, but it now has distinct package,
 example, and regression-test areas:
 
-- `packages/kirie`: the Godot addon plus Android and iOS native plugin code
+- `packages/kirie`: the Godot addon, C# wrapper, and Android and iOS native
+  plugin code
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `examples/basic-ipc`: the first runnable manual integration example
 - `tests/integration`: exported-app platform integration tests
@@ -39,4 +40,6 @@ The first milestone is limited to:
 At this stage, Kirie is intended to stay a low-level WebView and IPC bridge. A
 small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper,
 but higher-level application semantics are still deferred to future layers such
-as adapters above Kirie.
+as adapters above Kirie. The C# surface is a thin `KirieClient` wrapper over the
+same platform singleton used by GDScript, with C# events for the current Kirie
+signals.

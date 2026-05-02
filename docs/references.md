@@ -35,6 +35,10 @@ packaging, or platform WebView bridge details.
 - [C#/.NET (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html)
   Reference for Godot C# platform support, including Android and iOS export
   limitations.
+- [C# signals (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_signals.html)
+  Reference for idiomatic C# event usage when working with Godot signals.
+- [Signal class (stable)](https://docs.godotengine.org/en/stable/classes/class_signal.html)
+  Reference for Godot signal behavior and cross-language signal concepts.
 
 ## Android
 
@@ -94,7 +98,7 @@ packaging, or platform WebView bridge details.
   `JavascriptInterface`, and `WebMessagePort`.
 - When changing iOS IPC or packaging, start with `WKWebView`,
   `WKScriptMessageHandler`, and `EditorExportPlugin`.
-- When considering C# test or adapter discovery on mobile, start with Godot
-  C#/.NET platform support and .NET reflection or AOT documentation.
+- When changing the C# wrapper or C# tests, start with Godot C#/.NET platform
+  support, C# signals, and .NET reflection or AOT documentation.
 - When changing npm package publishing, start with npm trusted publishing,
   GitHub Actions OIDC, bumpp, and pnpm publish behavior.

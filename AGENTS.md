@@ -22,7 +22,7 @@ higher-level work.
 
 - `packages/kirie/addon/addons/kirie`
   Godot-facing plugin files, including `plugin.gd`, `export_plugin.gd`,
-  `gd_kirie.gd`, and `kirie_view.gd`
+  `gd_kirie.gd`, `kirie_view.gd`, and `csharp/KirieClient.cs`
 - `packages/kirie/native/android`
   Kotlin Android implementation
 - `packages/kirie/native/ios`
@@ -68,11 +68,14 @@ label them as anecdotal when they influence a decision.
   explicitly asks to reintroduce multi-WebView behavior.
 - Keep the Godot-facing wrapper thin; prefer forwarding to the platform
   singleton over reimplementing platform lifecycle logic in GDScript.
+- Keep `KirieClient` as a thin C# wrapper over the same platform singleton.
+  Expose Kirie signals as C# events, and keep internal Godot `Callable` usage as
+  bridge plumbing rather than public API.
 - Kirie supports packaged web content sourced from project resources through
   `res://web` loading on the current native paths. Runtime-mounted Godot packs
   remain out of scope for that loading path.
-- If an API is needed by both GDScript and C#, define the shape once and keep
-  C# as a thin wrapper.
+- If an API is needed by both GDScript and C#, keep the behavior aligned and
+  keep C# as a thin wrapper.
 
 ## Android Packaging Direction
 
@@ -143,6 +146,8 @@ configured yet.
   style preference.
 - Keep public APIs, cross-language boundaries, exported properties, signal
   payloads, and bridge-facing types explicit when that improves readability.
+- Prefer idiomatic C# events on public C# wrappers instead of exposing raw Godot
+  signal connection details to C# users.
 - Prefer `val` over `var` in Kotlin unless mutation is required.
 - Prefer `let` over `var` in Swift unless mutation is required.
 - For JavaScript and TypeScript in this repo, avoid unnecessary `void` usage to
@@ -201,6 +206,8 @@ configured yet.
   refreshed before any device testing.
 - When changing the IPC shape, make sure at least one real request/response
   round-trip remains covered by the example or integration tests.
+- When changing `KirieClient`, compile it against the Godot .NET SDK. A platform
+  integration smoke test for its C# event API is still pending.
 
 ### Dependencies
 
@@ -250,7 +257,7 @@ infrastructure.
 
 - GitHub Actions are configured for lint, Android platform integration, and npm
   package publishing. A broader release/build matrix is still not configured.
-- Code generation pipelines for future C# wrappers or shared API declarations do
+- Automated platform integration coverage for the C# `KirieClient` wrapper does
   not exist yet.
 - Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not
   implemented yet.

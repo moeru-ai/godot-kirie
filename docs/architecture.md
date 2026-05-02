@@ -6,6 +6,7 @@ We are standardizing only the minimum plugin shape needed to support:
 
 - a Godot-facing Kirie service
 - a scene-friendly KirieView node
+- a thin C# KirieClient wrapper for .NET projects
 - Android and iOS native WebView implementations
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
@@ -67,6 +68,12 @@ Current public Godot-facing names should stay close to that low-level role:
 The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side
 without duplicating native lifecycle logic.
+
+The C# `KirieClient` wrapper follows the same low-level surface and forwards to
+the same platform singleton. Its public API should feel idiomatic to .NET users:
+methods use C# naming, and Kirie signals are exposed as C# events. Internal
+Godot `Callable` usage exists only to connect native singleton signals and iOS
+callbacks.
 
 Current signals should also stay narrow:
 
