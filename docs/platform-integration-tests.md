@@ -162,10 +162,16 @@ bridge assertion.
 
 ## Android Local Flow
 
+Build the staged Android addon AAR first:
+
+```bash
+mise x -- corepack pnpm run build:android-aar
+```
+
 Build the test APK:
 
 ```bash
-scripts/build_integration_android.sh
+mise x -- corepack pnpm run build:integration-android
 ```
 
 Install it once:
@@ -212,18 +218,34 @@ Tests are isolated by app session:
 This avoids residual WebView, JavaScript, singleton, signal, and cache state
 without exporting a separate APK for every test.
 
+## iOS Local Flow
+
+Build the staged iOS addon XCFramework first:
+
+```bash
+mise x -- corepack pnpm run build:ios-xcframework
+```
+
+Build the simulator app:
+
+```bash
+mise x -- corepack pnpm run build:integration-ios
+```
+
+Install and run tests with the simulator helper:
+
+```bash
+scripts/run_integration_ios_test.sh ipc_round_trip_probe
+```
+
+The iOS XCFramework and simulator app tasks expect the Godot source checkout at
+repo-root `godot/`.
+
 ## CI Direction
 
-The intended GitHub Actions shape is:
-
-- set up Node and Java with `jdx/mise-action`
-- set up Godot and export templates with `chickensoft-games/setup-godot`
-- install pnpm dependencies
-- build the Android AAR
-- export `tests/integration` as an Android APK
-- start an emulator with `reactivecircus/android-emulator-runner`
-- install the APK once
-- run each test through `scripts/run_integration_android_test.sh`
+The CI flows live in `.github/workflows/platform-integration-android.yml` and
+`.github/workflows/platform-integration-ios.yml`. They build the native staging
+artifacts before exporting the integration project.
 
 CI should reuse the same marker contract and app-session isolation used
 locally.

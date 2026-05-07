@@ -43,7 +43,7 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-      
+
       - name: Install XcodeGen, Task, SCons and MoltenVK
         run: brew install xcodegen task scons molten-vk
 
@@ -52,12 +52,12 @@ jobs:
           curl -LO https://github.com/godotengine/godot/archive/refs/tags/4.6.2-stable.tar.gz
           tar -xzf 4.6.2-stable.tar.gz
           mv godot-4.6.2-stable godot
-      
+
           cd godot
-      
+
           MOLTENVK_PATH="$(brew --prefix molten-vk)"
           echo "Using MoltenVK from: ${MOLTENVK_PATH}"
-      
+
           scons platform=macos target=editor \
             vulkan_sdk_path="${MOLTENVK_PATH}" \
             core/version_generated.gen.h \
@@ -81,8 +81,11 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
+      - name: Build iOS XCFramework
+        run: mise x -- corepack pnpm run build:ios-xcframework
+
       - name: Build integration App
-        run: mise x -- bash -c 'GODOT_BIN="${GODOT:-godot}" scripts/build_integration_ios.sh'
+        run: mise x -- corepack pnpm run build:integration-ios
 
       - name: Start iOS Simulator
         run: |
@@ -96,7 +99,7 @@ jobs:
       - name: Run integration tests
         run: |
           xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
-          
+
           scripts/run_integration_ios_test.sh ipc_round_trip_probe
           scripts/run_integration_ios_test.sh webview_lifecycle_probe
           scripts/run_integration_ios_test.sh res_asset_loading_probe

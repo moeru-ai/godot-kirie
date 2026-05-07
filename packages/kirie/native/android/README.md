@@ -7,8 +7,9 @@ Current direction:
 - based on the standard Godot Android v2 plugin template
 - structured as an Android library root with a `plugin` module
 - depends on the Godot Android library matching the repo's target Godot version
-- ships to Godot projects as a local addon AAR through `EditorExportPlugin`
-  until Kirie needs Maven-delivered Android runtime dependencies
+- ships to staged Godot addon trees as local AAR files through
+  `EditorExportPlugin` until Kirie needs Maven-delivered Android runtime
+  dependencies
 
 Current responsibility:
 
@@ -30,6 +31,7 @@ Notes:
   template at commit `089491f`.
 - Local AAR export follows Godot's Android plugin v2 and `EditorExportPlugin`
   hooks; see `docs/references.md` for the official Godot references.
+- Build staged AARs with `mise x -- corepack pnpm run build:android-aar`.
 - Demo packaging from the upstream template was intentionally removed because
   this repository keeps Godot-facing addon files under
   `packages/kirie/addon/addons/kirie/`.

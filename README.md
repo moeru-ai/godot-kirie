@@ -24,7 +24,8 @@ example, and regression-test areas:
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `examples/basic-ipc`: the first runnable manual integration example
 - `tests/integration`: exported-app platform integration tests
-- `scripts`: local build and run helpers for native validation
+- `gulpfile.ts`: native artifact and integration export orchestration
+- `scripts`: local run helpers for native validation
 - `docs`: project notes and design decisions
   - `docs/dreams`: exploratory notes for ideas outside the current milestone
 

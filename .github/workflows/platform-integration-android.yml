@@ -66,8 +66,11 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
+      - name: Build Android AAR
+        run: mise x -- corepack pnpm run build:android-aar
+
       - name: Build integration APK
-        run: mise x -- bash -c 'GODOT_BIN="${GODOT:-godot}" scripts/build_integration_android.sh'
+        run: mise x -- corepack pnpm run build:integration-android
 
       - name: Enable KVM
         run: |

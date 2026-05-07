@@ -29,18 +29,18 @@ The project definition lives in [project.yml](./project.yml). The generated `.xc
 
 ## Build
 
-Run the repository-level helper:
+Run the repository-level task:
 
 ```sh
-./scripts/build_kirie_ios.sh
+mise x -- corepack pnpm run build:ios-xcframework
 ```
 
-The script will:
+The task will:
 
 1. Generate a local Xcode project under `.generated/`
 2. Archive `Kirie` for `iphoneos` and `iphonesimulator`
 3. Create `Kirie.xcframework`
-4. Copy the result into `addons/kirie/ios/`
+4. Stage the result under `packages/kirie/addon/addons/kirie/ios/`
 
 ## Runtime configuration
 
@@ -57,6 +57,6 @@ Export-time plist keys are injected by the addon export plugin.
 
 ## Current packaging direction
 
-- keep iOS native artifacts inside produced `addons/kirie` trees
+- keep iOS native artifacts inside staged `addons/kirie` trees
 - inject iOS native pieces through the addon export plugin
 - do not depend on `res://ios/plugins` or `.gdip` shims

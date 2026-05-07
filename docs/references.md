@@ -78,6 +78,13 @@ packaging, or platform WebView bridge details.
 
 ## JavaScript packaging
 
+- [Node.js TypeScript support](https://nodejs.org/api/typescript.html)
+  Reference for Node's built-in TypeScript type stripping and erasable syntax
+  constraints used by the repository `gulpfile.ts`.
+- [Gulp creating tasks](https://gulpjs.com/docs/en/getting-started/creating-tasks/)
+  Reference for exported Gulp task functions and task composition.
+- [Execa](https://github.com/sindresorhus/execa)
+  Reference for programmatic process execution from the repository task runner.
 - [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
   Reference for publishing npm packages from GitHub Actions through OIDC instead
   of long-lived npm tokens.
@@ -102,3 +109,5 @@ packaging, or platform WebView bridge details.
   support, C# signals, and .NET reflection or AOT documentation.
 - When changing npm package publishing, start with npm trusted publishing,
   GitHub Actions OIDC, bumpp, and pnpm publish behavior.
+- When changing native artifact orchestration, start with Node.js TypeScript
+  support and the Gulp task composition references.

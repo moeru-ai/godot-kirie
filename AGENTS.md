@@ -33,8 +33,10 @@ higher-level work.
   the first runnable manual integration target
 - `tests/integration`
   exported-app platform bridge regression target
+- `gulpfile.ts`
+  native artifact and integration export orchestration
 - `scripts`
-  local build and run helpers for Android and iOS validation
+  local run helpers for Android and iOS validation
 - `.codex/skills`
   repo-local Codex skills for project maintenance workflows
 - `docs`
@@ -84,14 +86,11 @@ is a standard Godot plugin:
 
 - users consume `addons/kirie`
 - Android binaries are exported through `EditorExportPlugin`
-- during bring-up, local `.aar` files under the addon are acceptable because the
-  current Android bridge does not require Kirie-owned Maven-delivered runtime
-  dependencies
 - Maven-based Android delivery can be revisited if Kirie gains Android
   dependencies that need Gradle metadata or transitive resolution
 
 When producing a downloadable addon tree, ensure Android `.aar` files are real
-files in the generated output, not repository-local symlinks into Gradle build
+files in the staged output, not repository-local symlinks into Gradle build
 directories.
 
 ## iOS Packaging Direction
@@ -99,7 +98,7 @@ directories.
 For the current milestone, iOS should be owned by the standard addon tree:
 
 - users consume `addons/kirie`
-- `Kirie.xcframework` belongs under `addons/kirie/ios` in produced addon trees
+- `Kirie.xcframework` belongs under `addons/kirie/ios` in staged addon trees
 - iOS native pieces are injected through `EditorExportPlugin` Apple export hooks
 - do not reintroduce `res://ios/plugins` or `.gdip` shims unless the export hook
   approach fails and the user explicitly chooses that fallback
@@ -132,6 +131,20 @@ For the current milestone, iOS should be owned by the standard addon tree:
   tool workaround.
 - Keep Gradle wrapper and Xcode usage as-is; mise only provides the Java runtime
   and command-line tools around them.
+- Start command invocations with the fewest necessary flags and options. Add
+  extra flags only after the project or user has a concrete need for them.
+- Native artifact orchestration lives in `gulpfile.ts`. Use
+  `mise x -- corepack pnpm run build:android-aar`,
+  `mise x -- corepack pnpm run build:ios-xcframework`, or
+  `mise x -- corepack pnpm run build:native-artifacts` instead of adding new
+  shell-only orchestration for the same artifact path.
+- Integration export orchestration also lives in `gulpfile.ts`. Use
+  `mise x -- corepack pnpm run build:integration-android` or
+  `mise x -- corepack pnpm run build:integration-ios` instead of adding new
+  integration build shell scripts.
+- Keep `gulpfile.ts` executable by Node's built-in TypeScript type stripping:
+  use erasable TypeScript syntax only and do not add `ts-node`, `tsx`, or other
+  TypeScript runtime loaders unless a real non-erasable TypeScript need appears.
 
 ## Engineering Rules
 
@@ -164,6 +177,9 @@ configured yet.
 - Do not wrap platform APIs with thin pass-through helpers unless the wrapper
   actually stabilizes the Godot-facing API, hides a platform difference, or
   creates a meaningful test seam.
+- Do not add extra guard code only to beautify errors. Prefer the underlying
+  tool, runtime, or filesystem error unless the guard changes behavior or makes
+  a likely failure materially easier to debug.
 - Prefer keeping logic close to the module that owns it instead of extracting it
   into cross-cutting helpers too early.
 - Add configuration, extension points, and generic options only when they are
@@ -199,11 +215,12 @@ configured yet.
   `mise x -- corepack pnpm run format:swift`.
 - When changing Android bridge code, validate the Godot-to-native-to-web path as
   soon as practical.
+- After changing Android native code under `packages/kirie/native/android`,
+  run `mise x -- corepack pnpm run build:android-aar` before exported-app tests.
 - When changing iOS bridge code, validate the Godot-to-native-to-web path as
   soon as practical.
 - After changing iOS native code under `packages/kirie/native/ios`, always run
-  `scripts/build_kirie_ios.sh` so `addons/kirie/ios/Kirie.xcframework` is
-  refreshed before any device testing.
+  `mise x -- corepack pnpm run build:ios-xcframework` before device testing.
 - When changing the IPC shape, make sure at least one real request/response
   round-trip remains covered by the example or integration tests.
 - When changing `KirieClient`, compile it against the Godot .NET SDK. A platform
@@ -234,11 +251,12 @@ configured yet.
 ### Binary artifacts
 
 - Avoid committing build outputs by default.
-- Do not commit `.aar`, `.xcframework`, exported app bundles, or similar binary
-  artifacts unless the repository intentionally adopts them as source-distributed
-  plugin assets.
-- If the repository starts tracking a binary artifact class intentionally, add
-  the rule explicitly here.
+- `.aar`, `.xcframework`, exported app bundles, and similar binaries are release
+  staging artifacts in this repository. Generate them into the addon tree or
+  release staging tree when needed, but do not commit them.
+- If the repository intentionally adopts a binary artifact class as
+  source-distributed plugin assets later, add the exception explicitly here and
+  update `.gitignore` in the same change.
 
 ### Logging and lifecycle
 
@@ -261,5 +279,3 @@ infrastructure.
   not exist yet.
 - Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not
   implemented yet.
-- Source tracking policy is not finalized yet for generated binary artifacts
-  such as local `.aar` files and `.xcframework` bundles.

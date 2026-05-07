@@ -5,6 +5,11 @@
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "build": "pnpm -r run build",
+    "build:android-aar": "gulp buildAndroidAar",
+    "build:integration-android": "gulp buildIntegrationAndroid",
+    "build:integration-ios": "gulp buildIntegrationIos",
+    "build:ios-xcframework": "gulp buildIosXcframework",
+    "build:native-artifacts": "gulp buildNativeArtifacts",
     "build:packages": "pnpm -r --filter './packages/*' run build",
     "format": "pnpm run format:biome && pnpm run format:gdscript && pnpm run format:kotlin && pnpm run format:swift",
     "format:biome": "biome check --write .",
@@ -21,6 +26,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
-    "bumpp": "^11.0.1"
+    "bumpp": "^11.0.1",
+    "execa": "9.6.1",
+    "gulp": "5.0.1"
   }
 }
