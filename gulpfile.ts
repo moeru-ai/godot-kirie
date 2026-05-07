@@ -16,7 +16,7 @@ const iosOutputXcframework = `${iosOutputDir}/Kirie.xcframework`;
 const iosDerivedDataPath = `${iosBuildDir}/DerivedData`;
 const integrationProjectDir = "tests/integration";
 const integrationDistDir = "dist/integration";
-const godotSourceRoot = "godot";
+const godotSourceRoot = path.join(rootDir, "godot");
 
 function findSimulatorLibgodot(dirPath: string): string | undefined {
   for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
@@ -207,7 +207,7 @@ export async function buildIntegrationIos(): Promise<void> {
       `-j${os.availableParallelism()}`,
     ],
     {
-      cwd: path.resolve(rootDir, godotSourceRoot),
+      cwd: godotSourceRoot,
       stdio: "inherit",
     },
   );
