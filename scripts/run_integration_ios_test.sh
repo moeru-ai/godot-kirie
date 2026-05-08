@@ -15,9 +15,10 @@ fi
 TEST_NAME="$1"
 BUNDLE_ID="${BUNDLE_ID:-ai.moeru.kirie.integrationtests}"
 SIMULATOR_ID="${SIMULATOR_ID:-booted}"
-TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-120}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-75}"
 LOG_STREAM_SETTLE_SECONDS="${LOG_STREAM_SETTLE_SECONDS:-1}"
 LOG_FILE="${LOG_FILE:-${TMPDIR:-/tmp}/kirie-integration-${TEST_NAME}.log}"
+LOG_PREDICATE="${LOG_PREDICATE:-process == \"integration\" OR eventMessage CONTAINS \"KIRIE_TEST_\" OR eventMessage CONTAINS \"[Kirie]\" OR eventMessage CONTAINS \"Godot\"}"
 
 cleanup() {
     if [ -n "${LOG_PID:-}" ]; then
@@ -31,7 +32,11 @@ trap cleanup EXIT
 : > "${LOG_FILE}"
 xcrun simctl terminate "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
 
-xcrun simctl spawn "${SIMULATOR_ID}" log stream --level debug --style compact > "${LOG_FILE}" 2>&1 &
+xcrun simctl spawn "${SIMULATOR_ID}" log stream \
+    --level debug \
+    --style compact \
+    --predicate "${LOG_PREDICATE}" \
+    > "${LOG_FILE}" 2>&1 &
 LOG_PID="$!"
 sleep "${LOG_STREAM_SETTLE_SECONDS}"
 
@@ -59,6 +64,4 @@ done
 echo "Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${TEST_NAME}" >&2
 echo "=== Last 120 Kirie/Godot/test lines ===" >&2
 grep -E "KIRIE_TEST_|\\[Kirie\\]|Godot" "${LOG_FILE}" | tail -n 120 >&2 || true
-echo "=== Last 120 lines of app output ===" >&2
-tail -n 120 "${LOG_FILE}" >&2
 exit 1

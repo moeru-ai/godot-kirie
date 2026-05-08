@@ -19,6 +19,8 @@ jobs:
     runs-on: macos-latest
     env:
       GODOT_VERSION: 4.6.2
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
 
@@ -46,23 +48,15 @@ jobs:
           xcode-version: latest-stable
 
       - name: Get Xcode version
-        id: xcode-version
+        id: xcode
         run: |
-          version="$(xcodebuild -version | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          xcodebuild -version
+          echo "version=$(xcodebuild -version | tr ' \n' '--')" >> "$GITHUB_OUTPUT"
 
-      - name: Restore prepared Godot source
-        id: godot-source-cache
-        uses: actions/cache/restore@v5
-        with:
-          path: godot
-          key: ${{ runner.os }}-${{ runner.arch }}-godot-source-${{ env.GODOT_VERSION }}-${{ steps.xcode-version.outputs.version }}-${{ hashFiles('.github/workflows/platform-integration-ios.yml') }}
-
-      - name: Install XcodeGen, Task, SCons and MoltenVK
-        run: brew install xcodegen task scons molten-vk
+      - name: Install XcodeGen, SCons and MoltenVK
+        run: brew install xcodegen scons molten-vk
 
       - name: Download and Prepare Godot Source Headers
-        if: steps.godot-source-cache.outputs.cache-hit != 'true'
         run: |
           rm -rf godot "${GODOT_VERSION}-stable.tar.gz" "godot-${GODOT_VERSION}-stable"
           curl -LO "https://github.com/godotengine/godot/archive/refs/tags/${GODOT_VERSION}-stable.tar.gz"
@@ -79,12 +73,11 @@ jobs:
             core/version_generated.gen.h \
             core/extension/gdextension_interface.gen.h
 
-      - name: Save prepared Godot source
-        if: steps.godot-source-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
+      - name: Cache Godot iOS simulator template
+        uses: actions/cache@v5
         with:
-          path: godot
-          key: ${{ steps.godot-source-cache.outputs.cache-primary-key }}
+          path: godot/bin/libgodot.ios.template_debug.arm64.simulator.a
+          key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-simulator-template-${{ hashFiles('gulpfile.ts') }}
 
       - name: Enable Corepack
         run: mise x -- corepack enable pnpm
@@ -104,14 +97,6 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
-      - name: Cache iOS DerivedData
-        uses: actions/cache@v5
-        with:
-          path: packages/kirie/native/ios/Kirie/.build/DerivedData
-          key: ${{ runner.os }}-${{ runner.arch }}-ios-derived-data-${{ env.GODOT_VERSION }}-${{ steps.xcode-version.outputs.version }}-${{ hashFiles('packages/kirie/native/ios/Kirie/**/*.swift', 'packages/kirie/native/ios/Kirie/project.yml', 'gulpfile.ts') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-ios-derived-data-${{ env.GODOT_VERSION }}-${{ steps.xcode-version.outputs.version }}-
-
       - name: Build iOS XCFramework
         run: mise x -- corepack pnpm run build:ios-xcframework
 
@@ -128,6 +113,9 @@ jobs:
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
 
       - name: Run integration tests
+        timeout-minutes: 8
+        env:
+          TIMEOUT_SECONDS: "45"
         run: |
           xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
 

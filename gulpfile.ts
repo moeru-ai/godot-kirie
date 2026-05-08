@@ -196,26 +196,30 @@ export async function buildIntegrationIos(): Promise<void> {
   fs.mkdirSync(path.dirname(appPath), { recursive: true });
   fs.mkdirSync(xcodeExportDir, { recursive: true });
 
-  console.log("Building Godot iOS arm64 simulator template...");
-  await execa(
-    "scons",
-    [
-      "platform=ios",
-      "target=template_debug",
-      "arch=arm64",
-      "simulator=yes",
-      `-j${os.availableParallelism()}`,
-    ],
-    {
-      cwd: godotSourceRoot,
-      stdio: "inherit",
-    },
-  );
-
   const arm64Source = path.join(
     godotSourceRoot,
     "bin/libgodot.ios.template_debug.arm64.simulator.a",
   );
+
+  if (fs.existsSync(arm64Source)) {
+    console.log(`Using existing Godot iOS arm64 simulator template: ${arm64Source}`);
+  } else {
+    console.log("Building Godot iOS arm64 simulator template...");
+    await execa(
+      "scons",
+      [
+        "platform=ios",
+        "target=template_debug",
+        "arch=arm64",
+        "simulator=yes",
+        `-j${os.availableParallelism()}`,
+      ],
+      {
+        cwd: godotSourceRoot,
+        stdio: "inherit",
+      },
+    );
+  }
 
   console.log("Exporting Xcode project...");
   await execa(
