@@ -111,6 +111,14 @@ For the current milestone, iOS should be owned by the standard addon tree:
   a non-English artifact.
 - Favor small, testable steps that can be exercised through
   `examples/basic-ipc` or `tests/integration`.
+- Default to a standard multi-agent workflow for non-trivial tasks whenever the
+  agent runtime supports delegation. Use independent sidecar agents for fact
+  finding or context description, deletion/prosecutor review, and build or
+  validation scope before finalizing work; for implementation work, keep each
+  agent's ownership and write scope explicit.
+- If delegation is unavailable or a task is too small to benefit from
+  independent agents, state that exception briefly and continue with the
+  smallest useful single-agent workflow.
 - When touching native code, keep the Godot-facing API stable unless there is a
   strong reason to change it.
 - When adding agent-facing guidance, prefer `AGENTS.md` and repo-local skills

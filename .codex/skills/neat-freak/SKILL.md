@@ -84,7 +84,12 @@ Use `references/sync-matrix.md` when uncertain.
 
 ### 3. Edit
 
-Actually modify files. A plan is not enough.
+When you are the primary cleanup agent, actually modify files when the inventory
+reveals stale, duplicated, or missing knowledge. A plan is not enough.
+
+When you are acting as a review-only sidecar for fact finding,
+deletion/prosecutor review, or validation scope, do not invent edits. Report
+findings clearly and leave file changes to the primary cleanup agent.
 
 Editing principles:
 
@@ -124,7 +129,8 @@ git diff --check
 
 ### 5. Summarize
 
-After editing, summarize only actual changes:
+After editing, summarize only actual changes. For review-only sidecars,
+summarize findings and explicitly state that no files were edited.
 
 - Memory or global instruction changes, if any.
 - Project documentation changes, grouped by project.
