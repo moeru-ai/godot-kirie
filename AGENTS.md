@@ -123,6 +123,9 @@ For the current milestone, iOS should be owned by the standard addon tree:
   strong reason to change it.
 - When adding agent-facing guidance, prefer `AGENTS.md` and repo-local skills
   over ad hoc note files.
+- Pull request titles must follow the same Conventional Commits-style
+  subject format as commit titles, for example `ci: cache iOS build inputs`
+  or `refactor(build): migrate to gulp`.
 
 ## Tooling
 
