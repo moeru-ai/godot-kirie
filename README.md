@@ -25,9 +25,14 @@ This follows Godot's plugin installation flow. Release packaging details live in
 Kirie adds Godot export preset options under `kirie/debug`:
 
 - `enable_web_inspector`: enable platform WebView inspection for exported apps.
-- `allow_tls_bypass`: allow invalid TLS certificates for exported apps.
+- `allow_tls_bypass`: allow invalid TLS certificates for exported apps. On iOS,
+  enabling this also relaxes App Transport Security (ATS) by allowing arbitrary
+  loads, which can permit insecure cleartext HTTP requests in addition to bypassing
+  invalid TLS certificates.
 
 Both options default to disabled and are intended for development exports only.
+In particular, `allow_tls_bypass` reduces transport security and must not be
+enabled for production builds.
 
 ## Current Architecture
 
