@@ -149,6 +149,11 @@ For the current milestone, iOS should be owned by the standard addon tree:
   `mise x -- corepack pnpm run build:ios-xcframework`, or
   `mise x -- corepack pnpm run build:native-artifacts` instead of adding new
   shell-only orchestration for the same artifact path.
+- Addon release packaging also lives in `gulpfile.ts`. Use
+  `mise x -- corepack pnpm run build:addon-pack` to build native artifacts and
+  produce `dist/kirie-addon.zip`; use
+  `mise x -- corepack pnpm run check:addon-pack` to verify an already staged
+  addon tree.
 - Integration export orchestration also lives in `gulpfile.ts`. Use
   `mise x -- corepack pnpm run build:integration-android` or
   `mise x -- corepack pnpm run build:integration-ios` instead of adding new
@@ -290,8 +295,10 @@ The following directions are intentional, but they are not fully set up in the
 repository yet. Agents should treat them as targets, not as already-enforced
 infrastructure.
 
-- GitHub Actions are configured for lint, Android platform integration, and npm
-  package publishing. A broader release/build matrix is still not configured.
+- GitHub Actions are configured for lint, Android platform integration, iOS
+  platform integration, npm package publishing, and addon release packaging.
+  Broader release matrix coverage beyond the current addon zip is still not
+  configured.
 - Automated platform integration coverage for the C# `KirieClient` wrapper does
   not exist yet.
 - Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not

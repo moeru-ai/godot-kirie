@@ -1,0 +1,150 @@
+name: Addon Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      upload_release:
+        description: Upload addon zip to GitHub Release
+        required: false
+        default: false
+        type: boolean
+      tag:
+        description: Release tag to upload to when upload_release is enabled
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  addon:
+    name: Build addon zip
+    runs-on: macos-latest
+    env:
+      GODOT_VERSION: 4.6.2
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      MISE_EXEC_AUTO_INSTALL: "false"
+      MISE_NOT_FOUND_AUTO_INSTALL: "false"
+
+    steps:
+      - name: Resolve release mode
+        id: release
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_UPLOAD_RELEASE: ${{ inputs.upload_release || false }}
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${INPUT_UPLOAD_RELEASE}" != "true" ]]; then
+            echo "tag=manual-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -z "${INPUT_TAG}" ]]; then
+            echo "::error::tag is required when upload_release is true"
+            exit 1
+          fi
+
+          if [[ "${INPUT_TAG}" != v* ]]; then
+            echo "::error::tag must start with v"
+            exit 1
+          fi
+
+          echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "upload=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.release.outputs.upload == 'true' && steps.release.outputs.tag || github.ref }}
+
+      - name: Install Node and Java
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          install_args: node java
+          cache: true
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: >-
+            platform-tools
+            platforms;android-35
+            platforms;android-36
+            build-tools;36.0.0
+
+      - name: Setup Xcode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen, SCons and MoltenVK
+        run: brew install xcodegen scons molten-vk
+
+      - name: Download and prepare Godot source headers
+        run: |
+          rm -rf godot "${GODOT_VERSION}-stable.tar.gz" "godot-${GODOT_VERSION}-stable"
+          curl -LO "https://github.com/godotengine/godot/archive/refs/tags/${GODOT_VERSION}-stable.tar.gz"
+          tar -xzf "${GODOT_VERSION}-stable.tar.gz"
+          mv "godot-${GODOT_VERSION}-stable" godot
+
+          cd godot
+
+          MOLTENVK_PATH="$(brew --prefix molten-vk)"
+          echo "Using MoltenVK from: ${MOLTENVK_PATH}"
+
+          scons platform=macos target=editor \
+            vulkan_sdk_path="${MOLTENVK_PATH}" \
+            core/version_generated.gen.h \
+            core/extension/gdextension_interface.gen.h
+
+      - name: Enable Corepack
+        run: mise x -- corepack enable pnpm
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
+
+      - name: Install pnpm dependencies
+        run: mise x -- corepack pnpm install --frozen-lockfile
+
+      - name: Build addon pack
+        run: mise x -- corepack pnpm run build:addon-pack
+
+      - name: Upload addon artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: kirie-addon-${{ steps.release.outputs.tag }}
+          path: dist/kirie-addon.zip
+          if-no-files-found: error
+
+      - name: Upload addon to GitHub Release
+        if: steps.release.outputs.upload == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          files: dist/kirie-addon.zip
+          fail_on_unmatched_files: true

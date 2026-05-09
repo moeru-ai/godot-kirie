@@ -25,6 +25,11 @@ request handler. `res://web` resolves to `web/index.html`. Runtime-mounted Godot
 packs are not part of this path. `http://`, `https://`, and `file://` URLs keep
 the default Android WebView loading behavior.
 
+Runtime configuration is injected by the addon export plugin as Android
+application manifest metadata. WebView inspection and invalid TLS certificate
+bypass are controlled by Godot export preset options instead of being tied to the
+native AAR build configuration.
+
 Notes:
 
 - The current skeleton was adapted from the official Godot Android v2 plugin

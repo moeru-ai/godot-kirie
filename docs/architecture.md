@@ -91,6 +91,27 @@ to end.
 Kirie supports loading packaged offline web content from Godot project resources
 through the `res://web` path described below.
 
+## Runtime debug configuration
+
+Debug behavior that affects exported applications is controlled by Godot export
+preset options, not by automatically detecting whether the export itself is a
+debug build.
+
+The current export preset options are:
+
+- `kirie/debug/enable_web_inspector`
+- `kirie/debug/allow_tls_bypass`
+
+On Android, the export plugin writes these values as application manifest
+metadata for the native plugin to read at runtime. On iOS, it writes matching
+Info.plist values. The iOS ATS widening plist block is injected only when
+`kirie/debug/allow_tls_bypass` is enabled.
+
+Android native artifact selection is separate from application debug behavior.
+Exports use `Kirie-release.aar` by default. Repository-local Android native
+debugging can opt into `Kirie-debug.aar` for a single export by passing
+`-- --kirie-android-aar=debug` to the Godot export command.
+
 ## Packaged web resource loading
 
 `res://` web loading is scoped to resources that are exported with the
@@ -120,10 +141,11 @@ Android:
   content, and native initialization glue through Apple export hooks
 - example projects should not carry a separate `res://ios/plugins` shim
 
-## Planned GitHub Release addon flow
+## GitHub Release addon flow
 
-GitHub Release addon publishing is not configured yet. Keep it separate from the
-npm publishing flow, which is only for browser-side workspace packages such as
-`@gd-kirie/ipc`.
+GitHub Release addon publishing is configured through the `Addon Release`
+workflow. Keep it separate from the npm publishing flow, which is only for
+browser-side workspace packages such as `@gd-kirie/ipc`.
 
-The planned method and open TODOs live in [Addon Release](./addon-release.md).
+The release artifact shape and workflow modes live in
+[Addon Release](./addon-release.md).

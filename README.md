@@ -3,6 +3,32 @@
 Kirie is an experimental Godot plugin project for embedding platform WebViews and
 building IPC between Godot and web content.
 
+## Installation
+
+Download `kirie-addon.zip` from a GitHub Release asset and extract it into the
+root of your Godot project. The final layout should be:
+
+```text
+res://addons/kirie/
+```
+
+If your project already has an `addons` directory, merge the extracted `addons`
+directory into the project root. Do not extract the zip inside the existing
+`addons` directory.
+
+After copying the files, enable Kirie from Godot's Project Settings Plugins tab.
+This follows Godot's plugin installation flow. Release packaging details live in
+[docs/addon-release.md](docs/addon-release.md).
+
+## Export Options
+
+Kirie adds Godot export preset options under `kirie/debug`:
+
+- `enable_web_inspector`: enable platform WebView inspection for exported apps.
+- `allow_tls_bypass`: allow invalid TLS certificates for exported apps.
+
+Both options default to disabled and are intended for development exports only.
+
 ## Current Architecture
 
 ```mermaid
