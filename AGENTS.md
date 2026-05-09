@@ -174,6 +174,12 @@ configured yet.
   signal connection details to C# users.
 - Prefer `val` over `var` in Kotlin unless mutation is required.
 - Prefer `let` over `var` in Swift unless mutation is required.
+- Prefer early returns and early continues to keep control flow flat. Avoid
+  nesting conditionals when a guard clause or loop `continue` can handle the
+  exceptional or irrelevant case clearly.
+- Avoid suppressing compiler, linter, or deprecation warnings. Use suppression
+  only when the current platform or compatibility target temporarily requires an
+  older API and the modern API is already used where available.
 - For JavaScript and TypeScript in this repo, avoid unnecessary `void` usage to
   swallow async promises and avoid unnecessary dynamic imports.
 
