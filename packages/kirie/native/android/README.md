@@ -32,6 +32,9 @@ Notes:
 - Local AAR export follows Godot's Android plugin v2 and `EditorExportPlugin`
   hooks; see `docs/references.md` for the official Godot references.
 - Build staged AARs with `mise x -- corepack pnpm run build:android-aar`.
+- Exported projects use the release AAR by default. Local Kirie development can
+  select the debug AAR for Android native debugging by passing
+  `-- --kirie-android-aar=debug` to the Godot export command.
 - Demo packaging from the upstream template was intentionally removed because
   this repository keeps Godot-facing addon files under
   `packages/kirie/addon/addons/kirie/`.

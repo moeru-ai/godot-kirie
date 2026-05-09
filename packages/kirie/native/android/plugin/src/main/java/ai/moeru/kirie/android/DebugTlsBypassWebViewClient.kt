@@ -11,6 +11,7 @@ import android.webkit.WebViewClient
 
 class DebugTlsBypassWebViewClient(
     private val serverUrl: String?,
+    private val allowTlsBypass: Boolean,
     private val assetRequestHandler: KirieAssetRequestHandler,
 ) : WebViewClient() {
     override fun shouldInterceptRequest(
@@ -39,7 +40,7 @@ class DebugTlsBypassWebViewClient(
     }
 
     private fun shouldBypassDevServerCertificate(error: SslError?): Boolean {
-        if (!BuildConfig.DEBUG || error == null) {
+        if (!allowTlsBypass || error == null) {
             return false
         }
 

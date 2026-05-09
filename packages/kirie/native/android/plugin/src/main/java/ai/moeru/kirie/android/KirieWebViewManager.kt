@@ -47,7 +47,8 @@ class KirieWebViewManager(
             createdWebView.settings.javaScriptEnabled = true
             createdWebView.settings.domStorageEnabled = true
 
-            if (BuildConfig.DEBUG) {
+            val runtimeConfig = KirieRuntimeConfig.from(activity)
+            if (runtimeConfig.enableWebInspector) {
                 WebView.setWebContentsDebuggingEnabled(true)
             }
 
@@ -55,6 +56,7 @@ class KirieWebViewManager(
             createdWebView.webViewClient =
                 DebugTlsBypassWebViewClient(
                     serverUrl = initialUrl,
+                    allowTlsBypass = runtimeConfig.allowTlsBypass,
                     assetRequestHandler = KirieAssetRequestHandler(activity.assets),
                 )
 

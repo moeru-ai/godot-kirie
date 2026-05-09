@@ -44,16 +44,16 @@ The task will:
 
 ## Runtime configuration
 
-No runtime plist keys are required for the current IPC path.
-
-Export-time plist keys are injected by the addon export plugin.
+Export-time plist keys are injected by the addon export plugin. WebView debug
+capabilities, such as inspectability and invalid TLS certificate bypass, are
+controlled by Godot export preset options instead of being tied to the native
+framework build configuration.
 
 ## Notes
 
 - The WebView is visually transparent, but it still captures touches everywhere it covers.
-- ATS is currently widened unconditionally via the plugin plist injection.
-- Invalid TLS certificates are currently bypassed unconditionally.
-- TODO: Narrow ATS and TLS bypass to debug-only before shipping.
+- ATS widening is injected only when the TLS bypass export option is enabled.
+- Invalid TLS certificates are bypassed only when the TLS bypass export option is enabled.
 
 ## Current packaging direction
 

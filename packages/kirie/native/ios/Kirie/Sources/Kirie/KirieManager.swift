@@ -8,6 +8,22 @@ private extension Notification.Name {
     static let kirieIpcError = Notification.Name("KirieIpcError")
 }
 
+private struct KirieRuntimeConfig {
+    private static let enableWebInspectorKey = "KirieEnableWebInspector"
+    private static let allowTlsBypassKey = "KirieAllowTlsBypass"
+
+    let enableWebInspector: Bool
+    let allowTlsBypass: Bool
+
+    static var current: KirieRuntimeConfig {
+        let bundle = Bundle.main
+        return KirieRuntimeConfig(
+            enableWebInspector: bundle.object(forInfoDictionaryKey: enableWebInspectorKey) as? Bool ?? false,
+            allowTlsBypass: bundle.object(forInfoDictionaryKey: allowTlsBypassKey) as? Bool ?? false
+        )
+    }
+}
+
 @MainActor
 final class KirieManager: NSObject {
     static let shared = KirieManager()
@@ -215,7 +231,7 @@ final class KirieManager: NSObject {
         webView.accessibilityIdentifier = "KirieWebView"
 
         if #available(iOS 16.4, *) {
-            webView.isInspectable = true // TODO: read from config
+            webView.isInspectable = KirieRuntimeConfig.current.enableWebInspector
         }
 
         containerView.addSubview(webView)
@@ -332,12 +348,12 @@ extension KirieManager: WKNavigationDelegate {
     ) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         let protectionSpace = challenge.protectionSpace
 
-        // TODO: Restrict invalid TLS bypass to debug-only before shipping.
-        if protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-           let serverTrust = protectionSpace.serverTrust {
-            return (.useCredential, URLCredential(trust: serverTrust))
+        guard KirieRuntimeConfig.current.allowTlsBypass,
+              protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = protectionSpace.serverTrust else {
+            return (.performDefaultHandling, nil)
         }
 
-        return (.performDefaultHandling, nil)
+        return (.useCredential, URLCredential(trust: serverTrust))
     }
 }

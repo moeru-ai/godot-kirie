@@ -2,17 +2,25 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execa } from "execa";
-import { parallel } from "gulp";
+import { parallel, series } from "gulp";
 
 const rootDir = process.cwd();
+const distDir = "dist";
+const addonSourceDir = "packages/kirie/addon/addons/kirie";
+const addonStageDir = `${distDir}/addons/kirie`;
+const addonZipPath = `${distDir}/kirie-addon.zip`;
 const androidAarOutputDir = "packages/kirie/native/android/plugin/build/outputs/aar";
 const androidAddonLibraryDir = "packages/kirie/addon/addons/kirie/libraries/android";
+const androidReleaseAar = `${androidAddonLibraryDir}/Kirie-release.aar`;
+const androidStagedDebugAar = `${addonStageDir}/libraries/android/Kirie-debug.aar`;
+const androidStagedReleaseAar = `${addonStageDir}/libraries/android/Kirie-release.aar`;
 const iosPluginDir = "packages/kirie/native/ios/Kirie";
 const iosBuildDir = `${iosPluginDir}/.build`;
 const iosGeneratedDir = `${iosPluginDir}/.generated`;
 const iosProjectPath = `${iosGeneratedDir}/Kirie.xcodeproj`;
 const iosOutputDir = "packages/kirie/addon/addons/kirie/ios";
 const iosOutputXcframework = `${iosOutputDir}/Kirie.xcframework`;
+const iosStagedXcframework = `${addonStageDir}/ios/Kirie.xcframework`;
 const iosDerivedDataPath = `${iosBuildDir}/DerivedData`;
 const integrationProjectDir = "tests/integration";
 const integrationDistDir = "dist/integration";
@@ -36,6 +44,48 @@ function findSimulatorLibgodot(dirPath: string): string | undefined {
   }
 
   return undefined;
+}
+
+function assertPathExists(pathToCheck: string): void {
+  if (!fs.existsSync(pathToCheck)) {
+    throw new Error(`Required addon release path is missing: ${pathToCheck}`);
+  }
+}
+
+function findSymlink(dirPath: string): string | undefined {
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const entryPath = path.join(dirPath, entry.name);
+    if (entry.isSymbolicLink()) {
+      return entryPath;
+    }
+
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const found = findSymlink(entryPath);
+    if (found) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+export function checkAddonPack(): void {
+  assertPathExists(addonStageDir);
+  assertPathExists(androidStagedReleaseAar);
+  assertPathExists(iosStagedXcframework);
+  assertPathExists(`${iosStagedXcframework}/Info.plist`);
+
+  if (fs.existsSync(androidStagedDebugAar)) {
+    throw new Error(`Development-only debug AAR must not be included: ${androidStagedDebugAar}`);
+  }
+
+  const symlink = findSymlink(addonStageDir);
+  if (symlink) {
+    throw new Error(`Release addon staging must not contain symlinks: ${symlink}`);
+  }
 }
 
 export async function buildAndroidAar(): Promise<void> {
@@ -312,3 +362,25 @@ export async function buildIntegrationIos(): Promise<void> {
 }
 
 export const buildNativeArtifacts = parallel(buildAndroidAar, buildIosXcframework);
+
+export async function packAddon(): Promise<void> {
+  fs.rmSync(addonStageDir, { force: true, recursive: true });
+  fs.mkdirSync(path.dirname(addonStageDir), { recursive: true });
+  fs.cpSync(addonSourceDir, addonStageDir, {
+    recursive: true,
+    filter: (src) =>
+      path.resolve(src) !==
+      path.resolve(`${addonSourceDir}/libraries/android/Kirie-debug.aar`),
+  });
+  fs.rmSync(androidStagedDebugAar, { force: true });
+
+  checkAddonPack();
+
+  fs.rmSync(addonZipPath, { force: true });
+  await execa("zip", ["-r", path.basename(addonZipPath), "addons/kirie"], {
+    cwd: path.join(rootDir, distDir),
+    stdio: "inherit",
+  });
+}
+
+export const buildAddonPack = series(buildNativeArtifacts, packAddon);

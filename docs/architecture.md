@@ -119,3 +119,11 @@ Android:
 - the addon export plugin injects the xcframework, system frameworks, plist
   content, and native initialization glue through Apple export hooks
 - example projects should not carry a separate `res://ios/plugins` shim
+
+## Planned GitHub Release addon flow
+
+GitHub Release addon publishing is not configured yet. Keep it separate from the
+npm publishing flow, which is only for browser-side workspace packages such as
+`@gd-kirie/ipc`.
+
+The planned method and open TODOs live in [Addon Release](./addon-release.md).
