@@ -11,7 +11,6 @@ const addonStageDir = `${distDir}/addons/kirie`;
 const addonZipPath = `${distDir}/kirie-addon.zip`;
 const androidAarOutputDir = "packages/kirie/native/android/plugin/build/outputs/aar";
 const androidAddonLibraryDir = "packages/kirie/addon/addons/kirie/libraries/android";
-const androidReleaseAar = `${androidAddonLibraryDir}/Kirie-release.aar`;
 const androidStagedDebugAar = `${addonStageDir}/libraries/android/Kirie-debug.aar`;
 const androidStagedReleaseAar = `${addonStageDir}/libraries/android/Kirie-release.aar`;
 const iosPluginDir = "packages/kirie/native/ios/Kirie";
@@ -369,8 +368,7 @@ export async function packAddon(): Promise<void> {
   fs.cpSync(addonSourceDir, addonStageDir, {
     recursive: true,
     filter: (src) =>
-      path.resolve(src) !==
-      path.resolve(`${addonSourceDir}/libraries/android/Kirie-debug.aar`),
+      path.resolve(src) !== path.resolve(`${addonSourceDir}/libraries/android/Kirie-debug.aar`),
   });
   fs.rmSync(androidStagedDebugAar, { force: true });
 
