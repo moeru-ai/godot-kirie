@@ -73,6 +73,12 @@ packaging, or platform WebView bridge details.
 - [Godot CEF IPC signals](https://godotcef.org/api/signals)
   Reference implementation and future compatibility target for separate text,
   binary, and CBOR-backed data IPC lanes.
+- [Eventa TypeScript repository](https://github.com/moeru-ai/eventa)
+  Upstream TypeScript Eventa project that Kirie JavaScript adapters should
+  integrate with rather than modify.
+- [eventa.net repository](https://github.com/moeru-ai/eventa.net)
+  Upstream C# Eventa project that `GdKirie.EventaAdapter` should integrate with
+  rather than modify.
 
 ## .NET
 
@@ -127,8 +133,8 @@ packaging, or platform WebView bridge details.
 - When changing the C# wrapper or C# tests, start with Godot C#/.NET platform
   support, C# signals, and .NET reflection or AOT documentation.
 - When changing the Eventa adapter or NuGet packaging, start with .NET Native
-  AOT, System.Text.Json source generation, NuGet contentFiles, `dotnet pack`,
-  and `dotnet nuget push`.
+  AOT, System.Text.Json source generation, the upstream Eventa repositories,
+  NuGet contentFiles, `dotnet pack`, and `dotnet nuget push`.
 - When changing npm package publishing, start with npm trusted publishing,
   GitHub Actions OIDC, bumpp, and pnpm publish behavior.
 - When changing native artifact orchestration, start with Node.js TypeScript

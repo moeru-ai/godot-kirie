@@ -148,8 +148,10 @@ data lane documented as CBOR-backed.
 
 Eventa remains above Kirie. The first Eventa adapter should support event
 emission and unary request/response RPC only. Its JSON envelope is an adapter
-encoding over Kirie text IPC, not a Kirie core payload type. The .NET adapter is
-planned as `GdKirie.EventaAdapter`, with a root `GdKirie.slnx`, a package under
-`packages/GdKirie.EventaAdapter`, and a NuGet-provided source bridge for
-connecting to addon-shipped `KirieClient.cs` without putting Eventa files in
-`addons/kirie`.
+encoding over Kirie text IPC, not a Kirie core payload type. Treat
+`moeru-ai/eventa` and `moeru-ai/eventa.net` as the upstream Eventa projects; do
+not change those projects unless the adapter exposes a real design issue. The
+.NET adapter is planned as `GdKirie.EventaAdapter`, with a root `GdKirie.slnx`,
+a package under `packages/GdKirie.EventaAdapter`, and a NuGet-provided source
+bridge for connecting to addon-shipped `KirieClient.cs` without putting Eventa
+files in `addons/kirie`.
