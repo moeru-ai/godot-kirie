@@ -18,6 +18,10 @@ package is a thin browser-side transport wrapper; do not expand it into an
 application event or invocation layer unless the user explicitly asks for that
 higher-level work.
 
+The planned IPC v1 direction keeps Kirie core byte-oriented and CBOR-based with
+text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
+core. Keep planned Eventa adapters above Kirie and out of `addons/kirie`.
+
 ## Repository Layout
 
 - `packages/kirie/addon/addons/kirie`
@@ -66,6 +70,11 @@ label them as anecdotal when they influence a decision.
 - Keep `@gd-kirie/ipc` as a thin browser-side transport wrapper around the raw
   native bridge. Defer richer browser SDKs until there is a real app-level use
   case.
+- For IPC v1, treat `text`, `binary`, and `data` as Kirie core lanes over a
+  CBOR packet format. Do not reintroduce automatic JSON serialization into
+  Kirie core; JSON is an application or adapter encoding choice.
+- Use Godot CEF as a learning reference and future compatibility target for
+  text, binary, and CBOR-backed data IPC lanes.
 - For the current milestone, assume a single active WebView unless the user
   explicitly asks to reintroduce multi-WebView behavior.
 - Keep the Godot-facing wrapper thin; prefer forwarding to the platform
@@ -214,6 +223,9 @@ configured yet.
 - Treat `Kirie` and `KirieView` as the primary public API surfaces.
 - Prefer low-level public names such as `load_url` and `send_ipc_message` while
   the bridge remains transport-oriented.
+- When implementing IPC v1, replace the JSON-shaped message API with explicit
+  text, binary, and data lane APIs, and update examples, integration tests, and
+  documentation in the same change.
 - Do not rename public methods, signal names, or exported properties without a
   clear reason.
 - If a public API change is necessary, update the example project and
@@ -303,3 +315,9 @@ infrastructure.
   not exist yet.
 - Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not
   implemented yet.
+- `GdKirie.EventaAdapter` and its NuGet publishing lane are planned but not
+  implemented. The adapter should support Eventa event and unary RPC first,
+  carry its JSON envelope over Kirie text IPC, preserve Native AOT
+  compatibility, keep Eventa source out of `addons/kirie`, and use a source
+  bridge from the NuGet package when it needs to connect to addon-shipped
+  `KirieClient.cs`.

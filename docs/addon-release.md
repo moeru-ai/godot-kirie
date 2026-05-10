@@ -4,6 +4,9 @@ GitHub Release addon publishing is handled by the `Addon Release` workflow.
 This flow is separate from npm publishing, which is only for browser-side
 workspace packages such as `@gd-kirie/ipc`.
 
+It is also separate from the planned NuGet publishing lane for .NET adapter
+packages. Keep addon zip packaging focused on `addons/kirie`.
+
 ## Intended Artifact
 
 The downloadable addon should be produced as a build artifact, not by using

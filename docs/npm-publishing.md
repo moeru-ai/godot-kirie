@@ -4,9 +4,16 @@ This repository publishes browser-side npm packages from GitHub Actions using
 npm trusted publishing. The workflow avoids long-lived npm write tokens and
 lets npm issue short-lived publish credentials through GitHub Actions OIDC.
 
+This flow is separate from addon zip publishing and the planned NuGet publishing
+lane for .NET adapter packages.
+
 ## Current Packages
 
 - `@gd-kirie/ipc` is published from `packages/ipc`.
+
+The planned Eventa JavaScript adapter, if introduced as
+`@gd-kirie/ipc-eventa`, should use the same npm publishing lane while keeping
+Eventa protocol behavior above the low-level `@gd-kirie/ipc` transport package.
 
 ## npm Setup
 

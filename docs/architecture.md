@@ -16,37 +16,9 @@ invocation APIs, is deferred until the IPC model is proven. The current
 `@gd-kirie/ipc` package is intentionally only a browser-side transport wrapper on
 top of the raw native bridge.
 
-## Deferred debugging and automation direction
-
-For the current milestone, automation should prefer project-owned observability:
-
-- explicit probe logs
-- success or failure markers
-- targeted scene-tree dumps when investigating lifecycle issues
-
-This keeps the IPC bring-up dependent on interfaces that Kirie owns directly,
-instead of coupling early automation to editor-facing debugger behavior.
-
-A longer-term direction is to evaluate whether Godot's remote debugging
-transport exposed through `--remote-debug` can support richer external
-inspection for Kirie runs. See [References](./references.md), especially:
-
-- Command line tutorial
-- Overview of debugging tools
-- Debugger panel
-- EditorSettings
-
-That work is intentionally deferred until the Android and iOS WebView IPC path
-is stable.
-
-If it becomes practical, the intended value is:
-
-- external inspection beyond plain log scraping
-- possible access to scene-tree or debugger state during automated runs
-- a better foundation for future AI-assisted debugging and diagnosis
-
-Until then, logs and project-owned debug hooks remain the primary supported
-automation interfaces.
+The next planned IPC milestone keeps Kirie core byte-oriented and CBOR-based
+while preserving separate text, binary, and data lanes. Higher-level protocols,
+including the planned Eventa adapter, remain above Kirie.
 
 ## Current Godot API direction
 
@@ -64,6 +36,11 @@ Current public Godot-facing names should stay close to that low-level role:
 - `load_html_string(html, base_url := "")`
 - `send_ipc_message(message)`
 - `get_launch_option(key)`
+
+These names describe the current implementation. The next planned IPC v1 work
+will replace the JSON-shaped message API with text, binary, and data lane APIs.
+When that migration lands, update the example project, platform integration
+tests, and this architecture note in the same change.
 
 The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side
@@ -149,3 +126,30 @@ browser-side workspace packages such as `@gd-kirie/ipc`.
 
 The release artifact shape and workflow modes live in
 [Addon Release](./addon-release.md).
+
+The planned .NET Eventa adapter will introduce a separate NuGet release lane.
+Keep it separate from addon zip publishing and npm publishing.
+
+## Planned IPC and adapter split
+
+This direction is planned, not implemented.
+
+Kirie IPC should move from the current JSON-shaped message path to explicit
+`text`, `binary`, and `data` lanes. All lanes should use a byte-oriented CBOR
+packet envelope. Text payloads are CBOR text strings, binary payloads are CBOR
+byte strings, and data payloads are a constrained cross-platform data subset:
+null, booleans, finite numbers, strings, byte arrays, arrays, and maps with
+string keys. Godot objects, nodes, callables, RIDs, and other engine-local values
+are out of scope for the data lane.
+
+Godot CEF is a learning reference and future compatibility target because it
+separates `ipc_message`, `ipc_binary_message`, and `ipc_data_message`, with its
+data lane documented as CBOR-backed.
+
+Eventa remains above Kirie. The first Eventa adapter should support event
+emission and unary request/response RPC only. Its JSON envelope is an adapter
+encoding over Kirie text IPC, not a Kirie core payload type. The .NET adapter is
+planned as `GdKirie.EventaAdapter`, with a root `GdKirie.slnx`, a package under
+`packages/GdKirie.EventaAdapter`, and a NuGet-provided source bridge for
+connecting to addon-shipped `KirieClient.cs` without putting Eventa files in
+`addons/kirie`.

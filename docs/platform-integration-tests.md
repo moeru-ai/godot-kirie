@@ -31,6 +31,10 @@ The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
 package. That package is a convenience SDK above the raw bridge contract and
 should be tested separately.
 
+When IPC v1 lands, this project should keep testing the raw bridge contract and
+add focused text, binary, and data round-trip cases. Eventa adapter behavior
+should be tested separately above the raw bridge.
+
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
 GDScript probe. That test is not implemented yet.

@@ -65,6 +65,15 @@ packaging, or platform WebView bridge details.
   Reference for JavaScript-to-native messaging through
   `window.webkit.messageHandlers`.
 
+## IPC formats and compatibility targets
+
+- [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
+  Stable CBOR specification used as the primary reference for Kirie IPC v1
+  packet encoding.
+- [Godot CEF IPC signals](https://godotcef.org/api/signals)
+  Reference implementation and future compatibility target for separate text,
+  binary, and CBOR-backed data IPC lanes.
+
 ## .NET
 
 - [Attributes and reflection](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/reflection-and-attributes/)
@@ -75,6 +84,14 @@ packaging, or platform WebView bridge details.
 - [Introduction to AOT warnings](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/fixing-warnings)
   Reference for warning categories that flag code patterns that may fail under
   Native AOT.
+- [System.Text.Json source generation](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation)
+  Reference for AOT-friendly JSON metadata generation.
+- [NuGet contentFiles](https://learn.microsoft.com/en-us/nuget/reference/nuspec#including-content-files)
+  Reference for source files included in PackageReference-based NuGet packages.
+- [dotnet pack](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack)
+  Reference for creating NuGet packages from .NET projects.
+- [dotnet nuget push](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-nuget-push)
+  Reference for publishing NuGet packages.
 
 ## JavaScript packaging
 
@@ -105,8 +122,13 @@ packaging, or platform WebView bridge details.
   `JavascriptInterface`, and `WebMessagePort`.
 - When changing iOS IPC or packaging, start with `WKWebView`,
   `WKScriptMessageHandler`, and `EditorExportPlugin`.
+- When changing the IPC packet format or data lane, start with RFC 8949 and
+  Godot CEF's IPC lane documentation.
 - When changing the C# wrapper or C# tests, start with Godot C#/.NET platform
   support, C# signals, and .NET reflection or AOT documentation.
+- When changing the Eventa adapter or NuGet packaging, start with .NET Native
+  AOT, System.Text.Json source generation, NuGet contentFiles, `dotnet pack`,
+  and `dotnet nuget push`.
 - When changing npm package publishing, start with npm trusted publishing,
   GitHub Actions OIDC, bumpp, and pnpm publish behavior.
 - When changing native artifact orchestration, start with Node.js TypeScript

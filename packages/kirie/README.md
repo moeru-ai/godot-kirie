@@ -19,9 +19,6 @@ in a real example project.
 platform singleton used by `GdKirie`. It exposes Kirie signals as idiomatic C#
 events while keeping Godot `Callable` usage internal to the bridge.
 
-TODO: Add a platform integration smoke test for `KirieClient` that subscribes
-through C# events and verifies a WebView IPC round-trip.
-
 ```csharp
 private readonly KirieClient _kirie = new();
 
