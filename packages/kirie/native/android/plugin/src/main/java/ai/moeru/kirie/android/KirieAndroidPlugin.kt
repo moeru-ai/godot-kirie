@@ -13,7 +13,9 @@ class KirieAndroidPlugin(
         KirieWebViewManager(
             activityProvider = { activity },
             onWebViewReady = ::handleWebViewReady,
-            onIpcMessage = ::handleIpcMessage,
+            onTextPacket = ::handleTextPacket,
+            onBinaryPacket = ::handleBinaryPacket,
+            onDataPacket = ::handleDataPacket,
             onIpcError = ::handleIpcError,
         )
     }
@@ -23,7 +25,9 @@ class KirieAndroidPlugin(
     override fun getPluginSignals(): Set<SignalInfo> =
         setOf(
             SIGNAL_WEBVIEW_READY,
-            SIGNAL_IPC_MESSAGE_RECEIVED,
+            SIGNAL_TEXT_PACKET_RECEIVED,
+            SIGNAL_BINARY_PACKET_RECEIVED,
+            SIGNAL_DATA_PACKET_RECEIVED,
             SIGNAL_IPC_ERROR,
         )
 
@@ -51,8 +55,18 @@ class KirieAndroidPlugin(
     }
 
     @UsedByGodot
-    fun sendIpcMessage(messageJson: String) {
-        webViewManager.sendIpcMessage(messageJson)
+    fun sendTextPacket(bytes: ByteArray) {
+        webViewManager.sendTextPacket(bytes)
+    }
+
+    @UsedByGodot
+    fun sendBinaryPacket(bytes: ByteArray) {
+        webViewManager.sendBinaryPacket(bytes)
+    }
+
+    @UsedByGodot
+    fun sendDataPacket(bytes: ByteArray) {
+        webViewManager.sendDataPacket(bytes)
     }
 
     @UsedByGodot
@@ -62,8 +76,16 @@ class KirieAndroidPlugin(
         emitSignal(SIGNAL_WEBVIEW_READY)
     }
 
-    private fun handleIpcMessage(messageJson: String) {
-        emitSignal(SIGNAL_IPC_MESSAGE_RECEIVED, messageJson)
+    private fun handleTextPacket(bytes: ByteArray) {
+        emitSignal(SIGNAL_TEXT_PACKET_RECEIVED, bytes)
+    }
+
+    private fun handleBinaryPacket(bytes: ByteArray) {
+        emitSignal(SIGNAL_BINARY_PACKET_RECEIVED, bytes)
+    }
+
+    private fun handleDataPacket(bytes: ByteArray) {
+        emitSignal(SIGNAL_DATA_PACKET_RECEIVED, bytes)
     }
 
     private fun handleIpcError(message: String) {
@@ -73,7 +95,9 @@ class KirieAndroidPlugin(
 
     companion object {
         private val SIGNAL_WEBVIEW_READY = SignalInfo("webview_ready")
-        private val SIGNAL_IPC_MESSAGE_RECEIVED = SignalInfo("ipc_message_received", String::class.java)
+        private val SIGNAL_TEXT_PACKET_RECEIVED = SignalInfo("text_packet_received", ByteArray::class.java)
+        private val SIGNAL_BINARY_PACKET_RECEIVED = SignalInfo("binary_packet_received", ByteArray::class.java)
+        private val SIGNAL_DATA_PACKET_RECEIVED = SignalInfo("data_packet_received", ByteArray::class.java)
         private val SIGNAL_IPC_ERROR = SignalInfo("ipc_error", String::class.java)
     }
 }

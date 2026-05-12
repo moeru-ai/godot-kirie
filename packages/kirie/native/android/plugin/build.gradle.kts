@@ -50,5 +50,6 @@ android {
 }
 
 dependencies {
+    implementation("androidx.webkit:webkit:1.16.0")
     implementation("org.godotengine:godot:4.6.2.stable")
 }

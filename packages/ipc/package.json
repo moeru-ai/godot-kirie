@@ -21,6 +21,9 @@
     "build": "tsdown",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "cborg": "^4.5.8"
+  },
   "devDependencies": {
     "tsdown": "^0.21.10",
     "typescript": "^5.9.3"

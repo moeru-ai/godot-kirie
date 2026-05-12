@@ -180,6 +180,9 @@ configured yet.
 
 - Prefer type inference in GDScript, TypeScript, Kotlin, and Swift when the
   inferred type is stable and obvious.
+- Prefer current stable language syntax supported by the repository toolchain
+  when it improves type clarity or reduces boilerplate without hurting
+  readability.
 - Do not add redundant explicit types to short local variables just to satisfy a
   style preference.
 - Keep public APIs, cross-language boundaries, exported properties, signal

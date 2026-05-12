@@ -38,6 +38,10 @@ importers:
         version: 8.0.10(@types/node@25.6.0)(jiti@2.6.1)(yaml@2.8.3)
 
   packages/ipc:
+    dependencies:
+      cborg:
+        specifier: ^4.5.8
+        version: 4.5.8
     devDependencies:
       tsdown:
         specifier: ^0.21.10
@@ -364,6 +368,10 @@ packages:
   cac@7.0.0:
     resolution: {integrity: sha512-tixWYgm5ZoOD+3g6UTea91eow5z6AAHaho3g0V9CNSNb45gM8SmflpAc+GRd1InC4AqN/07Unrgp56Y94N9hJQ==}
     engines: {node: '>=20.19.0'}
+
+  cborg@4.5.8:
+    resolution: {integrity: sha512-6/viltD51JklRhq4L7jC3zgy6gryuG5xfZ3kzpE+PravtyeQLeQmCYLREhQH7pWENg5pY4Yu/XCd6a7dKScVlw==}
+    hasBin: true
 
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
@@ -1491,6 +1499,8 @@ snapshots:
       yaml: 2.8.3
 
   cac@7.0.0: {}
+
+  cborg@4.5.8: {}
 
   chalk@4.1.2:
     dependencies:

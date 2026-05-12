@@ -1,35 +1,15 @@
-import { onIpcMessageReceived, sendIpcMessage } from "@gd-kirie/ipc";
+import {
+  onBinaryReceived,
+  onDataReceived,
+  onTextReceived,
+  sendBinary,
+  sendData,
+  sendText,
+} from "@gd-kirie/ipc";
 
 import "./style.css";
 
 type KirieExampleMode = "manual" | "probe";
-
-type WebToGodotMessage =
-  | {
-      type: "web_ready";
-      payload: {
-        source: KirieExampleMode;
-        userAgent: string;
-      };
-    }
-  | {
-      type: "web_ack";
-      payload: {
-        source: "probe";
-        acknowledgedType: string;
-      };
-    }
-  | {
-      type: "web_ping";
-      payload: {
-        source: "web";
-      };
-    };
-
-type GodotToWebMessage = {
-  type?: string;
-  payload?: unknown;
-};
 
 const logNodeElement = document.querySelector<HTMLPreElement>("#log");
 const sendButtonElement = document.querySelector<HTMLButtonElement>("#sendButton");
@@ -55,44 +35,38 @@ function appendLog(line: string): void {
   console.log(line);
 }
 
-function postToGodot(message: WebToGodotMessage): void {
+function postTextToGodot(message: string): void {
   try {
-    sendIpcMessage(message);
-    appendLog(`Sent to Godot: ${JSON.stringify(message)}`);
+    sendText(message);
+    appendLog(`Sent text to Godot: ${message}`);
   } catch (error) {
     appendLog(error instanceof Error ? error.message : "Kirie native bridge is unavailable");
   }
 }
 
-onIpcMessageReceived<GodotToWebMessage>((message) => {
-  appendLog(`Received from Godot: ${JSON.stringify(message)}`);
+onTextReceived((message) => {
+  appendLog(`Received text from Godot: ${message}`);
 
-  if (mode === "probe" && message.type === "godot_ready") {
-    postToGodot({
-      type: "web_ack",
-      payload: {
-        source: "probe",
-        acknowledgedType: message.type,
-      },
-    });
+  if (mode === "probe" && message === "godot_ready") {
+    postTextToGodot("web_ack");
   }
 });
 
+onBinaryReceived((bytes) => {
+  appendLog(`Received binary from Godot: ${bytes.byteLength} bytes`);
+});
+
+onDataReceived((data) => {
+  appendLog(`Received data from Godot: ${JSON.stringify(data)}`);
+});
+
 sendButton.addEventListener("click", () => {
-  postToGodot({
-    type: "web_ping",
-    payload: {
-      source: "web",
-    },
-  });
+  postTextToGodot("web_ping");
+  sendBinary(new Uint8Array([75, 105, 114, 105, 101]));
+  sendData({ source: "web", mode });
 });
 
 appendLog(`Mode: ${mode}`);
 
-postToGodot({
-  type: "web_ready",
-  payload: {
-    source: mode,
-    userAgent: navigator.userAgent,
-  },
-});
+postTextToGodot("web_ready");
+sendData({ source: mode, userAgent: navigator.userAgent });

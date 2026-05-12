@@ -1,11 +1,5 @@
 extends Control
 
-const DEFAULT_OUTBOUND_MESSAGE := {
-	"type": "godot_ping",
-	"payload": {
-		"source": "godot",
-	},
-}
 const PAGE_URL := "res://web/dist/index.html"
 const PROBE_PAGE_URL := "res://web/dist/index.html?mode=probe"
 
@@ -21,7 +15,9 @@ var _webview_is_ready := false
 
 func _ready() -> void:
 	_kirie.webview_ready.connect(_on_webview_ready)
-	_kirie.ipc_message_received.connect(_on_ipc_message_received)
+	_kirie.text_received.connect(_on_text_received)
+	_kirie.binary_received.connect(_on_binary_received)
+	_kirie.data_received.connect(_on_data_received)
 	_kirie.ipc_error.connect(_on_ipc_error)
 
 	if not _kirie.is_available():
@@ -84,26 +80,25 @@ func _on_webview_ready() -> void:
 		_load_probe_page()
 
 
-func _on_ipc_message_received(message: Variant) -> void:
-	_append_log("signal ipc_message_received %s" % JSON.stringify(message))
+func _on_text_received(message: String) -> void:
+	_append_log("signal text_received %s" % message)
 
-	if typeof(message) != TYPE_DICTIONARY:
-		return
-
-	var message_type := str(message.get("type", ""))
-	if message_type == "web_ready":
+	if message == "web_ready":
 		_set_status("Status: received web_ready")
-		_kirie.send_ipc_message({
-			"type": "godot_ready",
-			"payload": {
-				"message": "Hello from Godot",
-			},
-		})
+		_kirie.send_text("godot_ready")
 		return
 
-	if message_type == "web_ack":
+	if message == "web_ack":
 		_probe_pending = false
 		_set_status("Status: probe passed")
+
+
+func _on_binary_received(bytes: PackedByteArray) -> void:
+	_append_log("signal binary_received bytes=%d" % bytes.size())
+
+
+func _on_data_received(value: Variant) -> void:
+	_append_log("signal data_received %s" % str(value))
 
 
 func _on_ipc_error(error: String) -> void:
@@ -116,8 +111,12 @@ func _send_test_message() -> void:
 	if not _kirie.is_available():
 		return
 
-	_append_log("send_ipc_message %s" % JSON.stringify(DEFAULT_OUTBOUND_MESSAGE))
-	_kirie.send_ipc_message(DEFAULT_OUTBOUND_MESSAGE)
+	_append_log("send_text godot_ping")
+	_kirie.send_text("godot_ping")
+	_kirie.send_binary(PackedByteArray([75, 105, 114, 105, 101]))
+	_kirie.send_data({
+		"source": "godot",
+	})
 
 
 func _load_probe_page() -> void:

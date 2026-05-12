@@ -2,10 +2,16 @@ class_name GdKirie
 extends Object
 
 signal webview_ready()
-signal ipc_message_received(message: Variant)
+signal text_received(message: String)
+signal binary_received(bytes: PackedByteArray)
+signal data_received(value: Variant)
+signal text_packet_received(bytes: PackedByteArray)
+signal binary_packet_received(bytes: PackedByteArray)
+signal data_packet_received(bytes: PackedByteArray)
 signal ipc_error(error: String)
 
 const PLUGIN_SINGLETON_NAME := "Kirie"
+const KirieCborCodecScript := preload("res://addons/kirie/kirie_cbor_codec.gd")
 
 var _plugin_singleton = null
 
@@ -56,13 +62,40 @@ func load_html_string(html: String, base_url: String = "") -> void:
 	_plugin_singleton.loadHtmlString(html, base_url)
 
 
-func send_ipc_message(message: Variant) -> void:
-	if not _ensure_plugin_singleton("send_ipc_message"):
+func send_text(message: String) -> void:
+	send_text_packet(KirieCborCodecScript.encode_text(message))
+
+
+func send_binary(bytes: PackedByteArray) -> void:
+	send_binary_packet(KirieCborCodecScript.encode_bytes(bytes))
+
+
+func send_data(value: Variant) -> void:
+	send_data_packet(KirieCborCodecScript.encode_data(value))
+
+
+func send_text_packet(bytes: PackedByteArray) -> void:
+	if not _ensure_plugin_singleton("send_text_packet"):
 		return
 
-	var message_json := JSON.stringify(message)
-	print("[Kirie][gd] send_ipc_message %s" % message_json)
-	_plugin_singleton.sendIpcMessage(message_json)
+	print("[Kirie][gd] send_text_packet bytes=%d" % bytes.size())
+	_plugin_singleton.sendTextPacket(bytes)
+
+
+func send_binary_packet(bytes: PackedByteArray) -> void:
+	if not _ensure_plugin_singleton("send_binary_packet"):
+		return
+
+	print("[Kirie][gd] send_binary_packet bytes=%d" % bytes.size())
+	_plugin_singleton.sendBinaryPacket(bytes)
+
+
+func send_data_packet(bytes: PackedByteArray) -> void:
+	if not _ensure_plugin_singleton("send_data_packet"):
+		return
+
+	print("[Kirie][gd] send_data_packet bytes=%d" % bytes.size())
+	_plugin_singleton.sendDataPacket(bytes)
 
 
 func get_launch_option(key: String) -> String:
@@ -86,7 +119,7 @@ func _connect_plugin_signals() -> void:
 		print("[Kirie][gd] registering iOS callbacks")
 		_plugin_singleton.registerCallbacks(
 			Callable(self, "_on_plugin_webview_ready"),
-			Callable(self, "_on_plugin_ipc_message_received"),
+			Callable(self, "_on_plugin_text_packet_received"),
 			Callable(self, "_on_plugin_ipc_error"),
 		)
 		return
@@ -95,9 +128,17 @@ func _connect_plugin_signals() -> void:
 		print("[Kirie][gd] connecting Android webview_ready signal")
 		_plugin_singleton.webview_ready.connect(_on_plugin_webview_ready)
 
-	if _plugin_singleton.has_signal(&"ipc_message_received"):
-		print("[Kirie][gd] connecting Android ipc_message_received signal")
-		_plugin_singleton.ipc_message_received.connect(_on_plugin_ipc_message_received)
+	if _plugin_singleton.has_signal(&"text_packet_received"):
+		print("[Kirie][gd] connecting Android text_packet_received signal")
+		_plugin_singleton.text_packet_received.connect(_on_plugin_text_packet_received)
+
+	if _plugin_singleton.has_signal(&"binary_packet_received"):
+		print("[Kirie][gd] connecting Android binary_packet_received signal")
+		_plugin_singleton.binary_packet_received.connect(_on_plugin_binary_packet_received)
+
+	if _plugin_singleton.has_signal(&"data_packet_received"):
+		print("[Kirie][gd] connecting Android data_packet_received signal")
+		_plugin_singleton.data_packet_received.connect(_on_plugin_data_packet_received)
 
 	if _plugin_singleton.has_signal(&"ipc_error"):
 		print("[Kirie][gd] connecting Android ipc_error signal")
@@ -119,14 +160,37 @@ func _on_plugin_webview_ready() -> void:
 	webview_ready.emit()
 
 
-func _on_plugin_ipc_message_received(message_json: String) -> void:
-	print("[Kirie][gd] signal ipc_message_received raw=%s" % message_json)
-	var parsed_message := JSON.parse_string(message_json)
-	if parsed_message == null and message_json != "null":
-		ipc_message_received.emit(message_json)
+func _on_plugin_text_packet_received(bytes: PackedByteArray) -> void:
+	print("[Kirie][gd] signal text_packet_received bytes=%d" % bytes.size())
+	text_packet_received.emit(bytes)
+	var decoded := KirieCborCodecScript.try_decode_text(bytes)
+	if decoded["ok"]:
+		text_received.emit(decoded["value"])
 		return
 
-	ipc_message_received.emit(parsed_message)
+	_on_plugin_ipc_error("CBOR text decode failed: %s" % decoded["error"])
+
+
+func _on_plugin_binary_packet_received(bytes: PackedByteArray) -> void:
+	print("[Kirie][gd] signal binary_packet_received bytes=%d" % bytes.size())
+	binary_packet_received.emit(bytes)
+	var decoded := KirieCborCodecScript.try_decode_bytes(bytes)
+	if decoded["ok"]:
+		binary_received.emit(decoded["value"])
+		return
+
+	_on_plugin_ipc_error("CBOR binary decode failed: %s" % decoded["error"])
+
+
+func _on_plugin_data_packet_received(bytes: PackedByteArray) -> void:
+	print("[Kirie][gd] signal data_packet_received bytes=%d" % bytes.size())
+	data_packet_received.emit(bytes)
+	var decoded := KirieCborCodecScript.try_decode_data(bytes)
+	if decoded["ok"]:
+		data_received.emit(decoded["value"])
+		return
+
+	_on_plugin_ipc_error("CBOR data decode failed: %s" % decoded["error"])
 
 
 func _on_plugin_ipc_error(error: String) -> void:
