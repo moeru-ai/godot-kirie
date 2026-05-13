@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../packages/kirie/addon/addons/kirie/csharp/KirieCborCodec.cs" Link="KirieCborCodec.cs" />
+    <Compile Include="../../../packages/kirie/addon/addons/kirie/csharp/KirieClient.cs" Link="KirieClient.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="4.6.2" />
+  </ItemGroup>
+</Project>

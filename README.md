@@ -76,7 +76,8 @@ as adapters above Kirie. The C# surface is a thin `KirieClient` wrapper over the
 same platform singleton used by GDScript, with C# events for the current Kirie
 signals.
 
-The next planned IPC direction is tracked in
-[docs/architecture.md](docs/architecture.md): Kirie core should move toward
-text, binary, and data lanes over a CBOR packet format while leaving JSON and
-Eventa semantics to adapter layers.
+The IPC direction is tracked in [docs/architecture.md](docs/architecture.md):
+Kirie core uses text, binary, and data lanes over CBOR packet bytes. The native
+core stays raw-byte oriented, the current GDScript and browser layers encode
+those bytes as CBOR packets, and JSON or Eventa semantics belong to adapter
+layers.

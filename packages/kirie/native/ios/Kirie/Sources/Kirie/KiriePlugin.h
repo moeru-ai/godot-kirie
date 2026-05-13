@@ -9,21 +9,33 @@ class KiriePlugin : public Object {
 	GDSOFTCLASS(KiriePlugin, Object);
 
 	void *webview_ready_observer = nullptr;
-	void *ipc_message_received_observer = nullptr;
+	void *text_packet_received_observer = nullptr;
+	void *binary_packet_received_observer = nullptr;
+	void *data_packet_received_observer = nullptr;
 	void *ipc_error_observer = nullptr;
 	Callable webview_ready_callback;
-	Callable ipc_message_received_callback;
+	Callable text_packet_received_callback;
+	Callable binary_packet_received_callback;
+	Callable data_packet_received_callback;
 	Callable ipc_error_callback;
 
 public:
 	static KiriePlugin *get_singleton();
 
-	void registerCallbacks(Callable on_webview_ready, Callable on_ipc_message_received, Callable on_ipc_error);
+	void registerCallbacks(
+		Callable on_webview_ready,
+		Callable on_text_packet_received,
+		Callable on_binary_packet_received,
+		Callable on_data_packet_received,
+		Callable on_ipc_error
+	);
 	void createWebView(String initial_url);
 	void destroyWebView();
 	void loadUrl(String url);
 	void loadHtmlString(String html, String base_url);
-	void sendIpcMessage(String message_json);
+	void sendTextPacket(PackedByteArray bytes);
+	void sendBinaryPacket(PackedByteArray bytes);
+	void sendDataPacket(PackedByteArray bytes);
 	String getLaunchOption(String key);
 
 	virtual Variant callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) override;

@@ -2,13 +2,7 @@ import Foundation
 import UIKit
 import WebKit
 
-private extension Notification.Name {
-    static let kirieWebViewReady = Notification.Name("KirieWebViewReady")
-    static let kirieIpcMessageReceived = Notification.Name("KirieIpcMessageReceived")
-    static let kirieIpcError = Notification.Name("KirieIpcError")
-}
-
-private struct KirieRuntimeConfig {
+struct KirieRuntimeConfig {
     private static let enableWebInspectorKey = "KirieEnableWebInspector"
     private static let allowTlsBypassKey = "KirieAllowTlsBypass"
 
@@ -34,6 +28,7 @@ final class KirieManager: NSObject {
     private let notificationCenter = NotificationCenter.default
     private let sessionID = UUID().uuidString.lowercased()
     private let resourceURLSchemeHandler = KirieResourceURLSchemeHandler()
+    private var scriptMessageHandler: KirieScriptMessageHandler?
     private var containerView: UIView?
     private var webView: WKWebView?
 
@@ -88,11 +83,14 @@ final class KirieManager: NSObject {
     func destroyWebView() {
         logInfo("Destroying WebView")
 
-        webView?.configuration.userContentController.removeScriptMessageHandler(forName: "kirie")
+        KiriePacketChannel.allCases.forEach { channel in
+            webView?.configuration.userContentController.removeScriptMessageHandler(forName: channel.rawValue)
+        }
         webView?.navigationDelegate = nil
         webView?.stopLoading()
         webView?.removeFromSuperview()
         webView = nil
+        scriptMessageHandler = nil
 
         containerView?.removeFromSuperview()
         containerView = nil
@@ -131,30 +129,16 @@ final class KirieManager: NSObject {
         webView.loadHTMLString(html, baseURL: baseURL)
     }
 
-    func sendIpcMessage(_ messageJSON: String) {
-        logInfo("sendIpcMessage message=\(messageJSON)")
+    func sendTextPacket(_ packet: Data) {
+        sendPacket(packet, channel: .text)
+    }
 
-        guard let webView else {
-            emitIpcError("Cannot send IPC message because the WebView does not exist")
-            return
-        }
+    func sendBinaryPacket(_ packet: Data) {
+        sendPacket(packet, channel: .binary)
+    }
 
-        let script = """
-        window.dispatchEvent(new CustomEvent("kirie:ipc-message", { detail: \(messageJSON) }));
-        """
-
-        webView.evaluateJavaScript(script) { [weak self] _, error in
-            if let error {
-                Task { @MainActor in
-                    self?.emitIpcError("Failed to dispatch IPC message to WebView: \(error.localizedDescription)")
-                }
-                return
-            }
-
-            Task { @MainActor in
-                self?.logInfo("Dispatched IPC message to WebView")
-            }
-        }
+    func sendDataPacket(_ packet: Data) {
+        sendPacket(packet, channel: .data)
     }
 
     private func load(_ urlString: String, in webView: WKWebView) {
@@ -210,7 +194,15 @@ final class KirieManager: NSObject {
         }
 
         let userContentController = WKUserContentController()
-        userContentController.add(self, name: "kirie")
+        let scriptMessageHandler = KirieScriptMessageHandler(manager: self)
+        KiriePacketChannel.allCases.forEach { channel in
+            userContentController.add(scriptMessageHandler, name: channel.rawValue)
+        }
+        userContentController.addUserScript(WKUserScript(
+            source: Self.packetChannelScript,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
 
         let webViewConfiguration = WKWebViewConfiguration()
         webViewConfiguration.allowsInlineMediaPlayback = true
@@ -238,6 +230,7 @@ final class KirieManager: NSObject {
         pinToEdges(webView, in: containerView)
 
         self.webView = webView
+        self.scriptMessageHandler = scriptMessageHandler
         logInfo("Created WebView")
         return webView
     }
@@ -274,86 +267,69 @@ final class KirieManager: NSObject {
         notificationCenter.post(name: .kirieWebViewReady, object: nil)
     }
 
-    private func emitIpcMessage(_ messageJSON: String) {
-        logInfo("ipc_message_received message=\(messageJSON)")
-        notificationCenter.post(name: .kirieIpcMessageReceived, object: messageJSON)
+    func emitPacket(_ packet: Data, channel: KiriePacketChannel) {
+        logInfo("\(channel.logName)_packet_received bytes=\(packet.count)")
+        notificationCenter.post(name: channel.notificationName, object: packet)
     }
 
-    private func emitIpcError(_ message: String) {
+    func emitIpcError(_ message: String) {
         logError(message)
         notificationCenter.post(name: .kirieIpcError, object: message)
     }
 
-    private func logInfo(_ message: String) {
+    private func sendPacket(_ packet: Data, channel: KiriePacketChannel) {
+        logInfo("send\(channel.logName.capitalized)Packet bytes=\(packet.count)")
+
+        guard !packet.isEmpty else {
+            emitIpcError("Cannot send empty \(channel.logName) packet")
+            return
+        }
+
+        guard let webView else {
+            emitIpcError("Cannot send \(channel.logName) because the WebView does not exist")
+            return
+        }
+
+        let channelName = Self.javaScriptStringLiteral(channel.rawValue)
+        let packetBase64 = Self.javaScriptStringLiteral(packet.base64EncodedString())
+        let script = """
+        (() => {
+          const channel = window[\(channelName)];
+          if (!channel || typeof channel.__kirieReceiveBase64 !== "function") {
+            throw new Error("Kirie JavaScript channel is not ready: " + \(channelName));
+          }
+          channel.__kirieReceiveBase64(\(packetBase64));
+        })();
+        """
+
+        webView.evaluateJavaScript(script) { [weak self] _, error in
+            if let error {
+                Task { @MainActor in
+                    self?.emitIpcError("Failed to dispatch \(channel.logName) packet to WebView: \(error.localizedDescription)")
+                }
+                return
+            }
+
+            Task { @MainActor in
+                self?.logInfo("Dispatched \(channel.logName) packet to WebView")
+            }
+        }
+    }
+
+    private static func javaScriptStringLiteral(_ value: String) -> String {
+        guard let data = try? JSONEncoder().encode(value),
+              let literal = String(data: data, encoding: .utf8) else {
+            return "\"\""
+        }
+
+        return literal
+    }
+
+    func logInfo(_ message: String) {
         NSLog("[Kirie][session=%@] %@", sessionID, message)
     }
 
     private func logError(_ message: String) {
         NSLog("[Kirie][session=%@] ERROR %@", sessionID, message)
-    }
-}
-
-extension KirieManager: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        logInfo("Received WKScriptMessage name=\(message.name) bodyType=\(type(of: message.body))")
-
-        guard message.name == "kirie" else {
-            return
-        }
-
-        if let messageJSON = message.body as? String {
-            emitIpcMessage(messageJSON)
-            return
-        }
-
-        if JSONSerialization.isValidJSONObject(message.body),
-           let data = try? JSONSerialization.data(withJSONObject: message.body),
-           let messageJSON = String(data: data, encoding: .utf8) {
-            emitIpcMessage(messageJSON)
-            return
-        }
-
-        emitIpcError("Received unsupported IPC message from JavaScript")
-    }
-}
-
-extension KirieManager: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logInfo("Navigation started url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
-    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        logInfo("Navigation committed url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logInfo("Navigation finished url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        emitIpcError("Navigation failed: \(error.localizedDescription)")
-    }
-
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        emitIpcError("Initial navigation failed: \(error.localizedDescription)")
-    }
-
-    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        emitIpcError("Web content process terminated")
-    }
-
-    func webView(
-        _ webView: WKWebView,
-        respondTo challenge: URLAuthenticationChallenge
-    ) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-        let protectionSpace = challenge.protectionSpace
-
-        guard KirieRuntimeConfig.current.allowTlsBypass,
-              protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = protectionSpace.serverTrust else {
-            return (.performDefaultHandling, nil)
-        }
-
-        return (.useCredential, URLCredential(trust: serverTrust))
     }
 }

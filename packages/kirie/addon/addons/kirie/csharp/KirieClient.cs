@@ -19,6 +19,9 @@ public partial class KirieClient : GodotObject
     public event Action<byte[]>? TextPacketReceived;
     public event Action<byte[]>? BinaryPacketReceived;
     public event Action<byte[]>? DataPacketReceived;
+    public event Action<string>? TextReceived;
+    public event Action<byte[]>? BinaryReceived;
+    public event Action<object?>? DataReceived;
     public event Action<string>? IpcError;
 
     public KirieClient()
@@ -86,9 +89,39 @@ public partial class KirieClient : GodotObject
         _pluginSingleton!.Call("loadHtmlString", html, baseUrl);
     }
 
+    public void SendText(string message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        SendTextPacket(KirieCborCodec.EncodeText(message));
+    }
+
+    public void SendBinary(byte[] bytes)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        SendBinaryPacket(KirieCborCodec.EncodeBytes(bytes));
+    }
+
+    public void SendData(object? value)
+    {
+        try
+        {
+            SendDataPacket(KirieCborCodec.EncodeData(value));
+        }
+        catch (KirieCborException error)
+        {
+            OnPluginIpcError($"CBOR data encode failed: {error.Message}");
+        }
+    }
+
     public void SendTextPacket(byte[] bytes)
     {
+        ArgumentNullException.ThrowIfNull(bytes);
         if (!EnsurePluginSingleton(nameof(SendTextPacket)))
+        {
+            return;
+        }
+
+        if (!EnsureNonEmptyPacket(bytes, nameof(SendTextPacket)))
         {
             return;
         }
@@ -99,7 +132,13 @@ public partial class KirieClient : GodotObject
 
     public void SendBinaryPacket(byte[] bytes)
     {
+        ArgumentNullException.ThrowIfNull(bytes);
         if (!EnsurePluginSingleton(nameof(SendBinaryPacket)))
+        {
+            return;
+        }
+
+        if (!EnsureNonEmptyPacket(bytes, nameof(SendBinaryPacket)))
         {
             return;
         }
@@ -110,7 +149,13 @@ public partial class KirieClient : GodotObject
 
     public void SendDataPacket(byte[] bytes)
     {
+        ArgumentNullException.ThrowIfNull(bytes);
         if (!EnsurePluginSingleton(nameof(SendDataPacket)))
+        {
+            return;
+        }
+
+        if (!EnsureNonEmptyPacket(bytes, nameof(SendDataPacket)))
         {
             return;
         }
@@ -145,6 +190,8 @@ public partial class KirieClient : GodotObject
                 "registerCallbacks",
                 _webViewReadyCallable,
                 _textPacketReceivedCallable,
+                _binaryPacketReceivedCallable,
+                _dataPacketReceivedCallable,
                 _ipcErrorCallable
             );
             return;
@@ -180,6 +227,19 @@ public partial class KirieClient : GodotObject
         return false;
     }
 
+    private bool EnsureNonEmptyPacket(byte[] bytes, string methodName)
+    {
+        if (bytes.Length > 0)
+        {
+            return true;
+        }
+
+        var error = $"Kirie cannot send an empty CBOR packet from {methodName}()";
+        GD.PushWarning(error);
+        IpcError?.Invoke(error);
+        return false;
+    }
+
     private void OnPluginWebViewReady()
     {
         GD.Print("[Kirie][cs] signal webview_ready");
@@ -190,18 +250,42 @@ public partial class KirieClient : GodotObject
     {
         GD.Print($"[Kirie][cs] signal text_packet_received bytes={bytes.Length}");
         TextPacketReceived?.Invoke(bytes);
+        try
+        {
+            TextReceived?.Invoke(KirieCborCodec.DecodeText(bytes));
+        }
+        catch (KirieCborException error)
+        {
+            OnPluginIpcError($"CBOR text decode failed: {error.Message}");
+        }
     }
 
     private void OnPluginBinaryPacketReceived(byte[] bytes)
     {
         GD.Print($"[Kirie][cs] signal binary_packet_received bytes={bytes.Length}");
         BinaryPacketReceived?.Invoke(bytes);
+        try
+        {
+            BinaryReceived?.Invoke(KirieCborCodec.DecodeBytes(bytes));
+        }
+        catch (KirieCborException error)
+        {
+            OnPluginIpcError($"CBOR binary decode failed: {error.Message}");
+        }
     }
 
     private void OnPluginDataPacketReceived(byte[] bytes)
     {
         GD.Print($"[Kirie][cs] signal data_packet_received bytes={bytes.Length}");
         DataPacketReceived?.Invoke(bytes);
+        try
+        {
+            DataReceived?.Invoke(KirieCborCodec.DecodeData(bytes));
+        }
+        catch (KirieCborException error)
+        {
+            OnPluginIpcError($"CBOR data decode failed: {error.Message}");
+        }
     }
 
     private void OnPluginIpcError(string error)

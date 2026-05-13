@@ -8,6 +8,8 @@ node_modules/
 dist/
 build/
 godot/
+tests/csharp/**/bin/
+tests/csharp/**/obj/
 *.apk
 *.aab
 *.aar

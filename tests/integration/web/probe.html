@@ -2,25 +2,248 @@
 <meta charset="utf-8">
 <script>
 var kirieProbeName = new URLSearchParams(globalThis.location.search).get("probe") || "res_asset_loading";
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
 
-function postToGodot(message) {
-	var messageJson = JSON.stringify(message);
-	if (globalThis.KirieAndroidBridge) {
-		globalThis.KirieAndroidBridge.postMessage(messageJson);
-		return;
+// Fixture-only CBOR for the exported probe page, kept inline so the test does not need bundling.
+function encodeHead(majorType, length) {
+	if (length < 24) {
+		return [majorType << 5 | length];
 	}
 
-	var iosBridge = globalThis.webkit && globalThis.webkit.messageHandlers && globalThis.webkit.messageHandlers.kirie;
-	if (iosBridge) {
-		iosBridge.postMessage(messageJson);
-		return;
+	if (length <= 0xff) {
+		return [majorType << 5 | 24, length];
 	}
 
-	throw new Error("Kirie native IPC bridge is not available.");
+	if (length <= 0xffff) {
+		return [majorType << 5 | 25, length >> 8, length & 0xff];
+	}
+
+	return [
+		majorType << 5 | 26,
+		length >>> 24,
+		length >>> 16 & 0xff,
+		length >>> 8 & 0xff,
+		length & 0xff,
+	];
 }
 
-globalThis.addEventListener("kirie:ipc-message", function(event) {
-	var message = event.detail;
+function encodeCbor(value) {
+	if (value === null) {
+		return new Uint8Array([0xf6]);
+	}
+
+	if (value === false) {
+		return new Uint8Array([0xf4]);
+	}
+
+	if (value === true) {
+		return new Uint8Array([0xf5]);
+	}
+
+	if (typeof value === "number") {
+		if (!Number.isInteger(value) || value < 0) {
+			throw new Error("Probe CBOR encoder only supports unsigned integers.");
+		}
+
+		return new Uint8Array(encodeHead(0, value));
+	}
+
+	if (typeof value === "string") {
+		var textBytes = textEncoder.encode(value);
+		var textHead = encodeHead(3, textBytes.byteLength);
+		var textPacket = new Uint8Array(textHead.length + textBytes.byteLength);
+		textPacket.set(textHead);
+		textPacket.set(textBytes, textHead.length);
+		return textPacket;
+	}
+
+	if (value instanceof Uint8Array) {
+		var bytesHead = encodeHead(2, value.byteLength);
+		var bytesPacket = new Uint8Array(bytesHead.length + value.byteLength);
+		bytesPacket.set(bytesHead);
+		bytesPacket.set(value, bytesHead.length);
+		return bytesPacket;
+	}
+
+	if (Array.isArray(value)) {
+		var arrayParts = value.map(encodeCbor);
+		return joinCborParts(encodeHead(4, arrayParts.length), arrayParts);
+	}
+
+	if (typeof value === "object") {
+		var entries = Object.entries(value);
+		var mapParts = [];
+		for (var entry of entries) {
+			mapParts.push(encodeCbor(entry[0]));
+			mapParts.push(encodeCbor(entry[1]));
+		}
+		return joinCborParts(encodeHead(5, entries.length), mapParts);
+	}
+
+	throw new Error("Unsupported probe CBOR value.");
+}
+
+function joinCborParts(head, parts) {
+	var length = head.length;
+	for (var part of parts) {
+		length += part.byteLength;
+	}
+
+	var packet = new Uint8Array(length);
+	packet.set(head);
+	var offset = head.length;
+	for (var currentPart of parts) {
+		packet.set(currentPart, offset);
+		offset += currentPart.byteLength;
+	}
+	return packet;
+}
+
+function decodeCbor(bytes) {
+	var offset = 0;
+
+	function readLength(additional) {
+		if (additional < 24) {
+			return additional;
+		}
+
+		if (additional === 24) {
+			return bytes[offset++];
+		}
+
+		if (additional === 25) {
+			var twoByteLength = bytes[offset] << 8 | bytes[offset + 1];
+			offset += 2;
+			return twoByteLength;
+		}
+
+		if (additional === 26) {
+			var fourByteLength =
+				bytes[offset] * 0x1000000 + (bytes[offset + 1] << 16) + (bytes[offset + 2] << 8) + bytes[offset + 3];
+			offset += 4;
+			return fourByteLength;
+		}
+
+		throw new Error("Unsupported probe CBOR length.");
+	}
+
+	function readValue() {
+		var initialByte = bytes[offset++];
+		var majorType = initialByte >> 5;
+		var additional = initialByte & 0x1f;
+
+		if (majorType === 0) {
+			return readLength(additional);
+		}
+
+		if (majorType === 3) {
+			var textLength = readLength(additional);
+			var textBytes = bytes.subarray(offset, offset + textLength);
+			offset += textLength;
+			return textDecoder.decode(textBytes);
+		}
+
+		if (majorType === 2) {
+			var bytesLength = readLength(additional);
+			var byteString = bytes.subarray(offset, offset + bytesLength);
+			offset += bytesLength;
+			return byteString;
+		}
+
+		if (majorType === 4) {
+			var arrayLength = readLength(additional);
+			var array = [];
+			for (var arrayIndex = 0; arrayIndex < arrayLength; arrayIndex++) {
+				array.push(readValue());
+			}
+			return array;
+		}
+
+		if (majorType === 5) {
+			var mapLength = readLength(additional);
+			var map = {};
+			for (var mapIndex = 0; mapIndex < mapLength; mapIndex++) {
+				map[readValue()] = readValue();
+			}
+			return map;
+		}
+
+		if (majorType === 7 && additional === 20) {
+			return false;
+		}
+
+		if (majorType === 7 && additional === 21) {
+			return true;
+		}
+
+		if (majorType === 7 && additional === 22) {
+			return null;
+		}
+
+		throw new Error("Unsupported probe CBOR major type.");
+	}
+
+	return readValue();
+}
+
+function dataChannel() {
+	if (!globalThis.KirieDataChannel) {
+		throw new Error("Kirie data channel is not available.");
+	}
+
+	return globalThis.KirieDataChannel;
+}
+
+function textChannel() {
+	if (!globalThis.KirieTextChannel) {
+		throw new Error("Kirie text channel is not available.");
+	}
+
+	return globalThis.KirieTextChannel;
+}
+
+function binaryChannel() {
+	if (!globalThis.KirieBinaryChannel) {
+		throw new Error("Kirie binary channel is not available.");
+	}
+
+	return globalThis.KirieBinaryChannel;
+}
+
+function asBytes(value) {
+	if (value instanceof Uint8Array) {
+		return value;
+	}
+
+	if (value instanceof ArrayBuffer) {
+		return new Uint8Array(value);
+	}
+
+	if (ArrayBuffer.isView(value)) {
+		return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+	}
+
+	throw new Error("Kirie data channel delivered a non-binary message.");
+}
+
+function postToGodot(message) {
+	var packet = encodeCbor(message);
+	dataChannel().postMessage(packet.buffer);
+}
+
+function postTextToGodot(message) {
+	var packet = encodeCbor(message);
+	textChannel().postMessage(packet.buffer);
+}
+
+function postBinaryToGodot(bytes) {
+	var packet = encodeCbor(bytes);
+	binaryChannel().postMessage(packet.buffer);
+}
+
+dataChannel().onmessage = function(event) {
+	var message = decodeCbor(asBytes(event.data));
 	if (message && message.type === "godot_ready") {
 		postToGodot({
 			type: "web_ack",
@@ -30,7 +253,26 @@ globalThis.addEventListener("kirie:ipc-message", function(event) {
 			},
 		});
 	}
-});
+};
+
+textChannel().onmessage = function(event) {
+	var message = decodeCbor(asBytes(event.data));
+	if (message === "godot_text_ready:" + kirieProbeName) {
+		postTextToGodot("web_text_ack:" + kirieProbeName);
+	}
+};
+
+binaryChannel().onmessage = function(event) {
+	var message = decodeCbor(asBytes(event.data));
+	var text = message instanceof Uint8Array ? textDecoder.decode(message) : "";
+	if (text === "godot_binary_ready:" + kirieProbeName) {
+		postBinaryToGodot(textEncoder.encode("web_binary_ack:" + kirieProbeName));
+	}
+};
+
+dataChannel().postMessage(new ArrayBuffer(0));
+textChannel().postMessage(new ArrayBuffer(0));
+binaryChannel().postMessage(new ArrayBuffer(0));
 
 postToGodot({
 	type: "web_ready",
@@ -40,4 +282,6 @@ postToGodot({
 		userAgent: navigator.userAgent,
 	},
 });
+postTextToGodot("web_text_ready:" + kirieProbeName);
+postBinaryToGodot(textEncoder.encode("web_binary_ready:" + kirieProbeName));
 </script>

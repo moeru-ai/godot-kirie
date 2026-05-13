@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

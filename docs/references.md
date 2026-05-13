@@ -68,8 +68,15 @@ packaging, or platform WebView bridge details.
 ## IPC formats and compatibility targets
 
 - [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
-  Stable CBOR specification used as the primary reference for Kirie IPC v1
-  packet encoding.
+  Stable CBOR specification used as the primary reference for Kirie packet
+  encoding.
+- [cborg repository](https://github.com/rvagg/cborg)
+  Browser-side CBOR implementation used by `@gd-kirie/ipc`. Kirie uses cborg's
+  strict decode options for duplicate map keys, indefinite values, undefined,
+  and non-finite numbers, then adds Kirie-specific validation for the shared
+  data subset and JavaScript safe integer range. cborg's README notes that
+  string byte retention is needed to inspect non-UTF-8 text, so Kirie performs
+  its own text-byte validation before browser-side decode.
 - [Godot CEF IPC signals](https://godotcef.org/api/signals)
   Reference implementation and future compatibility target for separate text,
   binary, and CBOR-backed data IPC lanes.

@@ -2,14 +2,22 @@
 
 #import <Foundation/Foundation.h>
 
+#include <cstdint>
+#include <cstring>
+#include <limits>
+
 extern "C" void kirie_swift_create_webview(const char *initial_url);
 extern "C" void kirie_swift_destroy_webview(void);
 extern "C" void kirie_swift_load_url(const char *url);
 extern "C" void kirie_swift_load_html_string(const char *html, const char *base_url);
-extern "C" void kirie_swift_send_ipc_message(const char *message_json);
+extern "C" void kirie_swift_send_text_packet(const uint8_t *bytes, int32_t length);
+extern "C" void kirie_swift_send_binary_packet(const uint8_t *bytes, int32_t length);
+extern "C" void kirie_swift_send_data_packet(const uint8_t *bytes, int32_t length);
 
 static NSString *const KirieWebViewReadyNotification = @"KirieWebViewReady";
-static NSString *const KirieIpcMessageReceivedNotification = @"KirieIpcMessageReceived";
+static NSString *const KirieTextPacketReceivedNotification = @"KirieTextPacketReceived";
+static NSString *const KirieBinaryPacketReceivedNotification = @"KirieBinaryPacketReceived";
+static NSString *const KirieDataPacketReceivedNotification = @"KirieDataPacketReceived";
 static NSString *const KirieIpcErrorNotification = @"KirieIpcError";
 
 static KiriePlugin *singleton = nullptr;
@@ -20,6 +28,21 @@ static String to_godot_string(id value) {
 	}
 
 	return String::utf8([(NSString *)value UTF8String]);
+}
+
+static PackedByteArray to_godot_bytes(id value) {
+	PackedByteArray bytes;
+	if (![value isKindOfClass:[NSData class]]) {
+		return bytes;
+	}
+
+	NSData *data = (NSData *)value;
+	bytes.resize(data.length);
+	if (data.length > 0) {
+		memcpy(bytes.ptrw(), data.bytes, data.length);
+	}
+
+	return bytes;
 }
 
 static bool require_arg_count(Callable::CallError &r_error, int p_argcount, int p_expected) {
@@ -54,9 +77,36 @@ static void call_callback(const Callable &callback, const String &value) {
 	callback.callp(arguments, 1, return_value, call_error);
 }
 
-void KiriePlugin::registerCallbacks(Callable on_webview_ready, Callable on_ipc_message_received, Callable on_ipc_error) {
+static void call_callback(const Callable &callback, const PackedByteArray &value) {
+	if (callback.is_null()) {
+		return;
+	}
+
+	Variant argument = value;
+	const Variant *arguments[] = { &argument };
+	Variant return_value;
+	Callable::CallError call_error;
+	callback.callp(arguments, 1, return_value, call_error);
+}
+
+static void send_packet(PackedByteArray bytes, void (*send)(const uint8_t *, int32_t)) {
+	ERR_FAIL_COND_MSG(bytes.size() > std::numeric_limits<int32_t>::max(), "Kirie packet is too large to send through the iOS bridge.");
+
+	const int32_t byte_count = static_cast<int32_t>(bytes.size());
+	send(bytes.ptr(), byte_count);
+}
+
+void KiriePlugin::registerCallbacks(
+	Callable on_webview_ready,
+	Callable on_text_packet_received,
+	Callable on_binary_packet_received,
+	Callable on_data_packet_received,
+	Callable on_ipc_error
+) {
 	webview_ready_callback = on_webview_ready;
-	ipc_message_received_callback = on_ipc_message_received;
+	text_packet_received_callback = on_text_packet_received;
+	binary_packet_received_callback = on_binary_packet_received;
+	data_packet_received_callback = on_data_packet_received;
 	ipc_error_callback = on_ipc_error;
 }
 
@@ -80,9 +130,16 @@ void KiriePlugin::loadHtmlString(String html, String base_url) {
 	kirie_swift_load_html_string(encoded_html.get_data(), encoded_base_url.get_data());
 }
 
-void KiriePlugin::sendIpcMessage(String message_json) {
-	CharString encoded_message_json = message_json.utf8();
-	kirie_swift_send_ipc_message(encoded_message_json.get_data());
+void KiriePlugin::sendTextPacket(PackedByteArray bytes) {
+	send_packet(bytes, kirie_swift_send_text_packet);
+}
+
+void KiriePlugin::sendBinaryPacket(PackedByteArray bytes) {
+	send_packet(bytes, kirie_swift_send_binary_packet);
+}
+
+void KiriePlugin::sendDataPacket(PackedByteArray bytes) {
+	send_packet(bytes, kirie_swift_send_data_packet);
 }
 
 String KiriePlugin::getLaunchOption(String key) {
@@ -128,11 +185,17 @@ Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, i
 	}
 
 	if (p_method == StringName("registerCallbacks")) {
-		if (!require_arg_count(r_error, p_argcount, 3)) {
+		if (!require_arg_count(r_error, p_argcount, 5)) {
 			return Variant();
 		}
 
-		registerCallbacks(Callable(*p_args[0]), Callable(*p_args[1]), Callable(*p_args[2]));
+		registerCallbacks(
+			Callable(*p_args[0]),
+			Callable(*p_args[1]),
+			Callable(*p_args[2]),
+			Callable(*p_args[3]),
+			Callable(*p_args[4])
+		);
 		return Variant();
 	}
 
@@ -163,12 +226,30 @@ Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, i
 		return Variant();
 	}
 
-	if (p_method == StringName("sendIpcMessage")) {
+	if (p_method == StringName("sendTextPacket")) {
 		if (!require_arg_count(r_error, p_argcount, 1)) {
 			return Variant();
 		}
 
-		sendIpcMessage(String(*p_args[0]));
+		sendTextPacket(PackedByteArray(*p_args[0]));
+		return Variant();
+	}
+
+	if (p_method == StringName("sendBinaryPacket")) {
+		if (!require_arg_count(r_error, p_argcount, 1)) {
+			return Variant();
+		}
+
+		sendBinaryPacket(PackedByteArray(*p_args[0]));
+		return Variant();
+	}
+
+	if (p_method == StringName("sendDataPacket")) {
+		if (!require_arg_count(r_error, p_argcount, 1)) {
+			return Variant();
+		}
+
+		sendDataPacket(PackedByteArray(*p_args[0]));
 		return Variant();
 	}
 
@@ -198,12 +279,30 @@ KiriePlugin::KiriePlugin() {
 			}
 		}];
 
-	ipc_message_received_observer = (__bridge_retained void *)[center addObserverForName:KirieIpcMessageReceivedNotification
+	text_packet_received_observer = (__bridge_retained void *)[center addObserverForName:KirieTextPacketReceivedNotification
 		object:nil
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->ipc_message_received_callback, to_godot_string(notification.object));
+				call_callback(singleton->text_packet_received_callback, to_godot_bytes(notification.object));
+			}
+		}];
+
+	binary_packet_received_observer = (__bridge_retained void *)[center addObserverForName:KirieBinaryPacketReceivedNotification
+		object:nil
+		queue:main_queue
+		usingBlock:^(NSNotification *notification) {
+			if (singleton) {
+				call_callback(singleton->binary_packet_received_callback, to_godot_bytes(notification.object));
+			}
+		}];
+
+	data_packet_received_observer = (__bridge_retained void *)[center addObserverForName:KirieDataPacketReceivedNotification
+		object:nil
+		queue:main_queue
+		usingBlock:^(NSNotification *notification) {
+			if (singleton) {
+				call_callback(singleton->data_packet_received_callback, to_godot_bytes(notification.object));
 			}
 		}];
 
@@ -226,10 +325,22 @@ KiriePlugin::~KiriePlugin() {
 		webview_ready_observer = nullptr;
 	}
 
-	if (ipc_message_received_observer) {
-		id observer = (__bridge_transfer id)ipc_message_received_observer;
+	if (text_packet_received_observer) {
+		id observer = (__bridge_transfer id)text_packet_received_observer;
 		[center removeObserver:observer];
-		ipc_message_received_observer = nullptr;
+		text_packet_received_observer = nullptr;
+	}
+
+	if (binary_packet_received_observer) {
+		id observer = (__bridge_transfer id)binary_packet_received_observer;
+		[center removeObserver:observer];
+		binary_packet_received_observer = nullptr;
+	}
+
+	if (data_packet_received_observer) {
+		id observer = (__bridge_transfer id)data_packet_received_observer;
+		[center removeObserver:observer];
+		data_packet_received_observer = nullptr;
 	}
 
 	if (ipc_error_observer) {

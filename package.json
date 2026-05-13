@@ -24,6 +24,8 @@
     "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
     "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
     "release": "bumpp",
+    "check:csharp-wrapper": "dotnet build tests/csharp/kirie-client-compile/KirieClientCompile.csproj",
+    "test:csharp-cbor": "dotnet run --project tests/csharp/cbor-codec/KirieCborCodecProbe.csproj",
     "typecheck": "pnpm -r run typecheck"
   },
   "devDependencies": {

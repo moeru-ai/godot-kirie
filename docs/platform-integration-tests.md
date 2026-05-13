@@ -22,7 +22,7 @@ Godot -> Kirie platform singleton -> platform WebView -> JavaScript -> Godot
 The current focus is:
 
 - WebView lifecycle behavior from Godot
-- raw JavaScript bridge IPC
+- raw JavaScript bridge IPC through CBOR packet bytes
 - resource loading through `res://`
 - C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
@@ -31,13 +31,16 @@ The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
 package. That package is a convenience SDK above the raw bridge contract and
 should be tested separately.
 
-When IPC v1 lands, this project should keep testing the raw bridge contract and
-add focused text, binary, and data round-trip cases. Eventa adapter behavior
-should be tested separately above the raw bridge.
+The project should keep testing the raw packet bridge contract and the temporary
+GDScript codec/proving layer. Focused round-trip cases should cover text,
+binary, and data lanes. Eventa adapter behavior should be tested separately
+above the raw bridge.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
-GDScript probe. That test is not implemented yet.
+GDScript probe. That exported-app smoke test is not implemented yet. Until then,
+`tests/csharp` provides a C# codec probe and a compile check for `KirieClient`
+against `GodotSharp`.
 
 ## Project Layout
 
@@ -48,14 +51,20 @@ tests/integration/
   main.tscn
   addons/kirie -> ../../../packages/kirie/addon/addons/kirie
   scripts/
+    cbor_codec_smoke.gd
     test_runner.gd
     test_probe.gd
     test_cases/
+      cbor_codec_probe.gd
       ipc_round_trip_probe.gd
       webview_lifecycle_probe.gd
       res_asset_loading_probe.gd
   web/
     probe.html
+
+tests/csharp/
+  cbor-codec/
+  kirie-client-compile/
 ```
 
 `web/probe.html` is a minimal fixture, not a web app project. There is no Vite
@@ -109,7 +118,12 @@ the Kirie API it wants to exercise:
 - `create_webview()`
 - `load_html_string(...)`
 - `load_url(...)`
-- `send_ipc_message(...)`
+- `send_text(...)`
+- `send_binary(...)`
+- `send_data(...)`
+- `send_text_packet(...)`
+- `send_binary_packet(...)`
+- `send_data_packet(...)`
 - `destroy_webview()`
 
 Shared waiting and probe observation lives in `scripts/test_probe.gd`.
@@ -117,7 +131,9 @@ Shared waiting and probe observation lives in `scripts/test_probe.gd`.
 
 - connect to Kirie signals
 - wait for `webview_ready`
-- collect `ipc_message_received`
+- collect `text_received`, `binary_received`, and `data_received`
+- collect raw `text_packet_received`, `binary_packet_received`, and
+  `data_packet_received` bytes when a test needs the native packet contract
 - wait for a specific probe message
 - read `web/probe.html`
 
@@ -129,20 +145,19 @@ be provided by the test case itself.
 `web/probe.html` is a small raw bridge fixture. It uses the platform-level
 contract directly:
 
-- Android JavaScript to Godot:
-  `globalThis.KirieAndroidBridge.postMessage(messageJson)`
-- iOS JavaScript to Godot:
-  `globalThis.webkit.messageHandlers.kirie.postMessage(messageJson)`
-- Godot to JavaScript:
-  `kirie:ipc-message` DOM events
+- Android JavaScript to Godot: lane-specific WebKit message channels receive
+  CBOR packet bytes.
+- iOS JavaScript to Godot: injected `KirieTextChannel`, `KirieBinaryChannel`,
+  and `KirieDataChannel` shims expose the same page API. The WebKit native
+  boundary uses base64 strings internally.
+- Godot to JavaScript: native bridge delivery should preserve the selected
+  packet lane and CBOR bytes.
 
-For tests that do not care about asset loading, the GDScript case reads
-`probe.html` and injects it with `load_html_string(...)`. This keeps the test
-case in Godot while preserving HTML/JavaScript syntax highlighting in the
-fixture file. HTML-string tests pass the probe name through an injected
-`globalThis.__kirieProbeName` value instead of deriving it from
-`location.search`, because WebKit's `loadHTMLString(_:baseURL:)` treats
-`baseURL` as the URL for resolving relative references.
+For tests that do not care about asset loading, current GDScript cases still use
+the same `res://web/probe.html?...` URL shape as asset-loading tests. This keeps
+the exported-app probes close to the packaged resource path. `load_html_string`
+remains part of the test-case contract so future cases can exercise direct HTML
+injection without changing the runner.
 
 For tests that do care about exported resources, the case loads
 `res://web/probe.html?...` with `load_url(...)`.

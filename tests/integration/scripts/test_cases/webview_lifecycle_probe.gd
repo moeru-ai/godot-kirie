@@ -40,7 +40,7 @@ func _run_probe(
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_ipc_message({
+	kirie.send_data({
 		"type": "godot_ready",
 		"payload": {
 			"probe": probe_name,

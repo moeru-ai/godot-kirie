@@ -64,17 +64,55 @@ public func kirie_swift_load_html_string(_ htmlPointer: UnsafePointer<CChar>?, _
     }
 }
 
-@_cdecl("kirie_swift_send_ipc_message")
-public func kirie_swift_send_ipc_message(_ messageJSONPointer: UnsafePointer<CChar>?) {
-    guard let messageJSONPointer else {
-        kirieLogEntry("kirie_swift_send_ipc_message ignored nil pointer")
+@_cdecl("kirie_swift_send_text_packet")
+public func kirie_swift_send_text_packet(_ packetPointer: UnsafePointer<UInt8>?, _ packetLength: Int32) {
+    sendPacket(packetPointer, packetLength, logName: "text") { packet in
+        KirieManager.shared.sendTextPacket(packet)
+    }
+}
+
+@_cdecl("kirie_swift_send_binary_packet")
+public func kirie_swift_send_binary_packet(_ packetPointer: UnsafePointer<UInt8>?, _ packetLength: Int32) {
+    sendPacket(packetPointer, packetLength, logName: "binary") { packet in
+        KirieManager.shared.sendBinaryPacket(packet)
+    }
+}
+
+@_cdecl("kirie_swift_send_data_packet")
+public func kirie_swift_send_data_packet(_ packetPointer: UnsafePointer<UInt8>?, _ packetLength: Int32) {
+    sendPacket(packetPointer, packetLength, logName: "data") { packet in
+        KirieManager.shared.sendDataPacket(packet)
+    }
+}
+
+private func sendPacket(
+    _ packetPointer: UnsafePointer<UInt8>?,
+    _ packetLength: Int32,
+    logName: String,
+    send: @MainActor @escaping (Data) -> Void
+) {
+    guard packetLength >= 0 else {
+        kirieLogEntry("kirie_swift_send_\(logName)_packet ignored negative length")
         return
     }
 
-    let messageJSON = String(cString: messageJSONPointer)
-    kirieLogEntry("kirie_swift_send_ipc_message message=\(messageJSON)")
+    if packetLength == 0 {
+        kirieLogEntry("kirie_swift_send_\(logName)_packet bytes=0")
+        DispatchQueue.main.async {
+            send(Data())
+        }
+        return
+    }
+
+    guard let packetPointer else {
+        kirieLogEntry("kirie_swift_send_\(logName)_packet ignored nil pointer")
+        return
+    }
+
+    let packet = Data(bytes: packetPointer, count: Int(packetLength))
+    kirieLogEntry("kirie_swift_send_\(logName)_packet bytes=\(packet.count)")
     DispatchQueue.main.async {
-        KirieManager.shared.sendIpcMessage(messageJSON)
+        send(packet)
     }
 }
 

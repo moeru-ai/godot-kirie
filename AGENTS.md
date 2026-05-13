@@ -18,7 +18,7 @@ package is a thin browser-side transport wrapper; do not expand it into an
 application event or invocation layer unless the user explicitly asks for that
 higher-level work.
 
-The planned IPC v1 direction keeps Kirie core byte-oriented and CBOR-based with
+The current IPC direction keeps Kirie core byte-oriented and CBOR-based with
 text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
 core. Keep planned Eventa adapters above Kirie and out of `addons/kirie`.
 
@@ -70,8 +70,8 @@ label them as anecdotal when they influence a decision.
 - Keep `@gd-kirie/ipc` as a thin browser-side transport wrapper around the raw
   native bridge. Defer richer browser SDKs until there is a real app-level use
   case.
-- For IPC v1, treat `text`, `binary`, and `data` as Kirie core lanes over a
-  CBOR packet format. Do not reintroduce automatic JSON serialization into
+- Treat `text`, `binary`, and `data` as Kirie core lanes over a CBOR packet
+  format. Do not reintroduce automatic JSON serialization into
   Kirie core; JSON is an application or adapter encoding choice.
 - Use Godot CEF as a learning reference and future compatibility target for
   text, binary, and CBOR-backed data IPC lanes.
@@ -224,11 +224,14 @@ configured yet.
 ### Public API stability
 
 - Treat `Kirie` and `KirieView` as the primary public API surfaces.
-- Prefer low-level public names such as `load_url` and `send_ipc_message` while
-  the bridge remains transport-oriented.
-- When implementing IPC v1, replace the JSON-shaped message API with explicit
-  text, binary, and data lane APIs, and update examples, integration tests, and
-  documentation in the same change.
+- Prefer low-level public names such as `load_url`, `send_text`,
+  `send_binary`, and `send_data` while the bridge remains transport-oriented.
+  `GdKirie` may expose raw `send_*_packet` methods for bridge work; `KirieView`
+  should stay scene-friendly and typed.
+- Keep IPC as explicit text, binary, and data lanes over CBOR packet bytes.
+  Native core owns raw byte transport; the current GDScript and browser layers
+  encode those bytes as CBOR packets, and future native codec support should
+  preserve the same lane contract.
 - Do not rename public methods, signal names, or exported properties without a
   clear reason.
 - If a public API change is necessary, update the example project and
@@ -260,8 +263,12 @@ configured yet.
   `mise x -- corepack pnpm run build:ios-xcframework` before device testing.
 - When changing the IPC shape, make sure at least one real request/response
   round-trip remains covered by the example or integration tests.
-- When changing `KirieClient`, compile it against the Godot .NET SDK. A platform
-  integration smoke test for its C# event API is still pending.
+- When changing `KirieClient`, run
+  `mise x -- corepack pnpm run check:csharp-wrapper` to compile it against the
+  Godot .NET SDK. A platform integration smoke test for its C# event API is
+  still pending.
+- When changing the C# CBOR codec, run
+  `mise x -- corepack pnpm run test:csharp-cbor`.
 
 ### Dependencies
 

@@ -16,8 +16,8 @@ invocation APIs, is deferred until the IPC model is proven. The current
 `@gd-kirie/ipc` package is intentionally only a browser-side transport wrapper on
 top of the raw native bridge.
 
-The next planned IPC milestone keeps Kirie core byte-oriented and CBOR-based
-while preserving separate text, binary, and data lanes. Higher-level protocols,
+The current IPC milestone keeps Kirie core byte-oriented and CBOR-based while
+preserving separate text, binary, and data lanes. Higher-level protocols,
 including the planned Eventa adapter, remain above Kirie.
 
 ## Current Godot API direction
@@ -34,28 +34,43 @@ Current public Godot-facing names should stay close to that low-level role:
 - `destroy_webview()`
 - `load_url(url)`
 - `load_html_string(html, base_url := "")`
-- `send_ipc_message(message)`
+- `send_text(message)`
+- `send_binary(bytes)`
+- `send_data(value)`
+- `send_text_packet(bytes)`
+- `send_binary_packet(bytes)`
+- `send_data_packet(bytes)`
 - `get_launch_option(key)`
 
-These names describe the current implementation. The next planned IPC v1 work
-will replace the JSON-shaped message API with text, binary, and data lane APIs.
-When that migration lands, update the example project, platform integration
-tests, and this architecture note in the same change.
+The packet methods are the `GdKirie` native core contract: each lane carries an
+already encoded CBOR packet as bytes. `KirieView` is the scene-friendly wrapper
+and intentionally exposes only typed lane helpers. The non-packet methods are
+the temporary GDScript codec/proving layer that encodes text strings, byte
+arrays, and the constrained data subset before forwarding packets to native.
+This keeps the native bridge raw while the packet format and platform behavior
+are still being proven. A future native codec can replace or sit beside the
+GDScript codec once the lane contract is stable.
 
 The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side
 without duplicating native lifecycle logic.
 
-The C# `KirieClient` wrapper follows the same low-level surface and forwards to
-the same platform singleton. Its public API should feel idiomatic to .NET users:
-methods use C# naming, and Kirie signals are exposed as C# events. Internal
-Godot `Callable` usage exists only to connect native singleton signals and iOS
+The C# `KirieClient` wrapper follows the same lane surface and forwards to the
+same platform singleton. Its public API should feel idiomatic to .NET users:
+methods use C# naming, Kirie signals are exposed as C# events, and typed helpers
+sit next to the raw packet methods for low-level tests. Internal Godot
+`Callable` usage exists only to connect native singleton signals and iOS
 callbacks.
 
 Current signals should also stay narrow:
 
 - `webview_ready`
-- `ipc_message_received`
+- `text_received`
+- `binary_received`
+- `data_received`
+- `text_packet_received`
+- `binary_packet_received`
+- `data_packet_received`
 - `ipc_error`
 
 Browser lifecycle events and higher-level invocation APIs are intentionally
@@ -130,17 +145,32 @@ The release artifact shape and workflow modes live in
 The planned .NET Eventa adapter will introduce a separate NuGet release lane.
 Keep it separate from addon zip publishing and npm publishing.
 
-## Planned IPC and adapter split
+## IPC and adapter split
 
-This direction is planned, not implemented.
+Kirie IPC uses explicit `text`, `binary`, and `data` lanes over byte-oriented
+CBOR packets. Text payloads are CBOR text strings, binary payloads are CBOR byte
+strings, and data payloads are a constrained cross-platform data subset: null,
+booleans, finite numbers, strings, arrays, and maps with string keys. Integer
+values are limited to the JavaScript safe integer range so all current Kirie
+frontends agree on the value. Byte arrays belong to the binary lane. Godot
+objects, nodes, callables, RIDs, and other engine-local values are out of scope
+for the data lane.
 
-Kirie IPC should move from the current JSON-shaped message path to explicit
-`text`, `binary`, and `data` lanes. All lanes should use a byte-oriented CBOR
-packet envelope. Text payloads are CBOR text strings, binary payloads are CBOR
-byte strings, and data payloads are a constrained cross-platform data subset:
-null, booleans, finite numbers, strings, byte arrays, arrays, and maps with
-string keys. Godot objects, nodes, callables, RIDs, and other engine-local values
-are out of scope for the data lane.
+Current data encoders write floating-point values as CBOR float64. Decoders
+accept CBOR float16, float32, and float64 so Kirie can read valid CBOR produced
+by other encoders, but non-finite values are still rejected after decode. Nested
+arrays and maps have a fixed depth limit to avoid recursive payloads exhausting
+the host runtime.
+
+The staged architecture is:
+
+- Native core: exposes raw packet send methods and raw packet received signals
+  for the three lanes.
+- GDScript proving layer: temporarily owns CBOR encode/decode helpers and
+  typed lane methods/signals such as `send_text(...)` and `data_received`.
+- Future native codec option: may move encode/decode closer to platform code
+  once the packet contract has enough validation across Android, iOS, GDScript,
+  C#, and browser callers.
 
 Godot CEF is a learning reference and future compatibility target because it
 separates `ipc_message`, `ipc_binary_message`, and `ipc_data_message`, with its

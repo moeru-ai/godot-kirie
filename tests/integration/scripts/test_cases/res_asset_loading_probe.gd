@@ -23,7 +23,7 @@ func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_ipc_message({
+	kirie.send_data({
 		"type": "godot_ready",
 		"payload": {
 			"probe": PROBE_NAME,

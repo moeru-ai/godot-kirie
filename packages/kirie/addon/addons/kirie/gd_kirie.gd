@@ -71,11 +71,19 @@ func send_binary(bytes: PackedByteArray) -> void:
 
 
 func send_data(value: Variant) -> void:
-	send_data_packet(KirieCborCodecScript.encode_data(value))
+	var encoded := KirieCborCodecScript.try_encode_data(value)
+	if encoded["ok"]:
+		send_data_packet(encoded["value"])
+		return
+
+	_on_plugin_ipc_error("CBOR data encode failed: %s" % encoded["error"])
 
 
 func send_text_packet(bytes: PackedByteArray) -> void:
 	if not _ensure_plugin_singleton("send_text_packet"):
+		return
+
+	if not _ensure_non_empty_packet(bytes, "send_text_packet"):
 		return
 
 	print("[Kirie][gd] send_text_packet bytes=%d" % bytes.size())
@@ -86,12 +94,18 @@ func send_binary_packet(bytes: PackedByteArray) -> void:
 	if not _ensure_plugin_singleton("send_binary_packet"):
 		return
 
+	if not _ensure_non_empty_packet(bytes, "send_binary_packet"):
+		return
+
 	print("[Kirie][gd] send_binary_packet bytes=%d" % bytes.size())
 	_plugin_singleton.sendBinaryPacket(bytes)
 
 
 func send_data_packet(bytes: PackedByteArray) -> void:
 	if not _ensure_plugin_singleton("send_data_packet"):
+		return
+
+	if not _ensure_non_empty_packet(bytes, "send_data_packet"):
 		return
 
 	print("[Kirie][gd] send_data_packet bytes=%d" % bytes.size())
@@ -120,6 +134,8 @@ func _connect_plugin_signals() -> void:
 		_plugin_singleton.registerCallbacks(
 			Callable(self, "_on_plugin_webview_ready"),
 			Callable(self, "_on_plugin_text_packet_received"),
+			Callable(self, "_on_plugin_binary_packet_received"),
+			Callable(self, "_on_plugin_data_packet_received"),
 			Callable(self, "_on_plugin_ipc_error"),
 		)
 		return
@@ -150,6 +166,16 @@ func _ensure_plugin_singleton(method_name: String) -> bool:
 		return true
 
 	var error := "Kirie platform singleton is not available for %s()" % method_name
+	push_warning(error)
+	ipc_error.emit(error)
+	return false
+
+
+func _ensure_non_empty_packet(bytes: PackedByteArray, method_name: String) -> bool:
+	if not bytes.is_empty():
+		return true
+
+	var error := "Kirie cannot send an empty CBOR packet from %s()" % method_name
 	push_warning(error)
 	ipc_error.emit(error)
 	return false
