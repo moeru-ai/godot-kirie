@@ -15,8 +15,14 @@ Current responsibility:
 
 - create and manage the Android WebView
 - expose a Godot Android plugin singleton
-- bridge low-level IPC messages between Godot and web content
+- bridge low-level CBOR IPC lanes between Godot and web content
 - resolve `res://` web URLs to files exported into the APK/AAB assets
+
+Android IPC currently uses AndroidX WebKit `WebMessageListener` channels with
+ArrayBuffer payloads. The browser side sends and receives CBOR through
+`@gd-kirie/ipc`; native Android code encodes and decodes CBOR with Jackson CBOR.
+Text maps to `String`, binary maps to `ByteArray`, and data maps through
+Jackson `JsonNode` into Godot-compatible values.
 
 `res://` loading is intentionally limited to packaged application assets. The
 Android implementation rewrites `res://web/index.html` to Kirie's local asset

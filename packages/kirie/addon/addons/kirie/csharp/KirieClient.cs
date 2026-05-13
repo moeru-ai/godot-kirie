@@ -8,19 +8,25 @@ public partial class KirieClient : GodotObject
     public const string PluginSingletonName = "Kirie";
 
     private readonly Callable _webViewReadyCallable;
-    private readonly Callable _ipcMessageReceivedCallable;
+    private readonly Callable _textReceivedCallable;
+    private readonly Callable _binaryReceivedCallable;
+    private readonly Callable _dataReceivedCallable;
     private readonly Callable _ipcErrorCallable;
 
     private readonly GodotObject? _pluginSingleton;
 
     public event Action? WebViewReady;
-    public event Action<Variant>? IpcMessageReceived;
+    public event Action<string>? TextReceived;
+    public event Action<byte[]>? BinaryReceived;
+    public event Action<Variant>? DataReceived;
     public event Action<string>? IpcError;
 
     public KirieClient()
     {
         _webViewReadyCallable = Callable.From(OnPluginWebViewReady);
-        _ipcMessageReceivedCallable = Callable.From<string>(OnPluginIpcMessageReceived);
+        _textReceivedCallable = Callable.From<string>(OnPluginTextReceived);
+        _binaryReceivedCallable = Callable.From<byte[]>(OnPluginBinaryReceived);
+        _dataReceivedCallable = Callable.From<Variant>(OnPluginDataReceived);
         _ipcErrorCallable = Callable.From<string>(OnPluginIpcError);
 
         if (!Engine.HasSingleton(PluginSingletonName))
@@ -80,16 +86,37 @@ public partial class KirieClient : GodotObject
         _pluginSingleton!.Call("loadHtmlString", html, baseUrl);
     }
 
-    public void SendIpcMessage(Variant message)
+    public void SendText(string message)
     {
-        if (!EnsurePluginSingleton(nameof(SendIpcMessage)))
+        if (!EnsurePluginSingleton(nameof(SendText)))
         {
             return;
         }
 
-        var messageJson = Json.Stringify(message);
-        GD.Print($"[Kirie][cs] send_ipc_message {messageJson}");
-        _pluginSingleton!.Call("sendIpcMessage", messageJson);
+        GD.Print($"[Kirie][cs] send_text bytes={message.Length}");
+        _pluginSingleton!.Call("sendText", message);
+    }
+
+    public void SendBinary(byte[] bytes)
+    {
+        if (!EnsurePluginSingleton(nameof(SendBinary)))
+        {
+            return;
+        }
+
+        GD.Print($"[Kirie][cs] send_binary bytes={bytes.Length}");
+        _pluginSingleton!.Call("sendBinary", bytes);
+    }
+
+    public void SendData(Variant value)
+    {
+        if (!EnsurePluginSingleton(nameof(SendData)))
+        {
+            return;
+        }
+
+        GD.Print($"[Kirie][cs] send_data {value}");
+        _pluginSingleton!.Call("sendData", value);
     }
 
     public string GetLaunchOption(string key)
@@ -117,14 +144,16 @@ public partial class KirieClient : GodotObject
             _pluginSingleton.Call(
                 "registerCallbacks",
                 _webViewReadyCallable,
-                _ipcMessageReceivedCallable,
+                _textReceivedCallable,
                 _ipcErrorCallable
             );
             return;
         }
 
         ConnectPluginSignal("webview_ready", _webViewReadyCallable);
-        ConnectPluginSignal("ipc_message_received", _ipcMessageReceivedCallable);
+        ConnectPluginSignal("text_received", _textReceivedCallable);
+        ConnectPluginSignal("binary_received", _binaryReceivedCallable);
+        ConnectPluginSignal("data_received", _dataReceivedCallable);
         ConnectPluginSignal("ipc_error", _ipcErrorCallable);
     }
 
@@ -157,17 +186,22 @@ public partial class KirieClient : GodotObject
         WebViewReady?.Invoke();
     }
 
-    private void OnPluginIpcMessageReceived(string messageJson)
+    private void OnPluginTextReceived(string message)
     {
-        GD.Print($"[Kirie][cs] signal ipc_message_received raw={messageJson}");
-        var parsedMessage = Json.ParseString(messageJson);
-        if (parsedMessage.VariantType == Variant.Type.Nil && messageJson != "null")
-        {
-            IpcMessageReceived?.Invoke(messageJson);
-            return;
-        }
+        GD.Print($"[Kirie][cs] signal text_received {message}");
+        TextReceived?.Invoke(message);
+    }
 
-        IpcMessageReceived?.Invoke(parsedMessage);
+    private void OnPluginBinaryReceived(byte[] bytes)
+    {
+        GD.Print($"[Kirie][cs] signal binary_received bytes={bytes.Length}");
+        BinaryReceived?.Invoke(bytes);
+    }
+
+    private void OnPluginDataReceived(Variant value)
+    {
+        GD.Print($"[Kirie][cs] signal data_received {value}");
+        DataReceived?.Invoke(value);
     }
 
     private void OnPluginIpcError(string error)

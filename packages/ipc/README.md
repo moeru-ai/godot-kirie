@@ -8,24 +8,29 @@ level bridge on `globalThis`, and this package only wraps that bridge with a sma
 ## API
 
 ```ts
-import { onIpcMessageReceived, sendIpcMessage } from "@gd-kirie/ipc";
+import { onTextReceived, sendText } from "@gd-kirie/ipc";
 
-sendIpcMessage({
+sendText(JSON.stringify({
   type: "web_ready",
-});
+}));
 
-const unsubscribe = onIpcMessageReceived((message) => {
+const unsubscribe = onTextReceived((message) => {
   console.log(message);
 });
 
 unsubscribe();
 ```
 
-`sendIpcMessage()` serializes the message with `JSON.stringify()` and forwards the
-result to the current native bridge:
+The package exposes three Android channels backed by CBOR packets and AndroidX
+WebKit ArrayBuffer messages:
 
-- Android: `globalThis.KirieAndroidBridge.postMessage(...)`
-- iOS: `globalThis.webkit.messageHandlers.kirie.postMessage(...)`
+- `sendText()` / `onTextReceived()` for CBOR text strings
+- `sendBinary()` / `onBinaryReceived()` for CBOR byte strings
+- `sendData()` / `onDataReceived()` for CBOR-encoded structured data through `cborg`
 
-`onIpcMessageReceived()` listens for `kirie:ipc-message` events dispatched by the
-native bridge.
+The structured data subset is limited to `null`, booleans, numbers, strings,
+arrays, and objects with string keys. JSON envelopes are a caller or adapter
+convention and should be sent with `sendText()` when needed.
+
+This package is currently wired to AndroidX WebKit message channels. iOS still
+uses the previous native path and is not part of this experimental API break.

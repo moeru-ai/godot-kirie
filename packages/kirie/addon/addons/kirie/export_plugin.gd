@@ -100,8 +100,10 @@ func _get_android_dependencies(
 	_platform: EditorExportPlatform,
 	_debug: bool
 ) -> PackedStringArray:
-	# This stays empty until the Android artifact coordinates are finalized.
-	return PackedStringArray()
+	return  [
+		"androidx.webkit:webkit:1.16.0",
+		"com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.21.3",
+	]
 
 
 func _get_android_dependencies_maven_repos(

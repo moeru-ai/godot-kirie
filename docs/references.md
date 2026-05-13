@@ -51,6 +51,11 @@ packaging, or platform WebView bridge details.
   Reference for message payloads when using the platform message APIs.
 - [WebMessagePort](https://developer.android.com/reference/android/webkit/WebMessagePort)
   Reference for channel-style messaging on Android WebView.
+- [AndroidX WebKit WebViewCompat](https://developer.android.com/reference/androidx/webkit/WebViewCompat)
+  Reference for AndroidX WebView message listener APIs used by Kirie's Android
+  ArrayBuffer IPC channels.
+- [AndroidX WebKit WebMessageCompat](https://developer.android.com/reference/androidx/webkit/WebMessageCompat)
+  Reference for WebView message payload types, including ArrayBuffer support.
 - [Upload your Android library](https://developer.android.com/studio/publish-library/upload-library)
   Publishing reference for Maven delivery of Android libraries and metadata.
 - [Gradle dependency management basics](https://docs.gradle.org/current/userguide/declaring_dependencies_basics.html)
@@ -70,6 +75,11 @@ packaging, or platform WebView bridge details.
 - [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
   Stable CBOR specification used as the primary reference for Kirie IPC v1
   packet encoding.
+- [Jackson CBOR data format](https://github.com/FasterXML/jackson-dataformats-binary/tree/2.21/cbor)
+  Android native CBOR implementation used for dynamic data lane decoding through
+  Jackson's tree model.
+- [cborg](https://github.com/rvagg/cborg)
+  Browser-side CBOR implementation used by `@gd-kirie/ipc`.
 - [Godot CEF IPC signals](https://godotcef.org/api/signals)
   Reference implementation and future compatibility target for separate text,
   binary, and CBOR-backed data IPC lanes.
@@ -124,8 +134,8 @@ packaging, or platform WebView bridge details.
 
 - When changing Android plugin packaging, start with the Godot Android plugin
   docs and `EditorExportPlugin`.
-- When changing Android IPC, start with `WebView`,
-  `JavascriptInterface`, and `WebMessagePort`.
+- When changing Android IPC, start with `WebView`, AndroidX WebKit
+  `WebViewCompat` and `WebMessageCompat`, RFC 8949, Jackson CBOR, and `cborg`.
 - When changing iOS IPC or packaging, start with `WKWebView`,
   `WKScriptMessageHandler`, and `EditorExportPlugin`.
 - When changing the IPC packet format or data lane, start with RFC 8949 and

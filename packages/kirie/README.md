@@ -25,7 +25,9 @@ private readonly KirieClient _kirie = new();
 public override void _Ready()
 {
     _kirie.WebViewReady += OnWebViewReady;
-    _kirie.IpcMessageReceived += OnIpcMessageReceived;
+    _kirie.TextReceived += OnTextReceived;
+    _kirie.BinaryReceived += OnBinaryReceived;
+    _kirie.DataReceived += OnDataReceived;
     _kirie.IpcError += GD.PushError;
 
     if (_kirie.IsAvailable)

@@ -16,9 +16,11 @@ invocation APIs, is deferred until the IPC model is proven. The current
 `@gd-kirie/ipc` package is intentionally only a browser-side transport wrapper on
 top of the raw native bridge.
 
-The next planned IPC milestone keeps Kirie core byte-oriented and CBOR-based
-while preserving separate text, binary, and data lanes. Higher-level protocols,
-including the planned Eventa adapter, remain above Kirie.
+The Android IPC experiment keeps Kirie core byte-oriented and CBOR-based while
+preserving separate text, binary, and data lanes. Higher-level protocols,
+including the planned Eventa adapter, remain above Kirie. iOS still uses the
+previous text-oriented native path and has not yet been migrated to binary CBOR
+lanes.
 
 ## Current Godot API direction
 
@@ -34,13 +36,16 @@ Current public Godot-facing names should stay close to that low-level role:
 - `destroy_webview()`
 - `load_url(url)`
 - `load_html_string(html, base_url := "")`
-- `send_ipc_message(message)`
+- `send_text(message)`
+- `send_binary(bytes)`
+- `send_data(value)`
 - `get_launch_option(key)`
 
-These names describe the current implementation. The next planned IPC v1 work
-will replace the JSON-shaped message API with text, binary, and data lane APIs.
-When that migration lands, update the example project, platform integration
-tests, and this architecture note in the same change.
+These names describe the current low-level transport API. Android implements
+the lane shape with AndroidX WebKit ArrayBuffer message channels and CBOR
+packets. iOS remains text-only; the Godot wrapper keeps a compatibility
+fallback to the previous `sendIpcMessage` native method for text sends on
+unmigrated platforms.
 
 The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side
@@ -55,7 +60,9 @@ callbacks.
 Current signals should also stay narrow:
 
 - `webview_ready`
-- `ipc_message_received`
+- `text_received`
+- `binary_received`
+- `data_received`
 - `ipc_error`
 
 Browser lifecycle events and higher-level invocation APIs are intentionally
@@ -130,17 +137,27 @@ The release artifact shape and workflow modes live in
 The planned .NET Eventa adapter will introduce a separate NuGet release lane.
 Keep it separate from addon zip publishing and npm publishing.
 
-## Planned IPC and adapter split
+## IPC and adapter split
 
-This direction is planned, not implemented.
+Kirie IPC is moving from the previous JSON-shaped message path to explicit
+`text`, `binary`, and `data` lanes. Android currently implements this lane shape
+over byte-oriented CBOR packets:
 
-Kirie IPC should move from the current JSON-shaped message path to explicit
-`text`, `binary`, and `data` lanes. All lanes should use a byte-oriented CBOR
-packet envelope. Text payloads are CBOR text strings, binary payloads are CBOR
-byte strings, and data payloads are a constrained cross-platform data subset:
-null, booleans, finite numbers, strings, byte arrays, arrays, and maps with
-string keys. Godot objects, nodes, callables, RIDs, and other engine-local values
-are out of scope for the data lane.
+- text payloads are CBOR text strings
+- binary payloads are CBOR byte strings
+- data payloads are a constrained cross-platform data subset: null, booleans,
+  numbers, strings, arrays, and maps with string keys
+
+Godot objects, nodes, callables, RIDs, symbols, functions, custom classes,
+cycles, dates, regular expressions, and other engine-local or JavaScript-local
+values are out of scope for the data lane.
+
+The browser-side `@gd-kirie/ipc` package uses `cborg` for CBOR. Android native
+code uses Jackson CBOR because it provides a dynamic `JsonNode` tree for the
+data lane; Kotlinx Serialization CBOR is schema-first and is not used for the
+dynamic data lane. Android converts `JsonNode` values into Godot-compatible JVM
+objects before emitting Godot signals. Do not add a GDScript CBOR codec for this
+path.
 
 Godot CEF is a learning reference and future compatibility target because it
 separates `ipc_message`, `ipc_binary_message`, and `ipc_data_message`, with its

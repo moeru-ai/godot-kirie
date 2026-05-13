@@ -1,8 +1,10 @@
 class_name GdKirie
 extends Object
 
-signal webview_ready()
-signal ipc_message_received(message: Variant)
+signal webview_ready
+signal text_received(message: String)
+signal binary_received(bytes: PackedByteArray)
+signal data_received(value: Variant)
 signal ipc_error(error: String)
 
 const PLUGIN_SINGLETON_NAME := "Kirie"
@@ -56,13 +58,28 @@ func load_html_string(html: String, base_url: String = "") -> void:
 	_plugin_singleton.loadHtmlString(html, base_url)
 
 
-func send_ipc_message(message: Variant) -> void:
-	if not _ensure_plugin_singleton("send_ipc_message"):
+func send_text(message: String) -> void:
+	if not _ensure_plugin_singleton("send_text"):
 		return
 
-	var message_json := JSON.stringify(message)
-	print("[Kirie][gd] send_ipc_message %s" % message_json)
-	_plugin_singleton.sendIpcMessage(message_json)
+	print("[Kirie][gd] send_text bytes=%d" % message.length())
+	_plugin_singleton.sendText(message)
+
+
+func send_binary(bytes: PackedByteArray) -> void:
+	if not _ensure_plugin_singleton("send_binary"):
+		return
+
+	print("[Kirie][gd] send_binary bytes=%d" % bytes.size())
+	_plugin_singleton.sendBinary(bytes)
+
+
+func send_data(value: Variant) -> void:
+	if not _ensure_plugin_singleton("send_data"):
+		return
+
+	print("[Kirie][gd] send_data %s" % str(value))
+	_plugin_singleton.sendData(value)
 
 
 func get_launch_option(key: String) -> String:
@@ -84,10 +101,11 @@ func _connect_plugin_signals() -> void:
 
 	if OS.get_name() == "iOS":
 		print("[Kirie][gd] registering iOS callbacks")
+		var webview_ready_callback := Callable(self, "_on_plugin_webview_ready")
+		var text_received_callback := Callable(self, "_on_plugin_text_received")
+		var ipc_error_callback := Callable(self, "_on_plugin_ipc_error")
 		_plugin_singleton.registerCallbacks(
-			Callable(self, "_on_plugin_webview_ready"),
-			Callable(self, "_on_plugin_ipc_message_received"),
-			Callable(self, "_on_plugin_ipc_error"),
+			webview_ready_callback, text_received_callback, ipc_error_callback
 		)
 		return
 
@@ -95,9 +113,17 @@ func _connect_plugin_signals() -> void:
 		print("[Kirie][gd] connecting Android webview_ready signal")
 		_plugin_singleton.webview_ready.connect(_on_plugin_webview_ready)
 
-	if _plugin_singleton.has_signal(&"ipc_message_received"):
-		print("[Kirie][gd] connecting Android ipc_message_received signal")
-		_plugin_singleton.ipc_message_received.connect(_on_plugin_ipc_message_received)
+	if _plugin_singleton.has_signal(&"text_received"):
+		print("[Kirie][gd] connecting Android text_received signal")
+		_plugin_singleton.text_received.connect(_on_plugin_text_received)
+
+	if _plugin_singleton.has_signal(&"binary_received"):
+		print("[Kirie][gd] connecting Android binary_received signal")
+		_plugin_singleton.binary_received.connect(_on_plugin_binary_received)
+
+	if _plugin_singleton.has_signal(&"data_received"):
+		print("[Kirie][gd] connecting Android data_received signal")
+		_plugin_singleton.data_received.connect(_on_plugin_data_received)
 
 	if _plugin_singleton.has_signal(&"ipc_error"):
 		print("[Kirie][gd] connecting Android ipc_error signal")
@@ -119,14 +145,19 @@ func _on_plugin_webview_ready() -> void:
 	webview_ready.emit()
 
 
-func _on_plugin_ipc_message_received(message_json: String) -> void:
-	print("[Kirie][gd] signal ipc_message_received raw=%s" % message_json)
-	var parsed_message := JSON.parse_string(message_json)
-	if parsed_message == null and message_json != "null":
-		ipc_message_received.emit(message_json)
-		return
+func _on_plugin_text_received(message: String) -> void:
+	print("[Kirie][gd] signal text_received %s" % message)
+	text_received.emit(message)
 
-	ipc_message_received.emit(parsed_message)
+
+func _on_plugin_binary_received(bytes: PackedByteArray) -> void:
+	print("[Kirie][gd] signal binary_received bytes=%d" % bytes.size())
+	binary_received.emit(bytes)
+
+
+func _on_plugin_data_received(value: Variant) -> void:
+	print("[Kirie][gd] signal data_received %s" % str(value))
+	data_received.emit(value)
 
 
 func _on_plugin_ipc_error(error: String) -> void:

@@ -22,7 +22,7 @@ Godot -> Kirie platform singleton -> platform WebView -> JavaScript -> Godot
 The current focus is:
 
 - WebView lifecycle behavior from Godot
-- raw JavaScript bridge IPC
+- raw WebView IPC
 - resource loading through `res://`
 - C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
@@ -31,9 +31,10 @@ The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
 package. That package is a convenience SDK above the raw bridge contract and
 should be tested separately.
 
-When IPC v1 lands, this project should keep testing the raw bridge contract and
-add focused text, binary, and data round-trip cases. Eventa adapter behavior
-should be tested separately above the raw bridge.
+The integration project still needs migration from the legacy JSON message
+bridge to the explicit text, binary, and data lane API. After that migration it
+should keep testing the raw bridge contract with focused lane round-trip cases.
+Eventa adapter behavior should be tested separately above the raw bridge.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
@@ -109,15 +110,19 @@ the Kirie API it wants to exercise:
 - `create_webview()`
 - `load_html_string(...)`
 - `load_url(...)`
-- `send_ipc_message(...)`
+- `send_text(...)`
+- `send_binary(...)`
+- `send_data(...)`
 - `destroy_webview()`
 
-Shared waiting and probe observation lives in `scripts/test_probe.gd`.
-`KirieIntegrationProbe` may:
+Shared waiting and probe observation lives in `scripts/test_probe.gd`. The
+current probe code still refers to the legacy `ipc_message_received` signal and
+must be updated before the integration project can validate the Android CBOR
+lane implementation. `KirieIntegrationProbe` may:
 
 - connect to Kirie signals
 - wait for `webview_ready`
-- collect `ipc_message_received`
+- collect lane messages
 - wait for a specific probe message
 - read `web/probe.html`
 
@@ -126,8 +131,8 @@ be provided by the test case itself.
 
 ## Web Fixture
 
-`web/probe.html` is a small raw bridge fixture. It uses the platform-level
-contract directly:
+`web/probe.html` is a small raw bridge fixture. It currently uses the legacy
+platform-level JSON contract directly:
 
 - Android JavaScript to Godot:
   `globalThis.KirieAndroidBridge.postMessage(messageJson)`
@@ -135,6 +140,9 @@ contract directly:
   `globalThis.webkit.messageHandlers.kirie.postMessage(messageJson)`
 - Godot to JavaScript:
   `kirie:ipc-message` DOM events
+
+For Android IPC v1 validation this fixture should be rewritten to use the same
+AndroidX WebKit ArrayBuffer channels exposed to `@gd-kirie/ipc`.
 
 For tests that do not care about asset loading, the GDScript case reads
 `probe.html` and injects it with `load_html_string(...)`. This keeps the test

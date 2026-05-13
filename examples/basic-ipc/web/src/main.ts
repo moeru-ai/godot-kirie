@@ -1,4 +1,4 @@
-import { onIpcMessageReceived, sendIpcMessage } from "@gd-kirie/ipc";
+import { onTextReceived, sendText } from "@gd-kirie/ipc";
 
 import "./style.css";
 
@@ -56,16 +56,20 @@ function appendLog(line: string): void {
 }
 
 function postToGodot(message: WebToGodotMessage): void {
+  const messageText = JSON.stringify(message);
+
   try {
-    sendIpcMessage(message);
-    appendLog(`Sent to Godot: ${JSON.stringify(message)}`);
+    sendText(messageText);
+    appendLog(`Sent text to Godot: ${messageText}`);
   } catch (error) {
     appendLog(error instanceof Error ? error.message : "Kirie native bridge is unavailable");
   }
 }
 
-onIpcMessageReceived<GodotToWebMessage>((message) => {
-  appendLog(`Received from Godot: ${JSON.stringify(message)}`);
+onTextReceived((messageText) => {
+  appendLog(`Received text from Godot: ${messageText}`);
+
+  const message = JSON.parse(messageText) as GodotToWebMessage;
 
   if (mode === "probe" && message.type === "godot_ready") {
     postToGodot({

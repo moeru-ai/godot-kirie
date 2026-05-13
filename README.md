@@ -76,7 +76,10 @@ as adapters above Kirie. The C# surface is a thin `KirieClient` wrapper over the
 same platform singleton used by GDScript, with C# events for the current Kirie
 signals.
 
-The next planned IPC direction is tracked in
-[docs/architecture.md](docs/architecture.md): Kirie core should move toward
-text, binary, and data lanes over a CBOR packet format while leaving JSON and
-Eventa semantics to adapter layers.
+The Android IPC experiment uses explicit text, binary, and data lanes over CBOR
+packets. The browser package encodes and decodes those packets with
+`cborg`, while Android native code uses Jackson CBOR and converts structured
+data through Jackson's tree model before emitting Godot-compatible values. JSON
+and Eventa envelopes remain caller or adapter choices carried over the text
+lane, not Kirie core payload types. iOS is still on the previous text-oriented
+native path and has not yet been migrated to binary CBOR lanes.

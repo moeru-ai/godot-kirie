@@ -18,9 +18,11 @@ package is a thin browser-side transport wrapper; do not expand it into an
 application event or invocation layer unless the user explicitly asks for that
 higher-level work.
 
-The planned IPC v1 direction keeps Kirie core byte-oriented and CBOR-based with
-text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
-core. Keep planned Eventa adapters above Kirie and out of `addons/kirie`.
+The Android IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based
+with text, binary, and data lanes. JSON belongs to callers or adapters, not to
+Kirie core. Keep planned Eventa adapters above Kirie and out of `addons/kirie`.
+iOS still uses the previous text-oriented native path and is not yet migrated to
+the Android CBOR lane shape.
 
 ## Repository Layout
 
@@ -73,6 +75,10 @@ label them as anecdotal when they influence a decision.
 - For IPC v1, treat `text`, `binary`, and `data` as Kirie core lanes over a
   CBOR packet format. Do not reintroduce automatic JSON serialization into
   Kirie core; JSON is an application or adapter encoding choice.
+- On Android, the browser package uses `cborg`, WebView transport uses AndroidX
+  WebKit `WebMessageListener` ArrayBuffer channels, and native encoding or
+  decoding uses Jackson CBOR. Keep Godot-side GDScript and C# wrappers thin;
+  do not add a GDScript CBOR codec.
 - Use Godot CEF as a learning reference and future compatibility target for
   text, binary, and CBOR-backed data IPC lanes.
 - For the current milestone, assume a single active WebView unless the user
@@ -180,6 +186,9 @@ configured yet.
 
 - Prefer type inference in GDScript, TypeScript, Kotlin, and Swift when the
   inferred type is stable and obvious.
+- Prefer current stable language syntax supported by the repository toolchain
+  when it improves type clarity or reduces boilerplate without hurting
+  readability.
 - Do not add redundant explicit types to short local variables just to satisfy a
   style preference.
 - Keep public APIs, cross-language boundaries, exported properties, signal
@@ -221,11 +230,12 @@ configured yet.
 ### Public API stability
 
 - Treat `Kirie` and `KirieView` as the primary public API surfaces.
-- Prefer low-level public names such as `load_url` and `send_ipc_message` while
-  the bridge remains transport-oriented.
-- When implementing IPC v1, replace the JSON-shaped message API with explicit
-  text, binary, and data lane APIs, and update examples, integration tests, and
-  documentation in the same change.
+- Prefer low-level public names such as `load_url`, `send_text`, `send_binary`,
+  and `send_data` while the bridge remains transport-oriented.
+- When extending IPC v1, keep the explicit text, binary, and data lane APIs
+  aligned across GDScript, C#, the browser package, and native platforms. Do not
+  revive the JSON-shaped `send_ipc_message` path except as a temporary
+  compatibility fallback for an unmigrated platform.
 - Do not rename public methods, signal names, or exported properties without a
   clear reason.
 - If a public API change is necessary, update the example project and
@@ -256,7 +266,8 @@ configured yet.
 - After changing iOS native code under `packages/kirie/native/ios`, always run
   `mise x -- corepack pnpm run build:ios-xcframework` before device testing.
 - When changing the IPC shape, make sure at least one real request/response
-  round-trip remains covered by the example or integration tests.
+  exchange remains manually smoke-tested through `examples/basic-ipc` or covered
+  by integration tests once those tests are migrated to the lane API.
 - When changing `KirieClient`, compile it against the Godot .NET SDK. A platform
   integration smoke test for its C# event API is still pending.
 

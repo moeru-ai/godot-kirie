@@ -27,11 +27,7 @@ data class KirieRuntimeConfig(
                 return false
             }
 
-            if (getBoolean(key, false)) {
-                return true
-            }
-
-            return getString(key)?.equals("true", ignoreCase = true) == true
+            return getBoolean(key, false)
         }
 
         private fun Activity.applicationMetadata() =

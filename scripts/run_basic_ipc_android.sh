@@ -20,6 +20,7 @@ packages/kirie/native/android/gradlew \
 mise x -- godot \
     --headless \
     --path examples/basic-ipc \
+    --install-android-build-template \
     --export-debug "Android" \
     "../../${APK_PATH}"
 

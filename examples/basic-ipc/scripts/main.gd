@@ -1,11 +1,5 @@
 extends Control
 
-const DEFAULT_OUTBOUND_MESSAGE := {
-	"type": "godot_ping",
-	"payload": {
-		"source": "godot",
-	},
-}
 const PAGE_URL := "res://web/dist/index.html"
 const PROBE_PAGE_URL := "res://web/dist/index.html?mode=probe"
 
@@ -21,7 +15,7 @@ var _webview_is_ready := false
 
 func _ready() -> void:
 	_kirie.webview_ready.connect(_on_webview_ready)
-	_kirie.ipc_message_received.connect(_on_ipc_message_received)
+	_kirie.text_received.connect(_on_text_received)
 	_kirie.ipc_error.connect(_on_ipc_error)
 
 	if not _kirie.is_available():
@@ -40,9 +34,8 @@ func _on_create_button_pressed() -> void:
 	var url := _url_input.text.strip_edges()
 	_set_status("Status: creating WebView")
 	_append_log("create_webview initial_url=%s" % url)
-	_kirie.create_webview({
-		"initial_url": url,
-	})
+	var options := {"initial_url": url}
+	_kirie.create_webview(options)
 
 
 func _on_probe_button_pressed() -> void:
@@ -84,21 +77,24 @@ func _on_webview_ready() -> void:
 		_load_probe_page()
 
 
-func _on_ipc_message_received(message: Variant) -> void:
-	_append_log("signal ipc_message_received %s" % JSON.stringify(message))
+func _on_text_received(message_text: String) -> void:
+	_append_log("signal text_received %s" % message_text)
 
+	var message: Variant = JSON.parse_string(message_text)
 	if typeof(message) != TYPE_DICTIONARY:
 		return
 
 	var message_type := str(message.get("type", ""))
 	if message_type == "web_ready":
 		_set_status("Status: received web_ready")
-		_kirie.send_ipc_message({
+		var reply := {
 			"type": "godot_ready",
-			"payload": {
+			"payload":
+			{
 				"message": "Hello from Godot",
 			},
-		})
+		}
+		_kirie.send_text(JSON.stringify(reply))
 		return
 
 	if message_type == "web_ack":
@@ -116,8 +112,14 @@ func _send_test_message() -> void:
 	if not _kirie.is_available():
 		return
 
-	_append_log("send_ipc_message %s" % JSON.stringify(DEFAULT_OUTBOUND_MESSAGE))
-	_kirie.send_ipc_message(DEFAULT_OUTBOUND_MESSAGE)
+	var message := {
+		"type": "godot_ping",
+		"payload":
+		{
+			"source": "godot",
+		},
+	}
+	_kirie.send_text(JSON.stringify(message))
 
 
 func _load_probe_page() -> void:
