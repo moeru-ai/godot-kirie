@@ -41,6 +41,8 @@ Android CBOR lane shape.
   .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`
   the first runnable manual integration target
+- `examples/eventa-csharp`
+  manual Godot C# Eventa adapter smoke example
 - `tests/integration`
   exported-app platform bridge regression target
 - `gulpfile.ts`

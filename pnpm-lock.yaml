@@ -37,6 +37,25 @@ importers:
         specifier: ^8.0.10
         version: 8.0.10(@types/node@25.6.0)(jiti@2.6.1)(yaml@2.8.3)
 
+  examples/eventa-csharp/web:
+    dependencies:
+      '@gd-kirie/ipc-eventa':
+        specifier: workspace:*
+        version: link:../../../packages/ipc-eventa
+      '@moeru/eventa':
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.4
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.10(@types/node@25.6.0)(jiti@2.6.1)(yaml@2.8.3)
+
   packages/ipc:
     dependencies:
       cborg:
