@@ -40,19 +40,28 @@ func _run_probe(
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_ipc_message({
-		"type": "godot_ready",
-		"payload": {
-			"probe": probe_name,
-			"test": test_name,
-		},
-	})
+	(
+		kirie
+		. send_ipc_message(
+			{
+				"type": "godot_ready",
+				"payload":
+				{
+					"probe": probe_name,
+					"test": test_name,
+				},
+			}
+		)
+	)
 
 	return await probe.wait_for_message("web_ack", probe_name)
 
 
 func _probe_url(probe_name: String, test_name: String) -> String:
-	return "res://web/probe.html?probe=%s&test=%s" % [
-		probe_name.uri_encode(),
-		test_name.uri_encode(),
-	]
+	return (
+		"res://web/probe.html?probe=%s&test=%s"
+		% [
+			probe_name.uri_encode(),
+			test_name.uri_encode(),
+		]
+	)

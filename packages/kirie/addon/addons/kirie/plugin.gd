@@ -17,4 +17,3 @@ func _exit_tree() -> void:
 
 	remove_export_plugin(_export_plugin)
 	_export_plugin = null
-

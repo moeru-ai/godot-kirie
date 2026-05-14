@@ -66,14 +66,16 @@ func _supports_platform(platform: EditorExportPlatform) -> bool:
 func _get_export_options(_platform: EditorExportPlatform) -> Array[Dictionary]:
 	return [
 		{
-			"option": {
+			"option":
+			{
 				"name": OPTION_ENABLE_WEB_INSPECTOR,
 				"type": TYPE_BOOL,
 			},
 			"default_value": false,
 		},
 		{
-			"option": {
+			"option":
+			{
 				"name": OPTION_ALLOW_TLS_BYPASS,
 				"type": TYPE_BOOL,
 			},
@@ -83,10 +85,7 @@ func _get_export_options(_platform: EditorExportPlatform) -> Array[Dictionary]:
 
 
 func _export_begin(
-	features: PackedStringArray,
-	_is_debug: bool,
-	_path: String,
-	_flags: int
+	features: PackedStringArray, _is_debug: bool, _path: String, _flags: int
 ) -> void:
 	if not features.has("ios"):
 		return
@@ -96,59 +95,57 @@ func _export_begin(
 	_add_ios_web_bundle_files(DEFAULT_WEB_ROOT)
 
 
-func _get_android_dependencies(
-	_platform: EditorExportPlatform,
-	_debug: bool
-) -> PackedStringArray:
-	return  [
+func _get_android_dependencies(_platform: EditorExportPlatform, _debug: bool) -> PackedStringArray:
+	return [
 		"androidx.webkit:webkit:1.16.0",
 		"com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.21.3",
 	]
 
 
 func _get_android_dependencies_maven_repos(
-	_platform: EditorExportPlatform,
-	_debug: bool
+	_platform: EditorExportPlatform, _debug: bool
 ) -> PackedStringArray:
 	return PackedStringArray()
 
 
-func _get_android_libraries(
-	_platform: EditorExportPlatform,
-	_debug: bool
-) -> PackedStringArray:
+func _get_android_libraries(_platform: EditorExportPlatform, _debug: bool) -> PackedStringArray:
 	match _get_android_aar_mode():
 		"debug":
 			return PackedStringArray([ANDROID_DEBUG_AAR])
 		"release":
 			return PackedStringArray([ANDROID_RELEASE_AAR])
 
-	var message := "[Kirie][export] invalid Android AAR mode. Use %s=debug or %s=release" % [
-		ANDROID_DEBUG_AAR_ARG,
-		ANDROID_DEBUG_AAR_ARG,
-	]
+	var message := (
+		"[Kirie][export] invalid Android AAR mode. Use %s=debug or %s=release"
+		% [
+			ANDROID_DEBUG_AAR_ARG,
+			ANDROID_DEBUG_AAR_ARG,
+		]
+	)
 	push_error(message)
 	assert(false, message)
 	return PackedStringArray()
 
 
 func _get_android_manifest_application_element_contents(
-	_platform: EditorExportPlatform,
-	_debug: bool
+	_platform: EditorExportPlatform, _debug: bool
 ) -> String:
-	return """
+	return (
+		"""
         <meta-data
             android:name="%s"
             android:value="%s" />
         <meta-data
             android:name="%s"
             android:value="%s" />
-""" % [
-		ANDROID_META_ENABLE_WEB_INSPECTOR,
-		_xml_bool(_option_enabled(OPTION_ENABLE_WEB_INSPECTOR)),
-		ANDROID_META_ALLOW_TLS_BYPASS,
-		_xml_bool(_option_enabled(OPTION_ALLOW_TLS_BYPASS)),
-	]
+"""
+		% [
+			ANDROID_META_ENABLE_WEB_INSPECTOR,
+			_xml_bool(_option_enabled(OPTION_ENABLE_WEB_INSPECTOR)),
+			ANDROID_META_ALLOW_TLS_BYPASS,
+			_xml_bool(_option_enabled(OPTION_ALLOW_TLS_BYPASS)),
+		]
+	)
 
 
 func _get_android_aar_mode() -> String:
@@ -165,18 +162,20 @@ func _get_android_aar_mode() -> String:
 
 func _add_ios_runtime_configuration() -> void:
 	add_apple_embedded_platform_plist_content(
-		"""
+		(
+			"""
 <key>%s</key>
 %s
 <key>%s</key>
 %s
 """
-		% [
-			IOS_PLIST_ENABLE_WEB_INSPECTOR_KEY,
-			_plist_bool(_option_enabled(OPTION_ENABLE_WEB_INSPECTOR)),
-			IOS_PLIST_ALLOW_TLS_BYPASS_KEY,
-			_plist_bool(_option_enabled(OPTION_ALLOW_TLS_BYPASS)),
-		]
+			% [
+				IOS_PLIST_ENABLE_WEB_INSPECTOR_KEY,
+				_plist_bool(_option_enabled(OPTION_ENABLE_WEB_INSPECTOR)),
+				IOS_PLIST_ALLOW_TLS_BYPASS_KEY,
+				_plist_bool(_option_enabled(OPTION_ALLOW_TLS_BYPASS)),
+			]
+		)
 	)
 
 	if not _option_enabled(OPTION_ALLOW_TLS_BYPASS):

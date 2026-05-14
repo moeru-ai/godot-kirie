@@ -8,6 +8,7 @@ var _kirie := GdKirieScript.new()
 var _test_name := ""
 var _finished := false
 
+
 func _ready() -> void:
 	if not _kirie.is_available():
 		_test_name = "unknown"

@@ -11,7 +11,7 @@
     "build:integration-ios": "gulp buildIntegrationIos",
     "build:ios-xcframework": "gulp buildIosXcframework",
     "build:native-artifacts": "gulp buildNativeArtifacts",
-    "build:packages": "pnpm -r --filter './packages/*' run build",
+    "build:packages": "pnpm -rF './packages/*' run build",
     "check:addon-pack": "gulp checkAddonPack",
     "format": "pnpm run format:biome && pnpm run format:gdscript && pnpm run format:kotlin && pnpm run format:swift",
     "format:biome": "biome check --write .",
@@ -24,8 +24,8 @@
     "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
     "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
     "release": "bumpp",
-    "test:unit": "pnpm -r --if-present run test:run",
-    "typecheck": "pnpm -r run typecheck"
+    "test:unit": "pnpm -rF './packages/*' run test:run",
+    "typecheck": "pnpm -rF './packages/*' run typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

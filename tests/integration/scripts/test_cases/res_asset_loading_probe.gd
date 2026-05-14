@@ -23,12 +23,18 @@ func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_ipc_message({
-		"type": "godot_ready",
-		"payload": {
-			"probe": PROBE_NAME,
-			"test": test_name,
-		},
-	})
+	(
+		kirie
+		. send_ipc_message(
+			{
+				"type": "godot_ready",
+				"payload":
+				{
+					"probe": PROBE_NAME,
+					"test": test_name,
+				},
+			}
+		)
+	)
 
 	return await probe.wait_for_message("web_ack", PROBE_NAME)

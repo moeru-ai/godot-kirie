@@ -51,7 +51,9 @@ func wait_for_webview_ready(probe_name: String) -> String:
 
 		await _tree.process_frame
 
-	return "Timed out after %.1fs waiting for webview_ready during %s" % [timeout_seconds, probe_name]
+	return (
+		"Timed out after %.1fs waiting for webview_ready during %s" % [timeout_seconds, probe_name]
+	)
 
 
 func wait_for_message(message_type: String, probe_name: String) -> String:
@@ -66,12 +68,15 @@ func wait_for_message(message_type: String, probe_name: String) -> String:
 
 		await _tree.process_frame
 
-	return "Timed out after %.1fs waiting for %s during %s; observed messages=%s" % [
-		timeout_seconds,
-		message_type,
-		probe_name,
-		JSON.stringify(_messages),
-	]
+	return (
+		"Timed out after %.1fs waiting for %s during %s; observed messages=%s"
+		% [
+			timeout_seconds,
+			message_type,
+			probe_name,
+			JSON.stringify(_messages),
+		]
+	)
 
 
 func _has_message(message_type: String, probe_name: String) -> bool:
