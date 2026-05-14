@@ -26,10 +26,10 @@ type WebToGodotMessage =
       };
     };
 
-type GodotToWebMessage = {
+interface GodotToWebMessage {
   type?: string;
   payload?: unknown;
-};
+}
 
 const logNodeElement = document.querySelector<HTMLPreElement>("#log");
 const sendButtonElement = document.querySelector<HTMLButtonElement>("#sendButton");

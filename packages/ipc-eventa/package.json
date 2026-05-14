@@ -1,0 +1,44 @@
+{
+  "name": "@gd-kirie/ipc-eventa",
+  "version": "0.1.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moeru-ai/godot-kirie.git",
+    "directory": "packages/ipc-eventa"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test:run": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@gd-kirie/ipc": "workspace:*",
+    "@moeru/eventa": "^1.0.0-beta.3"
+  },
+  "devDependencies": {
+    "tsdown": "^0.21.10",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  }
+}

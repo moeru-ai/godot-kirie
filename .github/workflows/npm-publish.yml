@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ipc:
-    name: Publish @gd-kirie/ipc
+  packages:
+    name: Publish npm packages
     runs-on: ubuntu-latest
 
     steps:
@@ -40,8 +40,8 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck @gd-kirie/ipc
-        run: pnpm --filter @gd-kirie/ipc run typecheck
+      - name: Typecheck packages
+        run: pnpm run typecheck
 
       - name: Build packages
         run: pnpm run build:packages

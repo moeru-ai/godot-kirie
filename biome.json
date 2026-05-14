@@ -25,6 +25,14 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "nursery": {
+        "useConsistentTypeDefinitions": {
+          "level": "error",
+          "options": {
+            "style": "interface"
+          }
+        }
+      },
       "recommended": true
     }
   },

@@ -10,10 +10,10 @@ lane for .NET adapter packages.
 ## Current Packages
 
 - `@gd-kirie/ipc` is published from `packages/ipc`.
+- `@gd-kirie/ipc-eventa` is published from `packages/ipc-eventa`.
 
-The planned Eventa JavaScript adapter, if introduced as
-`@gd-kirie/ipc-eventa`, should use the same npm publishing lane while keeping
-Eventa protocol behavior above the low-level `@gd-kirie/ipc` transport package.
+`@gd-kirie/ipc-eventa` uses the same npm publishing lane while keeping Eventa
+protocol behavior above the low-level `@gd-kirie/ipc` transport package.
 
 ## npm Setup
 

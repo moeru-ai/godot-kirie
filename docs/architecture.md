@@ -164,7 +164,7 @@ separates `ipc_message`, `ipc_binary_message`, and `ipc_data_message`, with its
 data lane documented as CBOR-backed.
 
 Eventa remains above Kirie. The first Eventa adapter should support event
-emission and unary request/response RPC only. Its JSON envelope is an adapter
+emission and unary request/response RPC only. Its JSON message is an adapter
 encoding over Kirie text IPC, not a Kirie core payload type. Treat
 `moeru-ai/eventa` and `moeru-ai/eventa.net` as the upstream Eventa projects; do
 not change those projects unless the adapter exposes a real design issue. The
@@ -172,3 +172,10 @@ not change those projects unless the adapter exposes a real design issue. The
 a package under `packages/GdKirie.EventaAdapter`, and a NuGet-provided source
 bridge for connecting to addon-shipped `KirieClient.cs` without putting Eventa
 files in `addons/kirie`.
+
+The Eventa adapter should gain a binary or structured transport after the text
+transport proves the event and unary RPC shape. Prefer an explicit opt-in entry
+point, such as a data-lane context, before changing the default transport. The
+binary transport should use Kirie's CBOR-backed data or binary lane directly
+instead of layering another JSON string over it, and it should document any
+payload restrictions that come from Kirie's cross-platform data subset.

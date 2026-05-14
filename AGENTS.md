@@ -193,6 +193,11 @@ configured yet.
   style preference.
 - Keep public APIs, cross-language boundaries, exported properties, signal
   payloads, and bridge-facing types explicit when that improves readability.
+- For TypeScript object shapes, prefer `interface` over `type`. Keep `type` for
+  unions, intersections, mapped types, conditional types, and other aliases that
+  are not simple object shapes. This is enforced by Biome's
+  `lint/nursery/useConsistentTypeDefinitions` rule; do not add custom checks for
+  this preference.
 - Prefer idiomatic C# events on public C# wrappers instead of exposing raw Godot
   signal connection details to C# users.
 - Prefer `val` over `var` in Kotlin unless mutation is required.

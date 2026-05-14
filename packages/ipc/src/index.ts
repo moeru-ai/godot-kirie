@@ -3,10 +3,10 @@ import { decode, encode } from "cborg";
 const READY_MESSAGE = new ArrayBuffer(0);
 const ENCODE_OPTIONS = { float64: true } as const;
 
-type KirieAndroidChannel = {
+interface KirieAndroidChannel {
   postMessage(message: ArrayBuffer): void;
   onmessage: ((event: MessageEvent) => void) | null;
-};
+}
 
 declare global {
   interface Window {

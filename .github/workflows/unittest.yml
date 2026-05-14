@@ -1,0 +1,54 @@
+name: Unit Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unittest:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    env:
+      MISE_EXEC_AUTO_INSTALL: "false"
+      MISE_NOT_FOUND_AUTO_INSTALL: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Node
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          install_args: node
+          cache: true
+
+      - name: Enable Corepack
+        run: mise x -- corepack enable pnpm
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install pnpm dependencies
+        run: mise x -- corepack pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: mise x -- corepack pnpm run test:unit

@@ -24,6 +24,7 @@
     "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
     "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
     "release": "bumpp",
+    "test:unit": "pnpm -r --if-present run test:run",
     "typecheck": "pnpm -r run typecheck"
   },
   "devDependencies": {
