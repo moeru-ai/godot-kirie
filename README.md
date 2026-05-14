@@ -53,6 +53,8 @@ example, and regression-test areas:
 - `packages/kirie`: the Godot addon, C# wrapper, and Android and iOS native
   plugin code
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
+- `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
+- `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`: the first runnable manual integration example
 - `tests/integration`: exported-app platform integration tests
 - `gulpfile.ts`: native artifact and integration export orchestration
@@ -70,11 +72,11 @@ The first milestone is limited to:
 4. Stabilize the minimum Kirie plugin shape before adding adapters and tooling.
 
 At this stage, Kirie is intended to stay a low-level WebView and IPC bridge. A
-small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper,
-but higher-level application semantics are still deferred to future layers such
-as adapters above Kirie. The C# surface is a thin `KirieClient` wrapper over the
-same platform singleton used by GDScript, with C# events for the current Kirie
-signals.
+small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper.
+Eventa adapters live above that bridge: `@gd-kirie/ipc-eventa` for browser
+pages, and `GdKirie.EventaAdapter` for .NET 10 C# projects. The C# surface is a
+thin `KirieClient` wrapper over the same platform singleton used by GDScript,
+with C# events for the current Kirie signals.
 
 The Android IPC experiment uses explicit text, binary, and data lanes over CBOR
 packets. The browser package encodes and decodes those packets with
@@ -83,3 +85,8 @@ data through Jackson's tree model before emitting Godot-compatible values. JSON
 and Eventa envelopes remain caller or adapter choices carried over the text
 lane, not Kirie core payload types. iOS is still on the previous text-oriented
 native path and has not yet been migrated to binary CBOR lanes.
+
+`GdKirie.EventaAdapter` intentionally targets `net10.0` because the upstream
+Eventa .NET package targets `net10.0`, and .NET 8 LTS reaches end of support on
+2026-11-10. Godot C# projects targeting `net8.0` or `net9.0` should expect
+restore or build failures when referencing the adapter.

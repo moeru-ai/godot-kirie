@@ -11,16 +11,15 @@ We are standardizing only the minimum plugin shape needed to support:
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
 
-Anything beyond that, such as CLI tooling, app-level event adapters, or
-invocation APIs, is deferred until the IPC model is proven. The current
-`@gd-kirie/ipc` package is intentionally only a browser-side transport wrapper on
-top of the raw native bridge.
+Anything beyond that, such as CLI tooling or broad application frameworks, is
+deferred until the IPC model is proven. The current `@gd-kirie/ipc` package is
+intentionally only a browser-side transport wrapper on top of the raw native
+bridge. Eventa adapters live above Kirie and use that low-level text transport.
 
 The Android IPC experiment keeps Kirie core byte-oriented and CBOR-based while
 preserving separate text, binary, and data lanes. Higher-level protocols,
-including the planned Eventa adapter, remain above Kirie. iOS still uses the
-previous text-oriented native path and has not yet been migrated to binary CBOR
-lanes.
+including Eventa adapters, remain above Kirie. iOS still uses the previous
+text-oriented native path and has not yet been migrated to binary CBOR lanes.
 
 ## Current Godot API direction
 
@@ -129,13 +128,14 @@ Android:
 
 GitHub Release addon publishing is configured through the `Addon Release`
 workflow. Keep it separate from the npm publishing flow, which is only for
-browser-side workspace packages such as `@gd-kirie/ipc`.
+browser-side workspace packages such as `@gd-kirie/ipc` and
+`@gd-kirie/ipc-eventa`.
 
 The release artifact shape and workflow modes live in
 [Addon Release](./addon-release.md).
 
-The planned .NET Eventa adapter will introduce a separate NuGet release lane.
-Keep it separate from addon zip publishing and npm publishing.
+The .NET Eventa adapter uses a separate NuGet release lane. Keep it separate
+from addon zip publishing and npm publishing.
 
 ## IPC and adapter split
 
@@ -163,15 +163,20 @@ Godot CEF is a learning reference and future compatibility target because it
 separates `ipc_message`, `ipc_binary_message`, and `ipc_data_message`, with its
 data lane documented as CBOR-backed.
 
-Eventa remains above Kirie. The first Eventa adapter should support event
-emission and unary request/response RPC only. Its JSON message is an adapter
-encoding over Kirie text IPC, not a Kirie core payload type. Treat
-`moeru-ai/eventa` and `moeru-ai/eventa.net` as the upstream Eventa projects; do
-not change those projects unless the adapter exposes a real design issue. The
-.NET adapter is planned as `GdKirie.EventaAdapter`, with a root `GdKirie.slnx`,
-a package under `packages/GdKirie.EventaAdapter`, and a NuGet-provided source
-bridge for connecting to addon-shipped `KirieClient.cs` without putting Eventa
-files in `addons/kirie`.
+Eventa remains above Kirie. `@gd-kirie/ipc-eventa` and
+`GdKirie.EventaAdapter` support event emission and unary request/response RPC
+over Kirie text IPC. Their JSON messages are adapter encodings, not Kirie core
+payload types. Treat `moeru-ai/eventa` and `moeru-ai/eventa.net` as the upstream
+Eventa projects; do not change those projects unless an adapter exposes a real
+design issue. The .NET adapter lives under `packages/GdKirie.EventaAdapter`,
+uses the root `GdKirie.slnx`, and provides a NuGet source bridge for connecting
+to addon-shipped `KirieClient.cs` without putting Eventa files in
+`addons/kirie`.
+
+`GdKirie.EventaAdapter` is `net10.0` only. Projects targeting `net8.0` or
+`net9.0` are expected to fail restore or build when they reference it. Do not
+copy Eventa protocol logic into Kirie to bypass the upstream Eventa .NET target
+framework.
 
 The Eventa adapter should gain a binary or structured transport after the text
 transport proves the event and unary RPC shape. Prefer an explicit opt-in entry

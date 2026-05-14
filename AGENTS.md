@@ -20,9 +20,9 @@ higher-level work.
 
 The Android IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based
 with text, binary, and data lanes. JSON belongs to callers or adapters, not to
-Kirie core. Keep planned Eventa adapters above Kirie and out of `addons/kirie`.
-iOS still uses the previous text-oriented native path and is not yet migrated to
-the Android CBOR lane shape.
+Kirie core. Keep Eventa adapters above Kirie and out of `addons/kirie`. iOS
+still uses the previous text-oriented native path and is not yet migrated to the
+Android CBOR lane shape.
 
 ## Repository Layout
 
@@ -35,6 +35,10 @@ the Android CBOR lane shape.
   Swift iOS implementation
 - `packages/ipc`
   thin browser-side IPC transport wrapper for WebView pages
+- `packages/ipc-eventa`
+  browser-side Eventa adapter over Kirie text IPC
+- `packages/GdKirie.EventaAdapter`
+  .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`
   the first runnable manual integration target
 - `tests/integration`
@@ -329,11 +333,9 @@ infrastructure.
   configured.
 - Automated platform integration coverage for the C# `KirieClient` wrapper does
   not exist yet.
-- Richer app-level adapters or invocation APIs above `@gd-kirie/ipc` are not
-  implemented yet.
-- `GdKirie.EventaAdapter` and its NuGet publishing lane are planned but not
-  implemented. The adapter should support Eventa event and unary RPC first,
-  carry its JSON envelope over Kirie text IPC, preserve Native AOT
-  compatibility, keep Eventa source out of `addons/kirie`, and use a source
-  bridge from the NuGet package when it needs to connect to addon-shipped
-  `KirieClient.cs`.
+- Browser-side Eventa adapter support exists in `@gd-kirie/ipc-eventa`.
+- `GdKirie.EventaAdapter` is a .NET 10-only package. It supports Eventa events
+  and unary RPC over Kirie text IPC, keeps Eventa source out of `addons/kirie`,
+  and uses a NuGet source bridge when it needs to connect to addon-shipped
+  `KirieClient.cs`. `net8.0` and `net9.0` consumers are expected to fail
+  restore or build when they reference the adapter.

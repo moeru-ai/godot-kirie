@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <PackageId>GdKirie.EventaAdapter</PackageId>
+    <Version>0.1.1-preview.1</Version>
+    <Authors>Moeru AI</Authors>
+    <Description>Eventa adapter for Kirie C# projects over Kirie text IPC.</Description>
+    <PackageTags>godot;kirie;eventa;ipc;rpc;webview</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/moeru-ai/godot-kirie</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/moeru-ai/godot-kirie</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Eventa" Version="0.1.0-preview.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="contentFiles/**/*.cs" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="contentFiles/cs/any/GdKirie.EventaAdapter/*.cs" Pack="true" PackagePath="contentFiles/cs/any/GdKirie.EventaAdapter" BuildAction="Compile" />
+  </ItemGroup>
+
+</Project>

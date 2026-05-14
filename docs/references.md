@@ -92,6 +92,8 @@ packaging, or platform WebView bridge details.
 
 ## .NET
 
+- [.NET support policy](https://dotnet.microsoft.com/en-us/platform/support/policy)
+  Reference for supported .NET versions and end-of-support dates.
 - [Attributes and reflection](https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/reflection-and-attributes/)
   Reference for C# attribute metadata and runtime reflection.
 - [Native AOT deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
@@ -102,6 +104,8 @@ packaging, or platform WebView bridge details.
   Native AOT.
 - [System.Text.Json source generation](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation)
   Reference for AOT-friendly JSON metadata generation.
+- [Microsoft.Testing.Platform migration to v2](https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-migration-from-v1-to-v2)
+  Reference for the .NET 10 `dotnet test` opt-in through `global.json`.
 - [NuGet contentFiles](https://learn.microsoft.com/en-us/nuget/reference/nuspec#including-content-files)
   Reference for source files included in PackageReference-based NuGet packages.
 - [dotnet pack](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack)

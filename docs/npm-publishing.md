@@ -4,8 +4,8 @@ This repository publishes browser-side npm packages from GitHub Actions using
 npm trusted publishing. The workflow avoids long-lived npm write tokens and
 lets npm issue short-lived publish credentials through GitHub Actions OIDC.
 
-This flow is separate from addon zip publishing and the planned NuGet publishing
-lane for .NET adapter packages.
+This flow is separate from addon zip publishing and the NuGet publishing lane
+for .NET adapter packages.
 
 ## Current Packages
 
@@ -17,11 +17,11 @@ protocol behavior above the low-level `@gd-kirie/ipc` transport package.
 
 ## npm Setup
 
-The npm organization and package scope is `gd-kirie`; the published browser
-package is `@gd-kirie/ipc`.
+The npm organization and package scope is `gd-kirie`; browser packages include
+`@gd-kirie/ipc` and `@gd-kirie/ipc-eventa`.
 
-Configure trusted publishing for `@gd-kirie/ipc` on npmjs.com. These fields
-identify the GitHub repository that is allowed to publish the package:
+Configure trusted publishing for each public browser package on npmjs.com. These
+fields identify the GitHub repository that is allowed to publish the package:
 
 - Organization or user: `moeru-ai`
 - Repository: `godot-kirie`
