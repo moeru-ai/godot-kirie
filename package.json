@@ -24,9 +24,9 @@
     "lint:gdscript": "gdlint packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts",
     "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
     "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
-    "pack:nuget": "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release --no-build",
+    "pack:nuget": "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release",
     "release": "bumpp",
-    "test:dotnet": "dotnet test --solution GdKirie.slnx --configuration Release --no-build",
+    "test:dotnet": "dotnet test --solution GdKirie.slnx --configuration Release",
     "test:unit": "pnpm -rF './packages/*' run test:run",
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },
