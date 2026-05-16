@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: We need a script to receive a argument to run examples on specified platform
+
 set -euo pipefail
 
 if [ ! -f "examples/basic-ipc/project.godot" ]; then
