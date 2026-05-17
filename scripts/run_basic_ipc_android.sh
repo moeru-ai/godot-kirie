@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# TODO: We need a script to receive a argument to run examples on specified platform
+# TODO: We need a script to receive an argument to run examples on specified platform
 
 set -euo pipefail
 
