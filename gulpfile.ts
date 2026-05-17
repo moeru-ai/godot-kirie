@@ -210,7 +210,16 @@ export async function buildIosXcframework(): Promise<void> {
   );
 }
 
+export async function buildIntegrationWeb(): Promise<void> {
+  await execa("corepack", ["pnpm", "--filter", "@gd-kirie/integration-web", "run", "build"], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+}
+
 export async function buildIntegrationAndroid(): Promise<void> {
+  await buildIntegrationWeb();
+
   const apkPath = process.env.APK_PATH || `${integrationDistDir}/android_debug.apk`;
   fs.mkdirSync(path.dirname(apkPath), { recursive: true });
 
@@ -238,6 +247,8 @@ export async function buildIntegrationAndroid(): Promise<void> {
 }
 
 export async function buildIntegrationIos(): Promise<void> {
+  await buildIntegrationWeb();
+
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
   const xcodeExportDir = `${integrationDistDir}/ios_xcode`;
   const projectName = "integration";

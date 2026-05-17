@@ -70,7 +70,7 @@ class KirieAndroidPlugin(
     }
 
     @UsedByGodot
-    fun sendData(value: Any?) {
+    fun sendData(value: Dictionary) {
         webViewManager.sendDataPacket(cborMapper.writeValueAsBytes(value.toJsonNode()))
     }
 

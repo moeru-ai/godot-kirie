@@ -1,7 +1,7 @@
 extends RefCounted
 
 const PROBE_NAME := "res_asset_loading"
-const PROBE_URL := "res://web/probe.html?probe=res_asset_loading"
+const PROBE_URL := "res://web/?probe=res_asset_loading"
 const TestProbeScript = preload("res://scripts/test_probe.gd")
 
 
@@ -19,22 +19,19 @@ func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
 	print("[Kirie][test] load_url probe=%s url=%s" % [PROBE_NAME, PROBE_URL])
 	kirie.load_url(PROBE_URL)
 
-	failure_reason = await probe.wait_for_message("web_ready", PROBE_NAME)
+	failure_reason = await probe.wait_for_data_message("web_ready", PROBE_NAME)
 	if failure_reason != "":
 		return failure_reason
 
-	(
-		kirie
-		. send_ipc_message(
+	kirie.send_data(
+		{
+			"type": "godot_ready",
+			"payload":
 			{
-				"type": "godot_ready",
-				"payload":
-				{
-					"probe": PROBE_NAME,
-					"test": test_name,
-				},
-			}
-		)
+				"probe": PROBE_NAME,
+				"test": test_name,
+			},
+		}
 	)
 
-	return await probe.wait_for_message("web_ack", PROBE_NAME)
+	return await probe.wait_for_data_message("web_ack", PROBE_NAME)

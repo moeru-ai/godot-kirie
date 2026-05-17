@@ -8,6 +8,7 @@
     "build:addon-pack": "gulp buildAddonPack",
     "build:android-aar": "gulp buildAndroidAar",
     "build:dotnet": "dotnet build GdKirie.slnx --configuration Release",
+    "build:integration-web": "gulp buildIntegrationWeb",
     "build:integration-android": "gulp buildIntegrationAndroid",
     "build:integration-ios": "gulp buildIntegrationIos",
     "build:ios-xcframework": "gulp buildIosXcframework",

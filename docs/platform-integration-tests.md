@@ -22,19 +22,15 @@ Godot -> Kirie platform singleton -> platform WebView -> JavaScript -> Godot
 The current focus is:
 
 - WebView lifecycle behavior from Godot
-- raw WebView IPC
+- raw WebView IPC lanes
 - resource loading through `res://`
 - C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
-The tests intentionally do not depend on the browser-facing `@gd-kirie/ipc`
-package. That package is a convenience SDK above the raw bridge contract and
-should be tested separately.
-
-The integration project still needs migration from the legacy JSON message
-bridge to the explicit text, binary, and data lane API. After that migration it
-should keep testing the raw bridge contract with focused lane round-trip cases.
-Eventa adapter behavior should be tested separately above the raw bridge.
+The browser fixture uses `@gd-kirie/ipc` to encode and decode Android CBOR
+ArrayBuffer channel messages. The Godot side still verifies the exported app
+bridge through Kirie's explicit text, binary, and data lane API. Eventa adapter
+behavior should be tested separately above the raw bridge.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
@@ -55,13 +51,16 @@ tests/integration/
       ipc_round_trip_probe.gd
       webview_lifecycle_probe.gd
       res_asset_loading_probe.gd
+  web-src/
+    index.html
+    src/probe.ts
   web/
-    probe.html
+    index.html
+    assets/
 ```
 
-`web/probe.html` is a minimal fixture, not a web app project. There is no Vite
-project, package.json, TypeScript config, or generated web bundle under
-`tests/integration/web`.
+`web-src` is a minimal Vite fixture package, not an example application.
+`web` is generated output and should not be hand-edited.
 
 ## Runner Contract
 
@@ -115,45 +114,25 @@ the Kirie API it wants to exercise:
 - `send_data(...)`
 - `destroy_webview()`
 
-Shared waiting and probe observation lives in `scripts/test_probe.gd`. The
-current probe code still refers to the legacy `ipc_message_received` signal and
-must be updated before the integration project can validate the Android CBOR
-lane implementation. `KirieIntegrationProbe` may:
+Shared waiting and probe observation lives in `scripts/test_probe.gd`.
+`KirieIntegrationProbe` may:
 
 - connect to Kirie signals
 - wait for `webview_ready`
-- collect lane messages
+- collect text, binary, and data lane messages
 - wait for a specific probe message
-- read `web/probe.html`
+- read generated web fixture files when a test needs inline HTML
 
 It should not decide which URL a test loads. Page URLs are test inputs and must
 be provided by the test case itself.
 
 ## Web Fixture
 
-`web/probe.html` is a small raw bridge fixture. It currently uses the legacy
-platform-level JSON contract directly:
-
-- Android JavaScript to Godot:
-  `globalThis.KirieAndroidBridge.postMessage(messageJson)`
-- iOS JavaScript to Godot:
-  `globalThis.webkit.messageHandlers.kirie.postMessage(messageJson)`
-- Godot to JavaScript:
-  `kirie:ipc-message` DOM events
-
-For Android IPC v1 validation this fixture should be rewritten to use the same
-AndroidX WebKit ArrayBuffer channels exposed to `@gd-kirie/ipc`.
-
-For tests that do not care about asset loading, the GDScript case reads
-`probe.html` and injects it with `load_html_string(...)`. This keeps the test
-case in Godot while preserving HTML/JavaScript syntax highlighting in the
-fixture file. HTML-string tests pass the probe name through an injected
-`globalThis.__kirieProbeName` value instead of deriving it from
-`location.search`, because WebKit's `loadHTMLString(_:baseURL:)` treats
-`baseURL` as the URL for resolving relative references.
-
-For tests that do care about exported resources, the case loads
-`res://web/probe.html?...` with `load_url(...)`.
+The fixture is built from `web-src` with Vite before integration app export.
+It imports `@gd-kirie/ipc`, registers text, binary, and data lane listeners, and
+then sends a data-lane `web_ready` probe message. Tests load it through
+`res://web/?probe=...` so the native resource URL resolver serves the generated
+`web/index.html`.
 
 ## Test Coverage Shape
 
@@ -163,7 +142,7 @@ architecture note.
 The suite should stay organized around a small number of platform-facing
 coverage categories:
 
-- IPC round trips through the raw JavaScript bridge
+- IPC round trips through text, binary, and data lanes
 - WebView lifecycle transitions driven from Godot
 - exported `res://` web resource loading
 - C# `KirieClient` event forwarding over the same native singleton path
@@ -185,6 +164,8 @@ Build the test APK:
 ```bash
 mise x -- corepack pnpm run build:integration-android
 ```
+
+This task builds the Vite web fixture before exporting the Godot project.
 
 Install it once:
 
@@ -243,6 +224,8 @@ Build the simulator app:
 ```bash
 mise x -- corepack pnpm run build:integration-ios
 ```
+
+This task also builds the Vite web fixture before exporting the Godot project.
 
 Install and run tests with the simulator helper:
 

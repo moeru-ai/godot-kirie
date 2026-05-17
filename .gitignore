@@ -10,6 +10,7 @@ build/
 bin/
 obj/
 godot/
+tests/integration/web/
 *.apk
 *.aab
 *.aar

@@ -2,3 +2,4 @@ packages:
   - "examples/basic-ipc/web"
   - "examples/eventa-csharp/web"
   - "packages/*"
+  - "tests/integration/web-src"

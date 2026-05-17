@@ -1,13 +1,15 @@
 class_name KirieIntegrationProbe
 extends RefCounted
 
-const PROBE_HTML_PATH := "res://web/probe.html"
+const PROBE_HTML_PATH := "res://web/index.html"
 const DEFAULT_TEST_TIMEOUT_SECONDS := 12.0
 const IOS_TEST_TIMEOUT_SECONDS := 30.0
 
 var _kirie: GdKirie
-var _messages: Array[Dictionary] = []
+var _binary_messages: Array[PackedByteArray] = []
+var _data_messages: Array[Dictionary] = []
 var _probe_error := ""
+var _text_messages: Array[String] = []
 var _tree: SceneTree
 var _webview_is_ready := false
 
@@ -17,17 +19,21 @@ func _init(kirie: GdKirie, tree: SceneTree) -> void:
 	_tree = tree
 
 	_kirie.webview_ready.connect(_on_webview_ready)
-	_kirie.ipc_message_received.connect(_on_ipc_message_received)
+	_kirie.text_received.connect(_on_text_received)
+	_kirie.binary_received.connect(_on_binary_received)
+	_kirie.data_received.connect(_on_data_received)
 	_kirie.ipc_error.connect(_on_ipc_error)
 
 
 func reset() -> void:
-	_messages.clear()
+	_binary_messages.clear()
+	_data_messages.clear()
 	_probe_error = ""
+	_text_messages.clear()
 	_webview_is_ready = false
 
 
-func read_probe_html() -> String:
+func read_probe_index_html() -> String:
 	if not FileAccess.file_exists(PROBE_HTML_PATH):
 		_probe_error = "Missing probe HTML: %s" % PROBE_HTML_PATH
 		return ""
@@ -56,31 +62,78 @@ func wait_for_webview_ready(probe_name: String) -> String:
 	)
 
 
-func wait_for_message(message_type: String, probe_name: String) -> String:
+func wait_for_data_message(message_type: String, probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
 			return _probe_error
 
-		if _has_message(message_type, probe_name):
+		if _has_data_message(message_type, probe_name):
 			return ""
 
 		await _tree.process_frame
 
 	return (
-		"Timed out after %.1fs waiting for %s during %s; observed messages=%s"
+		"Timed out after %.1fs waiting for data %s during %s; observed messages=%s"
 		% [
 			timeout_seconds,
 			message_type,
 			probe_name,
-			JSON.stringify(_messages),
+			_observed_messages_description(),
 		]
 	)
 
 
-func _has_message(message_type: String, probe_name: String) -> bool:
-	for message in _messages:
+func wait_for_text_message(expected: String, probe_name: String) -> String:
+	var timeout_seconds := _test_timeout_seconds()
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if _probe_error != "":
+			return _probe_error
+
+		if expected in _text_messages:
+			return ""
+
+		await _tree.process_frame
+
+	return (
+		"Timed out after %.1fs waiting for text echo during %s; expected=%s observed=%s"
+		% [
+			timeout_seconds,
+			probe_name,
+			expected,
+			_observed_messages_description(),
+		]
+	)
+
+
+func wait_for_binary_message(expected: PackedByteArray, probe_name: String) -> String:
+	var timeout_seconds := _test_timeout_seconds()
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if _probe_error != "":
+			return _probe_error
+
+		for bytes in _binary_messages:
+			if bytes == expected:
+				return ""
+
+		await _tree.process_frame
+
+	return (
+		"Timed out after %.1fs waiting for binary echo during %s; expected_size=%d observed=%s"
+		% [
+			timeout_seconds,
+			probe_name,
+			expected.size(),
+			_observed_messages_description(),
+		]
+	)
+
+
+func _has_data_message(message_type: String, probe_name: String) -> bool:
+	for message in _data_messages:
 		if str(message.get("type", "")) != message_type:
 			continue
 
@@ -95,6 +148,25 @@ func _has_message(message_type: String, probe_name: String) -> bool:
 	return false
 
 
+func _observed_messages_description() -> String:
+	return (
+		"data=%s text=%s binary_sizes=%s"
+		% [
+			JSON.stringify(_data_messages),
+			JSON.stringify(_text_messages),
+			JSON.stringify(_binary_message_sizes()),
+		]
+	)
+
+
+func _binary_message_sizes() -> Array[int]:
+	var sizes: Array[int] = []
+	for bytes in _binary_messages:
+		sizes.append(bytes.size())
+
+	return sizes
+
+
 func _test_timeout_seconds() -> float:
 	if OS.get_name() == "iOS":
 		return IOS_TEST_TIMEOUT_SECONDS
@@ -107,14 +179,24 @@ func _on_webview_ready() -> void:
 	print("[Kirie][test] signal webview_ready")
 
 
-func _on_ipc_message_received(message: Variant) -> void:
-	print("[Kirie][test] signal ipc_message_received %s" % JSON.stringify(message))
+func _on_text_received(message: String) -> void:
+	print("[Kirie][test] signal text_received %s" % message)
+	_text_messages.append(message)
 
-	if typeof(message) != TYPE_DICTIONARY:
+
+func _on_binary_received(bytes: PackedByteArray) -> void:
+	print("[Kirie][test] signal binary_received bytes=%d" % bytes.size())
+	_binary_messages.append(bytes)
+
+
+func _on_data_received(value: Variant) -> void:
+	print("[Kirie][test] signal data_received %s" % str(value))
+
+	if typeof(value) != TYPE_DICTIONARY:
 		return
 
-	var message_dictionary := message as Dictionary
-	_messages.append(message_dictionary)
+	var message := value as Dictionary
+	_data_messages.append(message)
 
 
 func _on_ipc_error(error: String) -> void:
