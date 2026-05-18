@@ -25,7 +25,7 @@ function readString(record: KirieDataRecord, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-function sendProbeData(type: string, payload: KirieDataRecord): void {
+function sendProbeData(type: string, payload: KirieData): void {
   sendData({
     type,
     payload,
@@ -42,10 +42,12 @@ onBinaryReceived((bytes) => {
 
 onDataReceived((message) => {
   if (!isRecord(message)) {
+    sendProbeData("data_echo", message);
     return;
   }
 
   if (readString(message, "type") !== "godot_ready") {
+    sendProbeData("data_echo", message);
     return;
   }
 

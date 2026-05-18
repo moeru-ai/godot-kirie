@@ -29,8 +29,8 @@ WebKit ArrayBuffer messages:
 - `sendData()` / `onDataReceived()` for CBOR-encoded structured data through `cborg`
 
 The structured data subset is limited to `null`, booleans, numbers, strings,
-arrays, and objects with string keys. JSON envelopes are a caller or adapter
-convention and should be sent with `sendText()` when needed.
+arrays, and objects with string keys. JSON message shapes are a caller or
+adapter convention and should be sent with `sendText()` when needed.
 
 This package is currently wired to AndroidX WebKit message channels. iOS still
 uses the previous native path and is not part of this experimental API break.

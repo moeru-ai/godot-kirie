@@ -35,6 +35,11 @@ packaging, or platform WebView bridge details.
 - [C#/.NET (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html)
   Reference for Godot C# platform support, including Android and iOS export
   limitations.
+- [Variant class (stable)](https://docs.godotengine.org/en/stable/classes/class_variant.html)
+  Reference for Godot's cross-language dynamic value model.
+- [C# Variant (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_variant.html)
+  Reference for `Godot.Variant`, `Variant.Type`, and C# Variant-compatible
+  types.
 - [C# signals (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_signals.html)
   Reference for idiomatic C# event usage when working with Godot signals.
 - [Signal class (stable)](https://docs.godotengine.org/en/stable/classes/class_signal.html)

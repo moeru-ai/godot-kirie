@@ -116,7 +116,45 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] send_data {value}");
-        _pluginSingleton!.Call("sendData", value);
+        // Android plugin methods are registered by concrete JVM parameter type.
+        // Keep this public API Variant-shaped and dispatch to narrow native methods.
+        switch (value.VariantType)
+        {
+            case Variant.Type.Nil:
+                _pluginSingleton!.Call("sendNullData");
+                return;
+            case Variant.Type.Bool:
+                _pluginSingleton!.Call("sendBooleanData", value.AsBool());
+                return;
+            case Variant.Type.Int:
+                _pluginSingleton!.Call("sendIntData", value.AsInt64());
+                return;
+            case Variant.Type.Float:
+                _pluginSingleton!.Call("sendFloatData", value.AsDouble());
+                return;
+            case Variant.Type.String:
+                _pluginSingleton!.Call("sendStringData", value.AsString());
+                return;
+            case Variant.Type.Array:
+                // Kotlin Array<Any?> is registered with Godot as JVM Object[].
+                // Godot's Android bridge validates Object[] as a typed JavaObject
+                // array, not as a heterogeneous Variant Array. Passing the root array
+                // through a private Dictionary key uses Godot's supported Dictionary
+                // conversion path; Android unwraps it before CBOR encoding.
+                _pluginSingleton!.Call(
+                    "sendArrayData",
+                    new Godot.Collections.Dictionary
+                    {
+                        ["value"] = value.AsGodotArray(),
+                    });
+                return;
+            case Variant.Type.Dictionary:
+                _pluginSingleton!.Call("sendData", value.AsGodotDictionary());
+                return;
+            default:
+                GD.PushError($"Unsupported Kirie data type: {value.VariantType}");
+                return;
+        }
     }
 
     public string GetLaunchOption(string key)

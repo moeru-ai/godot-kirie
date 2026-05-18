@@ -130,6 +130,9 @@ For the current milestone, iOS should be owned by the standard addon tree:
 - Use English only for agent-facing communication, project-maintenance notes,
   AGENTS updates, and project documentation unless the user explicitly requests
   a non-English artifact.
+- Avoid the bridge metaphor `envelope`/`envelop` in comments, docs, task names,
+  and new APIs unless referring to an upstream domain type such as Eventa's
+  `EventEnvelope`.
 - Favor small, testable steps that can be exercised through
   `examples/basic-ipc` or `tests/integration`.
 - Default to a standard multi-agent workflow for non-trivial tasks whenever the

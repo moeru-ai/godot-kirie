@@ -79,7 +79,30 @@ func send_data(value: Variant) -> void:
 		return
 
 	print("[Kirie][gd] send_data %s" % str(value))
-	_plugin_singleton.sendData(value)
+	# Android plugin methods are registered by concrete JVM parameter type.
+	# Keep this public API Variant-shaped and dispatch to narrow native methods.
+	match typeof(value):
+		TYPE_NIL:
+			_plugin_singleton.sendNullData()
+		TYPE_BOOL:
+			_plugin_singleton.sendBooleanData(value)
+		TYPE_INT:
+			_plugin_singleton.sendIntData(value)
+		TYPE_FLOAT:
+			_plugin_singleton.sendFloatData(value)
+		TYPE_STRING:
+			_plugin_singleton.sendStringData(value)
+		TYPE_ARRAY:
+			# Kotlin Array<Any?> is registered with Godot as JVM Object[].
+			# Godot's Android bridge validates Object[] as a typed JavaObject
+			# array, not as a heterogeneous Variant Array. Passing the root array
+			# through a private Dictionary key uses Godot's supported Dictionary
+			# conversion path; Android unwraps it before CBOR encoding.
+			_plugin_singleton.sendArrayData({"value": value})
+		TYPE_DICTIONARY:
+			_plugin_singleton.sendData(value)
+		_:
+			push_error("Unsupported Kirie data type: %s" % type_string(typeof(value)))
 
 
 func get_launch_option(key: String) -> String:

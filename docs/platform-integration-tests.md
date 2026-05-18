@@ -27,10 +27,13 @@ The current focus is:
 - C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
-The browser fixture uses `@gd-kirie/ipc` to encode and decode Android CBOR
-ArrayBuffer channel messages. The Godot side still verifies the exported app
-bridge through Kirie's explicit text, binary, and data lane API. Eventa adapter
-behavior should be tested separately above the raw bridge.
+The browser fixture currently targets the Android CBOR ArrayBuffer lane path:
+it uses `@gd-kirie/ipc` to encode and decode text, binary, and data lane
+messages. The Godot side still verifies the exported app bridge through
+Kirie's explicit lane API. iOS still uses the legacy text-oriented native
+bridge and is not expected to pass this Vite fixture until the iOS lane
+migration lands. Eventa adapter behavior should be tested separately above the
+raw bridge.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the

@@ -69,13 +69,55 @@ class KirieAndroidPlugin(
         webViewManager.sendBinaryPacket(cborMapper.writeValueAsBytes(bytes))
     }
 
+    // Godot's Android bridge converts by registered JVM parameter type.
+    // Narrow entrypoints preserve the public Variant API without relying on Any?/Object conversion.
     @UsedByGodot
     fun sendData(value: Dictionary) {
-        webViewManager.sendDataPacket(cborMapper.writeValueAsBytes(value.toJsonNode()))
+        sendDataValue(value)
+    }
+
+    @UsedByGodot
+    fun sendNullData() {
+        sendDataValue(null)
+    }
+
+    @UsedByGodot
+    fun sendBooleanData(value: Boolean) {
+        sendDataValue(value)
+    }
+
+    @UsedByGodot
+    fun sendIntData(value: Long) {
+        sendDataValue(value)
+    }
+
+    @UsedByGodot
+    fun sendFloatData(value: Double) {
+        sendDataValue(value)
+    }
+
+    @UsedByGodot
+    fun sendStringData(value: String) {
+        sendDataValue(value)
+    }
+
+    // Do not change this parameter to Array<Any?>. Kotlin Array<Any?> is JVM
+    // Object[], and Godot's Android JavaClassWrapper validates Object[] as a
+    // typed JavaObject array. A heterogeneous Godot Array fails before Kotlin
+    // receives it. Dictionary is the Godot-supported container parameter here;
+    // this method immediately unwraps the private root-array key and preserves
+    // the original CBOR data item.
+    @UsedByGodot
+    fun sendArrayData(value: Dictionary) {
+        sendDataValue(value[ARRAY_VALUE_KEY])
     }
 
     @UsedByGodot
     fun getLaunchOption(key: String): String = activity?.intent?.getStringExtra(key).orEmpty()
+
+    private fun sendDataValue(value: Any?) {
+        webViewManager.sendDataPacket(cborMapper.writeValueAsBytes(value.toJsonNode()))
+    }
 
     private fun handleWebViewReady() {
         emitSignal(SIGNAL_WEBVIEW_READY)
@@ -106,6 +148,7 @@ class KirieAndroidPlugin(
         private val SIGNAL_BINARY_RECEIVED = SignalInfo("binary_received", ByteArray::class.java)
         private val SIGNAL_DATA_RECEIVED = SignalInfo("data_received", Any::class.java)
         private val SIGNAL_IPC_ERROR = SignalInfo("ipc_error", String::class.java)
+        private const val ARRAY_VALUE_KEY = "value"
     }
 }
 

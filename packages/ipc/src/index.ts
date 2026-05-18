@@ -16,6 +16,10 @@ declare global {
   }
 }
 
+/**
+ * Structured data lane subset shared with Godot Variant data.
+ * It intentionally excludes engine-local and JavaScript-local object types.
+ */
 export type KirieData =
   | null
   | boolean

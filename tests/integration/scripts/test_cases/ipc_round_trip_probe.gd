@@ -36,6 +36,13 @@ func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
 	if failure_reason != "":
 		return failure_reason
 
+	for data_payload: Variant in [42, ["array-root", 7, null, {"nested": true}], null]:
+		kirie.send_data(data_payload)
+
+		failure_reason = await probe.wait_for_data_echo(data_payload, PROBE_NAME)
+		if failure_reason != "":
+			return failure_reason
+
 	kirie.send_data(
 		{
 			"type": "godot_ready",

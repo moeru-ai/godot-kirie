@@ -1,7 +1,7 @@
 class_name KirieIntegrationProbe
 extends RefCounted
 
-const PROBE_HTML_PATH := "res://web/index.html"
+const PROBE_INDEX_HTML_PATH := "res://web/index.html"
 const DEFAULT_TEST_TIMEOUT_SECONDS := 12.0
 const IOS_TEST_TIMEOUT_SECONDS := 30.0
 
@@ -34,11 +34,11 @@ func reset() -> void:
 
 
 func read_probe_index_html() -> String:
-	if not FileAccess.file_exists(PROBE_HTML_PATH):
-		_probe_error = "Missing probe HTML: %s" % PROBE_HTML_PATH
+	if not FileAccess.file_exists(PROBE_INDEX_HTML_PATH):
+		_probe_error = "Missing probe index HTML: %s" % PROBE_INDEX_HTML_PATH
 		return ""
 
-	return FileAccess.get_file_as_string(PROBE_HTML_PATH)
+	return FileAccess.get_file_as_string(PROBE_INDEX_HTML_PATH)
 
 
 func failure_reason() -> String:
@@ -80,6 +80,29 @@ func wait_for_data_message(message_type: String, probe_name: String) -> String:
 			timeout_seconds,
 			message_type,
 			probe_name,
+			_observed_messages_description(),
+		]
+	)
+
+
+func wait_for_data_echo(expected: Variant, probe_name: String) -> String:
+	var timeout_seconds := _test_timeout_seconds()
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if _probe_error != "":
+			return _probe_error
+
+		if _has_data_echo(expected):
+			return ""
+
+		await _tree.process_frame
+
+	return (
+		"Timed out after %.1fs waiting for data echo during %s; expected=%s observed=%s"
+		% [
+			timeout_seconds,
+			probe_name,
+			str(expected),
 			_observed_messages_description(),
 		]
 	)
@@ -146,6 +169,60 @@ func _has_data_message(message_type: String, probe_name: String) -> bool:
 			return true
 
 	return false
+
+
+func _has_data_echo(expected: Variant) -> bool:
+	for message in _data_messages:
+		if str(message.get("type", "")) != "data_echo":
+			continue
+
+		if not message.has("payload"):
+			continue
+
+		if _data_values_equal(message["payload"], expected):
+			return true
+
+	return false
+
+
+func _data_values_equal(left: Variant, right: Variant) -> bool:
+	var left_type := typeof(left)
+	var right_type := typeof(right)
+	if left_type != right_type:
+		return false
+
+	if left_type == TYPE_ARRAY:
+		return _data_arrays_equal(left, right)
+
+	if left_type == TYPE_DICTIONARY:
+		return _data_dictionaries_equal(left, right)
+
+	return left == right
+
+
+func _data_arrays_equal(left: Array, right: Array) -> bool:
+	if left.size() != right.size():
+		return false
+
+	for index in left.size():
+		if not _data_values_equal(left[index], right[index]):
+			return false
+
+	return true
+
+
+func _data_dictionaries_equal(left: Dictionary, right: Dictionary) -> bool:
+	if left.size() != right.size():
+		return false
+
+	for key: Variant in left.keys():
+		if not right.has(key):
+			return false
+
+		if not _data_values_equal(left[key], right[key]):
+			return false
+
+	return true
 
 
 func _observed_messages_description() -> String:
