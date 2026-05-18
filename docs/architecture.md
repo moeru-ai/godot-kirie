@@ -157,34 +157,31 @@ values are out of scope for the data lane.
 The data lane keeps one semantic subset across the browser, Godot wrappers, and
 Android native code, but each layer uses its own host-language representation:
 
-| Data lane value | TypeScript `@gd-kirie/ipc` | Godot GDScript | Godot C# | Android Kotlin |
+| Data lane value | TypeScript `@gd-kirie/ipc` | Godot GDScript | Godot C# | Android Kotlin after bridge |
 | --- | --- | --- | --- | --- |
 | null | `null` | `null` / `TYPE_NIL` | `Variant.Type.Nil` | `null` |
 | boolean | `boolean` | `bool` / `TYPE_BOOL` | `Variant.Type.Bool` | `Boolean` |
 | integer | `number` | `int` / `TYPE_INT` | `Variant.Type.Int` | `Long` |
 | float | `number` | `float` / `TYPE_FLOAT` | `Variant.Type.Float` | `Double` |
 | string | `string` | `String` / `TYPE_STRING` | `Variant.Type.String` | `String` |
-| array | `KirieData[]` | `Array` / `TYPE_ARRAY` | `Variant.Type.Array` | private `Dictionary`, unwrapped to `Array<*>` internally |
+| array | `KirieData[]` | `Array` / `TYPE_ARRAY` | `Variant.Type.Array` | `Array<*>` |
 | map/object | `{ [key: string]: KirieData }` | `Dictionary` / `TYPE_DICTIONARY` | `Variant.Type.Dictionary` | `Dictionary` |
 
 The public Godot API stays Variant-shaped: GDScript exposes
 `send_data(value: Variant)`, and C# exposes `SendData(Variant value)`. Android
 does not expose a single Kotlin `Any?` entrypoint for all data lane values,
 because Godot's Android plugin bridge registers JVM parameter types for
-conversion. A Kotlin `Any?` parameter becomes `java.lang.Object`, which does not
-reliably accept Godot Variant container values such as `Dictionary`. The Godot
-wrappers therefore dispatch by Variant kind into narrow Android methods, and the
-Android plugin funnels those narrow methods back into one internal encoder.
-Array roots pass through a private `Dictionary` at the Android bridge boundary
-because a Kotlin `Array<Any?>` parameter is registered with Godot as JVM
-`Object[]`. In Godot 4.6.2 stable, Android plugin registration records concrete
-Java reflection parameter names, native registration maps those names into
-Godot JNI argument types, and `JavaClassWrapper` treats Java object arrays as
-typed JavaObject arrays. That path validates each element as a JavaObject before
-calling Kotlin, so a heterogeneous Godot `Array` containing normal Variant
-values fails before Kirie can encode it. The `Dictionary` parameter path is
-separate and is already supported by Godot's Android bridge; Kirie unwraps the
-private array value immediately and still encodes the original root array as a
+conversion. A Kotlin `Any?` parameter becomes `java.lang.Object`; Godot treats
+that as a Java object parameter, not as a general Variant parameter. A Kotlin
+`Array<Any?>` parameter becomes JVM `Object[]`; Godot treats that as a typed
+JavaObject array, not as a heterogeneous Godot `Array`.
+
+The Godot wrappers therefore validate the root `Variant` kind, place the value
+under a private `Dictionary` key, and call one Android `sendData(Dictionary)`
+method. The Android plugin unwraps that key immediately before CBOR encoding.
+The `Dictionary` exists only at the Godot Android bridge boundary; it is not the
+data lane protocol shape, and it does not force CBOR values to be map roots.
+Root `null`, scalar, array, and map values are still encoded as their original
 CBOR data item.
 
 The relevant Godot 4.6.2 stable sources are
@@ -192,6 +189,8 @@ The relevant Godot 4.6.2 stable sources are
 method registration,
 [`godot_plugin_jni.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/plugin/godot_plugin_jni.cpp#L72-L88)
 native method registration,
+[`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/java_class_wrapper.cpp#L118-L128)
+Java object argument validation,
 [`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/java_class_wrapper.cpp#L224-L247)
 array argument validation, and
 [`jni_utils.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/jni_utils.cpp#L199-L211)
