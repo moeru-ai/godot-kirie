@@ -58,7 +58,7 @@ packaging, or platform WebView bridge details.
   Reference for channel-style messaging on Android WebView.
 - [AndroidX WebKit WebViewCompat](https://developer.android.com/reference/androidx/webkit/WebViewCompat)
   Reference for AndroidX WebView message listener APIs used by Kirie's Android
-  ArrayBuffer IPC channels.
+  ArrayBuffer IPC channels and document-start runtime injection.
 - [AndroidX WebKit WebMessageCompat](https://developer.android.com/reference/androidx/webkit/WebMessageCompat)
   Reference for WebView message payload types, including ArrayBuffer support.
 - [Upload your Android library](https://developer.android.com/studio/publish-library/upload-library)
@@ -74,9 +74,14 @@ packaging, or platform WebView bridge details.
 - [WKScriptMessageHandler](https://developer.apple.com/documentation/webkit/wkscriptmessagehandler)
   Reference for JavaScript-to-native messaging through
   `window.webkit.messageHandlers`.
+- [WKUserScriptInjectionTime.atDocumentStart](https://developer.apple.com/documentation/webkit/wkuserscriptinjectiontime/atdocumentstart)
+  Reference for iOS document-start script injection before page content loads.
 
 ## IPC formats and compatibility targets
 
+- [Godot CEF methods](https://godotcef.org/api/methods)
+  Reference for `CefTexture` browser controls, JavaScript `eval`, and Godot CEF
+  JavaScript IPC send APIs.
 - [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
   Stable CBOR specification used as the primary reference for Kirie IPC v1
   packet encoding.
@@ -88,6 +93,9 @@ packaging, or platform WebView bridge details.
 - [Godot CEF IPC signals](https://godotcef.org/api/signals)
   Reference implementation and future compatibility target for separate text,
   binary, and CBOR-backed data IPC lanes.
+- [CEF `CefRenderProcessHandler`](https://cef-builds.spotifycdn.com/docs/112.3/classCefRenderProcessHandler.html)
+  Reference for `OnContextCreated`, the desktop CEF hook closest to Kirie's
+  future pre-page-script runtime injection point.
 - [Eventa TypeScript repository](https://github.com/moeru-ai/eventa)
   Upstream TypeScript Eventa project that Kirie JavaScript adapters should
   integrate with rather than modify.
@@ -130,6 +138,14 @@ packaging, or platform WebView bridge details.
 - [Vite build guide](https://vite.dev/guide/build)
   Reference for production HTML builds used by the platform integration web
   fixture.
+- [Electron preload scripts](https://www.electronjs.org/docs/latest/tutorial/tutorial-preload)
+  Comparison point for renderer-side runtime injection before a page is loaded.
+- [Tauri WebviewWindowBuilder initialization scripts](https://docs.rs/tauri/latest/src/tauri/webview/webview_window.rs.html)
+  Comparison point for scripts that run after the global object exists but
+  before the HTML document is parsed and before HTML scripts run.
+- [Wails frontend script injection](https://wails.io/docs/guides/frontend/)
+  Comparison point for injecting IPC and runtime scripts while serving
+  `index.html`.
 - [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
   Reference for publishing npm packages from GitHub Actions through OIDC instead
   of long-lived npm tokens.
@@ -150,6 +166,12 @@ packaging, or platform WebView bridge details.
   `WebViewCompat` and `WebMessageCompat`, RFC 8949, Jackson CBOR, and `cborg`.
 - When changing iOS IPC or packaging, start with `WKWebView`,
   `WKScriptMessageHandler`, and `EditorExportPlugin`.
+- When changing Kirie runtime injection, start with AndroidX WebKit
+  `addDocumentStartJavaScript`, `WKUserScriptInjectionTime.atDocumentStart`, CEF
+  `OnContextCreated`, and the Electron, Tauri, and Wails runtime injection
+  references.
+- When changing the desktop Godot CEF backend, start with Godot CEF methods,
+  Godot CEF IPC signals, and CEF `OnContextCreated`.
 - When changing the IPC packet format or data lane, start with RFC 8949 and
   Godot CEF's IPC lane documentation.
 - When changing the C# wrapper or C# tests, start with Godot C#/.NET platform

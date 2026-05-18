@@ -10,7 +10,8 @@ The current milestone is limited to:
 1. create a platform WebView
 2. establish bidirectional IPC between Godot and the WebView
 3. support packaged `res://` web content loading enough for bridge tests
-4. stabilize the Kirie plugin shape before adding larger tooling layers
+4. add desktop Godot CEF compatibility, starting with macOS
+5. stabilize the Kirie plugin shape before adding larger tooling layers
 
 Do not introduce extra packages, adapters, or CLI workflows unless they are
 required to make the current IPC milestone work. The existing `@gd-kirie/ipc`
@@ -22,7 +23,9 @@ The Android IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based
 with text, binary, and data lanes. JSON belongs to callers or adapters, not to
 Kirie core. Keep Eventa adapters above Kirie and out of `addons/kirie`. iOS
 still uses the previous text-oriented native path and is not yet migrated to the
-Android CBOR lane shape.
+Android CBOR lane shape. Desktop compatibility starts with Godot CEF as a
+backend for Kirie's existing WebView and IPC surface, not as a reason to expose
+the full Godot CEF browser API through Kirie.
 
 ## Repository Layout
 
@@ -87,6 +90,9 @@ label them as anecdotal when they influence a decision.
   do not add a GDScript CBOR codec.
 - Use Godot CEF as a learning reference and future compatibility target for
   text, binary, and CBOR-backed data IPC lanes.
+- Desktop Godot CEF support starts with macOS and should preserve the existing
+  Kirie public API. Keep the detailed desktop backend, runtime-injection, and
+  artifact rules centralized in `docs/architecture.md`.
 - For the current milestone, assume a single active WebView unless the user
   explicitly asks to reintroduce multi-WebView behavior.
 - Keep the Godot-facing wrapper thin; prefer forwarding to the platform

@@ -5,7 +5,8 @@ This flow is separate from npm publishing, which is only for browser-side
 workspace packages such as `@gd-kirie/ipc` and `@gd-kirie/ipc-eventa`.
 
 It is also separate from the NuGet publishing lane for .NET adapter packages.
-Keep addon zip packaging focused on `addons/kirie`.
+Keep addon zip packaging focused on `addons/kirie`; desktop Godot CEF artifacts
+are outside the default Kirie addon zip.
 
 ## Intended Artifact
 
@@ -23,8 +24,8 @@ The public addon should include release native artifacts:
 - `addons/kirie/libraries/android/Kirie-release.aar`
 - `addons/kirie/ios/Kirie.xcframework`
 
-Development-only debug native artifacts should not be included in the public
-addon zip.
+Development-only debug native artifacts and desktop Godot CEF artifacts should
+not be included in the public addon zip.
 
 ## User Install Flow
 

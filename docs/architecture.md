@@ -8,6 +8,7 @@ We are standardizing only the minimum plugin shape needed to support:
 - a scene-friendly KirieView node
 - a thin C# KirieClient wrapper for .NET projects
 - Android and iOS native WebView implementations
+- a desktop Godot CEF backend, starting with macOS
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
 
@@ -20,6 +21,8 @@ The Android IPC experiment keeps Kirie core byte-oriented and CBOR-based while
 preserving separate text, binary, and data lanes. Higher-level protocols,
 including Eventa adapters, remain above Kirie. iOS still uses the previous
 text-oriented native path and has not yet been migrated to binary CBOR lanes.
+Desktop compatibility now starts from Godot CEF's IPC lane shape rather than
+from a broader browser-node API.
 
 ## Current Godot API direction
 
@@ -112,6 +115,130 @@ rewriting those URLs.
 The addon export plugin currently includes `res://web` in the iOS app bundle.
 Android example exports still rely on the project export preset include filters
 for packaged web files.
+
+## Desktop Godot CEF direction
+
+Kirie now treats Godot CEF as the desktop WebView and IPC backend compatibility
+target. The first desktop target is macOS. Windows and Linux should follow the
+same shape once macOS works, but iOS and Android continue to use their platform
+WebView implementations.
+
+This work is scoped to Kirie's current low-level WebView and IPC surface:
+
+- `create_webview`
+- `destroy_webview`
+- `load_url`
+- `load_html_string`
+- `send_text`
+- `send_binary`
+- `send_data`
+- `webview_ready`, `text_received`, `binary_received`, `data_received`, and
+  `ipc_error`
+
+Do not expose Godot CEF's full browser-control API as Kirie API just because the
+desktop backend can do it. If Kirie later adopts more of the Godot CEF IPC
+surface, add each capability only when there is a cross-platform plan for the
+Android WebView and iOS WKWebView backends.
+
+The `@gd-kirie/ipc` browser package should not detect backend implementation
+details such as `window.sendIpcMessage` or Android channel object names. It
+should select its transport from the Kirie runtime platform object:
+
+```ts
+interface KiriePlatform {
+  os: "android" | "ios" | "macos" | "windows" | "linux";
+  backend: "webview" | "wkwebview" | "godot-cef";
+}
+
+interface KirieRuntime {
+  platform: KiriePlatform;
+}
+
+interface Window {
+  kirie?: KirieRuntime;
+}
+```
+
+The runtime object belongs to Kirie, not to Godot CEF. Godot CEF currently
+documents renderer-side IPC globals such as `window.sendIpcMessage`,
+`window.sendIpcBinaryMessage`, and `window.sendIpcData`, but not a stable
+platform-information object.
+
+Desktop Godot CEF binaries are external downloaded artifacts, not part of the
+default `kirie-addon.zip`. Only desktop run or export flows should check for
+Godot CEF. If a required desktop artifact is missing, fail before export or run
+and print the exact setup command. Android and iOS workflows must not require a
+Godot CEF download.
+
+Downloaded Godot CEF addons should use the standard Godot addon layout:
+
+```text
+addons/godot-cef/
+```
+
+This lets Godot recognize the Godot CEF plugin normally. Repository instances of
+that directory are ignored and should not be committed. Download logic must pin
+the Godot CEF version and verify the downloaded artifact before installing it.
+
+## JavaScript runtime injection
+
+Kirie browser-side code requires one invariant:
+
+```text
+Kirie initializes the JavaScript global before any user page script runs.
+```
+
+The injected runtime must be small and must not depend on the DOM. It should only
+require `globalThis` or `window`:
+
+```js
+globalThis.kirie ??= {};
+globalThis.kirie.platform = Object.freeze({
+  os: "macos",
+  backend: "godot-cef",
+});
+```
+
+The long-term platform mapping for this pre-page-script injection is:
+
+- Android: `WebViewCompat.addDocumentStartJavaScript`, registered before
+  `loadUrl`, `loadData`, or `loadDataWithBaseURL`. Android documents this as a
+  document-beginning script that runs before page JavaScript, while the DOM tree
+  might not be ready.
+- iOS: `WKUserScript` with `WKUserScriptInjectionTime.atDocumentStart`, added to
+  the `WKUserContentController` before the `WKWebView` loads content. Apple
+  documents this as after creation of the webpage document element but before
+  loading other content.
+- Godot CEF: a future preload or document-start hook backed by
+  `CefRenderProcessHandler::OnContextCreated`, which CEF documents as
+  immediately after the V8 context for a frame has been created. That hook can
+  access the JavaScript global through `CefV8Context::GetGlobal()` but should not
+  rely on the DOM.
+
+Godot CEF's current public Godot-facing API documents `eval(code)`, but `eval`
+executes JavaScript in the browser's main frame after the page exists. It is not
+a reliable Kirie runtime injection mechanism because it cannot guarantee that the
+runtime is available before the user's module bundle runs.
+
+Until Godot CEF exposes or receives a proper pre-page-script hook, Kirie should
+bootstrap local `res://` HTML entrypoints with HTML rewriting:
+
+1. Resolve Kirie-managed local HTML URLs such as `res://web/dist/index.html` or
+   `res://web/`.
+2. Read the HTML before handing it to the backend.
+3. Insert the Kirie runtime script before the user's script bundle.
+4. Load the rewritten HTML through the backend while preserving relative asset
+   loading.
+
+This mirrors established desktop WebView framework patterns. Electron uses a
+preload script that runs before the page is loaded and is commonly used to
+expose renderer IPC APIs. Tauri exposes initialization scripts whose documented
+timing is after the global object is created but before the HTML document is
+parsed and before scripts in the HTML run; it also documents an Android fallback
+that prepends initialization scripts to each HTML head when document-start
+support is unavailable. Wails serves `index.html` with injected IPC and runtime
+scripts. Kirie's HTML rewrite is therefore an intentional first step, not the
+final preferred backend hook.
 
 ## iOS packaging direction
 

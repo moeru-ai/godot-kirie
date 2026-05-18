@@ -67,10 +67,11 @@ Primary references live in [docs/references.md](docs/references.md).
 
 The first milestone is limited to:
 
-1. Create a WebView on mobile platforms.
+1. Create a WebView on mobile and desktop platforms.
 2. Establish bidirectional IPC between Godot and the WebView.
 3. Support packaged `res://` web content loading for bridge tests.
-4. Stabilize the minimum Kirie plugin shape before adding adapters and tooling.
+4. Add desktop Godot CEF compatibility, starting with macOS.
+5. Stabilize the minimum Kirie plugin shape before adding adapters and tooling.
 
 At this stage, Kirie is intended to stay a low-level WebView and IPC bridge. A
 small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper.
@@ -86,6 +87,10 @@ data through Jackson's tree model before emitting Godot-compatible values. JSON
 and Eventa envelopes remain caller or adapter choices carried over the text
 lane, not Kirie core payload types. iOS is still on the previous text-oriented
 native path and has not yet been migrated to binary CBOR lanes.
+
+Desktop compatibility starts with Godot CEF as Kirie's desktop WebView backend,
+with macOS as the first target. Scope and runtime-injection details live in
+[docs/architecture.md](docs/architecture.md).
 
 `GdKirie.EventaAdapter` intentionally targets `net10.0` because the upstream
 Eventa .NET package targets `net10.0`, and .NET 8 LTS reaches end of support on
