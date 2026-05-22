@@ -59,6 +59,9 @@ class KirieWebViewManager(
             if (!installMessageChannels(createdWebView)) {
                 return@runOnUiThread
             }
+            if (!installRuntimeScript(createdWebView)) {
+                return@runOnUiThread
+            }
 
             createdWebView.webViewClient =
                 DebugTlsBypassWebViewClient(
@@ -199,6 +202,16 @@ class KirieWebViewManager(
         return true
     }
 
+    private fun installRuntimeScript(webView: WebView): Boolean {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            onIpcError("Android WebView does not support document-start scripts")
+            return false
+        }
+
+        WebViewCompat.addDocumentStartJavaScript(webView, KIRIE_RUNTIME_SCRIPT, setOf("*"))
+        return true
+    }
+
     private fun installBytesChannel(
         webView: WebView,
         name: String,
@@ -230,5 +243,15 @@ class KirieWebViewManager(
         private const val TEXT_CHANNEL = "KirieTextChannel"
         private const val BINARY_CHANNEL = "KirieBinaryChannel"
         private const val DATA_CHANNEL = "KirieDataChannel"
+        private val KIRIE_RUNTIME_SCRIPT =
+            """
+            (() => {
+              globalThis.kirie ??= {};
+              globalThis.kirie.platform = {
+                os: "android",
+                backend: "webview",
+              };
+            })();
+            """.trimIndent()
     }
 }

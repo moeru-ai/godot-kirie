@@ -30,6 +30,15 @@ final class KirieManager: NSObject {
 
     private static let hostWindowRetryDelay: TimeInterval = 0.1
     private static let maxHostWindowResolveAttempts = 50
+    private static let kirieRuntimeScript = """
+    (() => {
+      globalThis.kirie ??= {};
+      globalThis.kirie.platform = {
+        os: "ios",
+        backend: "wkwebview",
+      };
+    })();
+    """
 
     private let notificationCenter = NotificationCenter.default
     private let sessionID = UUID().uuidString.lowercased()
@@ -139,8 +148,14 @@ final class KirieManager: NSObject {
             return
         }
 
+        guard let messageData = try? JSONEncoder().encode(messageJSON),
+              let messageLiteral = String(data: messageData, encoding: .utf8) else {
+            emitIpcError("Cannot encode IPC message for JavaScript dispatch")
+            return
+        }
+
         let script = """
-        window.dispatchEvent(new CustomEvent("kirie:ipc-message", { detail: \(messageJSON) }));
+        window.dispatchEvent(new CustomEvent("kirie:ipc-message", { detail: \(messageLiteral) }));
         """
 
         webView.evaluateJavaScript(script) { [weak self] _, error in
@@ -210,6 +225,13 @@ final class KirieManager: NSObject {
         }
 
         let userContentController = WKUserContentController()
+        userContentController.addUserScript(
+            WKUserScript(
+                source: Self.kirieRuntimeScript,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false
+            )
+        )
         userContentController.add(self, name: "kirie")
 
         let webViewConfiguration = WKWebViewConfiguration()
