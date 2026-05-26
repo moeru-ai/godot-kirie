@@ -58,7 +58,7 @@ example, and regression-test areas:
 - `examples/basic-ipc`: the first runnable manual integration example
 - `examples/eventa-csharp`: manual Godot C# Eventa adapter smoke example
 - `tests/integration`: exported-app platform integration tests
-- `gulpfile.ts`: native artifact and integration export orchestration
+- `scripts/build.ts`: native artifact and integration export implementation
 - `scripts`: local run helpers for native validation
 - `docs`: project notes and design decisions
   - `docs/dreams`: exploratory notes for ideas outside the current milestone

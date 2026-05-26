@@ -2,32 +2,14 @@
   "name": "godot-kirie",
   "version": "0.1.1",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "build": "pnpm -r run build",
-    "build:addon-pack": "gulp buildAddonPack",
-    "build:android-aar": "gulp buildAndroidAar",
-    "build:dotnet": "dotnet build GdKirie.slnx --configuration Release",
-    "build:integration-web": "gulp buildIntegrationWeb",
-    "build:integration-android": "gulp buildIntegrationAndroid",
-    "build:integration-ios": "gulp buildIntegrationIos",
-    "build:ios-xcframework": "gulp buildIosXcframework",
-    "build:native-artifacts": "gulp buildNativeArtifacts",
     "build:packages": "pnpm -rF './packages/*' run build",
-    "check:addon-pack": "gulp checkAddonPack",
-    "format": "pnpm run format:biome && pnpm run format:gdscript && pnpm run format:kotlin && pnpm run format:swift",
     "format:biome": "biome check --write .",
-    "format:gdscript": "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts",
-    "format:kotlin": "ktlint --format \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
-    "format:swift": "swiftlint lint --fix --format --no-cache --config .swiftlint.yml",
-    "lint": "pnpm run lint:biome && pnpm run lint:gdscript && pnpm run lint:kotlin && pnpm run lint:swift",
     "lint:biome": "biome check .",
-    "lint:gdscript": "gdlint packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts",
-    "lint:kotlin": "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\"",
-    "lint:swift": "swiftlint lint --strict --no-cache --config .swiftlint.yml",
-    "pack:nuget": "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release",
     "release": "bumpp",
-    "test:dotnet": "dotnet test --solution GdKirie.slnx --configuration Release",
     "test:ios-ipc-serialization": "bash scripts/run_basic_ipc_ios.sh",
     "test:unit": "pnpm -rF './packages/*' run test:run",
     "typecheck": "pnpm -rF './packages/*' run typecheck"
@@ -35,7 +17,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
     "bumpp": "^11.0.1",
-    "execa": "9.6.1",
-    "gulp": "5.0.1"
+    "execa": "9.6.1"
   }
 }

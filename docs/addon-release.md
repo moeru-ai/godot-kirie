@@ -56,7 +56,7 @@ After copying the files, enable Kirie from Godot's Project Settings Plugins tab.
 Build native release artifacts and pack the public addon zip:
 
 ```sh
-mise x -- corepack pnpm run build:addon-pack
+mise run build:addon-pack
 ```
 
 The task stages a clean addon tree at:
@@ -76,7 +76,7 @@ The zip is rooted so it unpacks into `addons/kirie`.
 To check an already staged addon tree without rebuilding native artifacts:
 
 ```sh
-mise x -- corepack pnpm run check:addon-pack
+mise run check:addon-pack
 ```
 
 ## GitHub Actions Flow

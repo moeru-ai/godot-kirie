@@ -48,8 +48,8 @@ the full Godot CEF browser API through Kirie.
   manual Godot C# Eventa adapter smoke example
 - `tests/integration`
   exported-app platform bridge regression target
-- `gulpfile.ts`
-  native artifact and integration export orchestration
+- `scripts/build.ts`
+  native artifact and integration export implementation
 - `scripts`
   local run helpers for Android and iOS validation
 - `.codex/skills`
@@ -155,7 +155,7 @@ For the current milestone, iOS should be owned by the standard addon tree:
   over ad hoc note files.
 - Pull request titles must follow the same Conventional Commits-style
   subject format as commit titles, for example `ci: cache iOS build inputs`
-  or `refactor(build): migrate to gulp`.
+  or `refactor(build): migrate task orchestration`.
 
 ## Tooling
 
@@ -174,23 +174,22 @@ For the current milestone, iOS should be owned by the standard addon tree:
   and command-line tools around them.
 - Start command invocations with the fewest necessary flags and options. Add
   extra flags only after the project or user has a concrete need for them.
-- Native artifact orchestration lives in `gulpfile.ts`. Use
-  `mise x -- corepack pnpm run build:android-aar`,
-  `mise x -- corepack pnpm run build:ios-xcframework`, or
-  `mise x -- corepack pnpm run build:native-artifacts` instead of adding new
-  shell-only orchestration for the same artifact path.
-- Addon release packaging also lives in `gulpfile.ts`. Use
-  `mise x -- corepack pnpm run build:addon-pack` to build native artifacts and
-  produce `dist/kirie-addon.zip`; use
-  `mise x -- corepack pnpm run check:addon-pack` to verify an already staged
-  addon tree.
-- Integration export orchestration also lives in `gulpfile.ts`. Use
-  `mise x -- corepack pnpm run build:integration-android` or
-  `mise x -- corepack pnpm run build:integration-ios` instead of adding new
-  integration build shell scripts.
-- Keep `gulpfile.ts` executable by Node's built-in TypeScript type stripping:
-  use erasable TypeScript syntax only and do not add `ts-node`, `tsx`, or other
-  TypeScript runtime loaders unless a real non-erasable TypeScript need appears.
+- Native artifact orchestration lives in mise tasks, with implementation in
+  `scripts/build.ts`. Use `mise run build:android-aar`,
+  `mise run build:ios-xcframework`, or `mise run build:native-artifacts`
+  instead of adding new shell-only orchestration for the same artifact path.
+- Addon release packaging also lives in mise tasks, with implementation in
+  `scripts/build.ts`. Use `mise run build:addon-pack` to build native
+  artifacts and produce `dist/kirie-addon.zip`; use
+  `mise run check:addon-pack` to verify an already staged addon tree.
+- Integration export orchestration also lives in mise tasks, with
+  implementation in `scripts/build.ts`. Use
+  `mise run build:integration-android` or `mise run build:integration-ios`
+  instead of adding new integration build shell scripts.
+- Keep `scripts/build.ts` executable by Node's built-in TypeScript type
+  stripping: use erasable TypeScript syntax only and do not add `ts-node`,
+  `tsx`, or other TypeScript runtime loaders unless a real non-erasable
+  TypeScript need appears.
 
 ## Engineering Rules
 
@@ -266,25 +265,25 @@ configured yet.
 - Use `examples/basic-ipc` for manual smoke validation and `tests/integration`
   for exported-app platform bridge regressions.
 - Run the relevant lint target through mise after changing a covered language:
-  - GDScript: `mise x -- corepack pnpm run lint:gdscript`
+  - GDScript: `mise run lint:gdscript`
   - TypeScript, JSON, CSS, and HTML: `mise x -- corepack pnpm run lint:biome`
-  - Kotlin and Gradle Kotlin DSL: `mise x -- corepack pnpm run lint:kotlin`
-  - Swift: `mise x -- corepack pnpm run lint:swift`
-- Run `mise x -- corepack pnpm run lint` when changes span multiple covered
+  - Kotlin and Gradle Kotlin DSL: `mise run lint:kotlin`
+  - Swift: `mise run lint:swift`
+- Run `mise run lint` when changes span multiple covered
   languages or before finalizing broad changes.
 - Use the matching format target when making style-only fixes:
-  `mise x -- corepack pnpm run format:gdscript`,
+  `mise run format:gdscript`,
   `mise x -- corepack pnpm run format:biome`,
-  `mise x -- corepack pnpm run format:kotlin`, or
-  `mise x -- corepack pnpm run format:swift`.
+  `mise run format:kotlin`, or
+  `mise run format:swift`.
 - When changing Android bridge code, validate the Godot-to-native-to-web path as
   soon as practical.
 - After changing Android native code under `packages/kirie/native/android`,
-  run `mise x -- corepack pnpm run build:android-aar` before exported-app tests.
+  run `mise run build:android-aar` before exported-app tests.
 - When changing iOS bridge code, validate the Godot-to-native-to-web path as
   soon as practical.
 - After changing iOS native code under `packages/kirie/native/ios`, always run
-  `mise x -- corepack pnpm run build:ios-xcframework` before device testing.
+  `mise run build:ios-xcframework` before device testing.
 - When changing the IPC shape, make sure at least one real request/response
   exchange remains manually smoke-tested through `examples/basic-ipc` or covered
   by integration tests once those tests are migrated to the lane API.

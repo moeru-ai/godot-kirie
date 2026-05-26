@@ -33,7 +33,7 @@ The project definition lives in [project.yml](./project.yml). The generated `.xc
 Run the repository-level task:
 
 ```sh
-mise x -- corepack pnpm run build:ios-xcframework
+mise run build:ios-xcframework
 ```
 
 The task will:

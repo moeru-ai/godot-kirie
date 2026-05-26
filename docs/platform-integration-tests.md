@@ -160,13 +160,13 @@ bridge assertion.
 Build the staged Android addon AAR first:
 
 ```bash
-mise x -- corepack pnpm run build:android-aar
+mise run build:android-aar
 ```
 
 Build the test APK:
 
 ```bash
-mise x -- corepack pnpm run build:integration-android
+mise run build:integration-android
 ```
 
 This task builds the Vite web fixture before exporting the Godot project.
@@ -234,13 +234,13 @@ IOS_TEST_DESTINATION="platform=iOS Simulator,name=iPhone 15" \
 Build the staged iOS addon XCFramework first:
 
 ```bash
-mise x -- corepack pnpm run build:ios-xcframework
+mise run build:ios-xcframework
 ```
 
 Build the simulator app:
 
 ```bash
-mise x -- corepack pnpm run build:integration-ios
+mise run build:integration-ios
 ```
 
 This task also builds the Vite web fixture before exporting the Godot project.

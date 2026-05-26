@@ -130,9 +130,9 @@ packaging, or platform WebView bridge details.
 
 - [Node.js TypeScript support](https://nodejs.org/api/typescript.html)
   Reference for Node's built-in TypeScript type stripping and erasable syntax
-  constraints used by the repository `gulpfile.ts`.
-- [Gulp creating tasks](https://gulpjs.com/docs/en/getting-started/creating-tasks/)
-  Reference for exported Gulp task functions and task composition.
+  constraints used by the repository task implementation.
+- [mise task configuration](https://mise.jdx.dev/tasks/task-configuration.html)
+  Reference for repository task dependencies and task graph behavior.
 - [Execa](https://github.com/sindresorhus/execa)
   Reference for programmatic process execution from the repository task runner.
 - [Vite build guide](https://vite.dev/guide/build)

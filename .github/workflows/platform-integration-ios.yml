@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: godot/bin/libgodot.ios.template_debug.arm64.simulator.a
-          key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-simulator-template-${{ hashFiles('gulpfile.ts') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-simulator-template-${{ hashFiles('scripts/build.ts') }}
 
       - name: Enable Corepack
         run: mise x -- corepack enable pnpm
@@ -98,10 +98,10 @@ jobs:
         run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Build iOS XCFramework
-        run: mise x -- corepack pnpm run build:ios-xcframework
+        run: mise run build:ios-xcframework
 
       - name: Build integration App
-        run: mise x -- corepack pnpm run build:integration-ios
+        run: mise run build:integration-ios
 
       - name: Start iOS Simulator
         run: |

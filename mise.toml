@@ -17,3 +17,115 @@ dotnet = "10"
 ktlint = "1.8.0"
 swiftlint = "0.62.2"
 "pipx:gdtoolkit" = "4.5.0"
+
+[tasks.build]
+description = "Build all workspace packages"
+run = "corepack pnpm run build"
+
+[tasks."build:addon-pack"]
+description = "Build native artifacts and package the Godot addon"
+depends = ["build:native-artifacts"]
+run = "node scripts/build.ts pack-addon"
+
+[tasks."build:android-aar"]
+description = "Build Android AAR artifacts"
+run = "node scripts/build.ts build-android-aar"
+
+[tasks."build:dotnet"]
+description = "Build .NET projects"
+run = "dotnet build GdKirie.slnx --configuration Release"
+
+[tasks."build:integration-web"]
+description = "Build integration web assets"
+run = "node scripts/build.ts build-integration-web"
+
+[tasks."build:integration-android"]
+description = "Build Android integration export"
+depends = ["build:integration-web"]
+run = "node scripts/build.ts build-integration-android"
+
+[tasks."build:integration-ios"]
+description = "Build iOS integration export"
+depends = ["build:integration-web"]
+run = "node scripts/build.ts build-integration-ios"
+
+[tasks."build:ios-xcframework"]
+description = "Build iOS xcframework artifact"
+run = "node scripts/build.ts build-ios-xcframework"
+
+[tasks."build:native-artifacts"]
+description = "Build all native artifacts"
+depends = ["build:android-aar", "build:ios-xcframework"]
+run = "true"
+
+[tasks."build:packages"]
+description = "Build publishable packages"
+run = "corepack pnpm run build:packages"
+
+[tasks."check:addon-pack"]
+description = "Check staged addon package contents"
+run = "node scripts/build.ts check-addon-pack"
+
+[tasks.format]
+description = "Format all covered source files"
+run = "corepack pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift"
+
+[tasks."format:biome"]
+description = "Format TypeScript, JSON, CSS, and HTML files"
+run = "corepack pnpm run format:biome"
+
+[tasks."format:gdscript"]
+description = "Format GDScript files"
+run = "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts"
+
+[tasks."format:kotlin"]
+description = "Format Kotlin and Gradle Kotlin DSL files"
+run = "ktlint --format \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\""
+
+[tasks."format:swift"]
+description = "Format Swift files"
+run = "swiftlint lint --fix --format --no-cache --config .swiftlint.yml"
+
+[tasks.lint]
+description = "Run all linters"
+run = "corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift"
+
+[tasks."lint:biome"]
+description = "Lint TypeScript, JSON, CSS, and HTML files"
+run = "corepack pnpm run lint:biome"
+
+[tasks."lint:gdscript"]
+description = "Lint GDScript files"
+run = "gdlint packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts"
+
+[tasks."lint:kotlin"]
+description = "Lint Kotlin and Gradle Kotlin DSL files"
+run = "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/android/**/*.kts\""
+
+[tasks."lint:swift"]
+description = "Lint Swift files"
+run = "swiftlint lint --strict --no-cache --config .swiftlint.yml"
+
+[tasks."pack:nuget"]
+description = "Pack the .NET Eventa adapter NuGet package"
+run = "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release"
+
+[tasks.release]
+description = "Run the package release flow"
+run = "corepack pnpm run release"
+
+[tasks."test:dotnet"]
+description = "Run .NET tests"
+run = "dotnet test --solution GdKirie.slnx --configuration Release"
+
+[tasks."test:ios-ipc-serialization"]
+description = "Run iOS IPC serialization tests"
+run = "corepack pnpm run test:ios-ipc-serialization"
+
+[tasks."test:unit"]
+description = "Run package unit tests"
+run = "corepack pnpm run test:unit"
+
+[tasks.typecheck]
+description = "Typecheck publishable packages"
+run = "corepack pnpm run typecheck"

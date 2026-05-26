@@ -132,7 +132,7 @@ jobs:
         run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Build addon pack
-        run: mise x -- corepack pnpm run build:addon-pack
+        run: mise run build:addon-pack
 
       - name: Upload addon artifact
         uses: actions/upload-artifact@v7
