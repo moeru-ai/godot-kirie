@@ -5,6 +5,11 @@ options:
   developmentLanguage: en
   createIntermediateGroups: false
 
+packages:
+  SwiftCBOR:
+    url: https://github.com/valpackett/SwiftCBOR.git
+    branch: master
+
 targets:
   Kirie:
     type: framework
@@ -39,3 +44,30 @@ targets:
       - sdk: Foundation.framework
       - sdk: UIKit.framework
       - sdk: WebKit.framework
+      - package: SwiftCBOR
+  KirieIpcSerializationTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/Kirie/KirieIpcPacketCodec.swift
+      - path: Tests/KirieIpcSerializationTests
+    settings:
+      PRODUCT_NAME: KirieIpcSerializationTests
+      PRODUCT_BUNDLE_IDENTIFIER: ai.moeru.godot.kirie.ios.ipcSerializationTests
+      GENERATE_INFOPLIST_FILE: YES
+      SWIFT_VERSION: 6.0
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
+    dependencies:
+      - sdk: XCTest.framework
+      - package: SwiftCBOR
+
+schemes:
+  KirieIpcSerializationTests:
+    build:
+      targets:
+        KirieIpcSerializationTests: all
+    test:
+      targets:
+        - KirieIpcSerializationTests

@@ -78,6 +78,48 @@ public func kirie_swift_send_ipc_message(_ messageJSONPointer: UnsafePointer<CCh
     }
 }
 
+@_cdecl("kirie_swift_send_text")
+public func kirie_swift_send_text(_ messagePointer: UnsafePointer<CChar>?) {
+    guard let messagePointer else {
+        kirieLogEntry("kirie_swift_send_text ignored nil pointer")
+        return
+    }
+
+    let message = String(cString: messagePointer)
+    kirieLogEntry("kirie_swift_send_text bytes=\(message.utf8.count)")
+    DispatchQueue.main.async {
+        KirieManager.shared.sendText(message)
+    }
+}
+
+@_cdecl("kirie_swift_send_binary")
+public func kirie_swift_send_binary(_ bytesPointer: UnsafePointer<UInt8>?, _ byteCount: Int) {
+    guard let bytesPointer else {
+        kirieLogEntry("kirie_swift_send_binary ignored nil pointer")
+        return
+    }
+
+    let bytes = Data(bytes: bytesPointer, count: byteCount)
+    kirieLogEntry("kirie_swift_send_binary bytes=\(bytes.count)")
+    DispatchQueue.main.async {
+        KirieManager.shared.sendBinary(bytes)
+    }
+}
+
+@_cdecl("kirie_swift_send_data_json")
+public func kirie_swift_send_data_json(_ jsonPointer: UnsafePointer<CChar>?) {
+    guard let jsonPointer else {
+        kirieLogEntry("kirie_swift_send_data_json ignored nil pointer")
+        return
+    }
+
+    let json = String(cString: jsonPointer)
+    kirieLogEntry("kirie_swift_send_data_json bytes=\(json.utf8.count)")
+    DispatchQueue.main.async {
+        KirieManager.shared.sendDataJSON(json)
+    }
+}
+
 private func kirieLogEntry(_ message: String) {
     NSLog("[Kirie][entry] %@", message)
 }

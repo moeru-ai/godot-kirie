@@ -1,7 +1,7 @@
 class_name KirieIntegrationProbe
 extends RefCounted
 
-const PROBE_INDEX_HTML_PATH := "res://web/index.html"
+const PROBE_INDEX_HTML_PATH := "res://web-src/index.html"
 const DEFAULT_TEST_TIMEOUT_SECONDS := 12.0
 const IOS_TEST_TIMEOUT_SECONDS := 30.0
 
@@ -18,6 +18,7 @@ func _init(kirie: GdKirie, tree: SceneTree) -> void:
 	_kirie = kirie
 	_tree = tree
 
+	print("[Kirie][DEBUG] Connecting signal handlers in test_probe._init")
 	_kirie.webview_ready.connect(_on_webview_ready)
 	_kirie.text_received.connect(_on_text_received)
 	_kirie.binary_received.connect(_on_binary_received)
@@ -26,6 +27,7 @@ func _init(kirie: GdKirie, tree: SceneTree) -> void:
 
 
 func reset() -> void:
+	print("[Kirie][DEBUG] Resetting probe tracking arrays")
 	_binary_messages.clear()
 	_data_messages.clear()
 	_probe_error = ""
@@ -36,6 +38,7 @@ func reset() -> void:
 func read_probe_index_html() -> String:
 	if not FileAccess.file_exists(PROBE_INDEX_HTML_PATH):
 		_probe_error = "Missing probe index HTML: %s" % PROBE_INDEX_HTML_PATH
+		print("[Kirie][ERROR] %s" % _probe_error)
 		return ""
 
 	return FileAccess.get_file_as_string(PROBE_INDEX_HTML_PATH)
@@ -47,12 +50,15 @@ func failure_reason() -> String:
 
 func wait_for_webview_ready(probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
+	print("[Kirie][DEBUG] Starting wait_for_webview_ready. Timeout: %.1fs" % timeout_seconds)
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
+			print("[Kirie][DEBUG] wait_for_webview_ready aborted due to probe error: %s" % _probe_error)
 			return _probe_error
 
 		if _webview_is_ready:
+			print("[Kirie][DEBUG] wait_for_webview_ready success")
 			return ""
 
 		await _tree.process_frame
@@ -64,12 +70,15 @@ func wait_for_webview_ready(probe_name: String) -> String:
 
 func wait_for_data_message(message_type: String, probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
+	print("[Kirie][DEBUG] Starting wait_for_data_message for type: '%s'" % message_type)
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
+			print("[Kirie][DEBUG] wait_for_data_message aborted due to probe error: %s" % _probe_error)
 			return _probe_error
 
 		if _has_data_message(message_type, probe_name):
+			print("[Kirie][DEBUG] Found target data message '%s' successfully" % message_type)
 			return ""
 
 		await _tree.process_frame
@@ -87,12 +96,14 @@ func wait_for_data_message(message_type: String, probe_name: String) -> String:
 
 func wait_for_data_echo(expected: Variant, probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
+	print("[Kirie][DEBUG] Starting wait_for_data_echo")
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
 			return _probe_error
 
 		if _has_data_echo(expected):
+			print("[Kirie][DEBUG] Found expected data echo packet match")
 			return ""
 
 		await _tree.process_frame
@@ -110,12 +121,14 @@ func wait_for_data_echo(expected: Variant, probe_name: String) -> String:
 
 func wait_for_text_message(expected: String, probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
+	print("[Kirie][DEBUG] Starting wait_for_text_message for: '%s'" % expected)
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
 			return _probe_error
 
 		if expected in _text_messages:
+			print("[Kirie][DEBUG] Found target text message match")
 			return ""
 
 		await _tree.process_frame
@@ -133,6 +146,7 @@ func wait_for_text_message(expected: String, probe_name: String) -> String:
 
 func wait_for_binary_message(expected: PackedByteArray, probe_name: String) -> String:
 	var timeout_seconds := _test_timeout_seconds()
+	print("[Kirie][DEBUG] Starting wait_for_binary_message with size: %d" % expected.size())
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
@@ -140,6 +154,7 @@ func wait_for_binary_message(expected: PackedByteArray, probe_name: String) -> S
 
 		for bytes in _binary_messages:
 			if bytes == expected:
+				print("[Kirie][DEBUG] Found matching binary buffer payload")
 				return ""
 
 		await _tree.process_frame
@@ -162,6 +177,10 @@ func _has_data_message(message_type: String, probe_name: String) -> bool:
 
 		var payload: Variant = message.get("payload", {})
 		if typeof(payload) != TYPE_DICTIONARY:
+			print(
+				"[Kirie][DEBUG] Key 'type' matched '%s', but 'payload' type is %d instead of TYPE_DICTIONARY"
+				% [message_type, typeof(payload)]
+			)
 			continue
 
 		var payload_dictionary := payload as Dictionary
@@ -257,7 +276,7 @@ func _on_webview_ready() -> void:
 
 
 func _on_text_received(message: String) -> void:
-	print("[Kirie][test] signal text_received %s" % message)
+	print("[Kirie][test] signal text_received: %s" % message)
 	_text_messages.append(message)
 
 
@@ -267,15 +286,27 @@ func _on_binary_received(bytes: PackedByteArray) -> void:
 
 
 func _on_data_received(value: Variant) -> void:
-	print("[Kirie][test] signal data_received %s" % str(value))
+	var val_type := typeof(value)
+	print(
+		"[Kirie][test] signal data_received raw_type_id=%d value_str=%s"
+		% [val_type, str(value)]
+	)
 
-	if typeof(value) != TYPE_DICTIONARY:
+	if val_type != TYPE_DICTIONARY:
+		print(
+			"[Kirie][WARNING] Ignored data_received payload because type %d is not TYPE_DICTIONARY"
+			% val_type
+		)
 		return
 
 	var message := value as Dictionary
+	print(
+		"[Kirie][DEBUG] Successfully appended structured dictionary message: %s"
+		% JSON.stringify(message)
+	)
 	_data_messages.append(message)
 
 
 func _on_ipc_error(error: String) -> void:
 	_probe_error = error
-	print("[Kirie][test] signal ipc_error %s" % error)
+	print("[Kirie][ERROR][test] signal ipc_error: %s" % error)

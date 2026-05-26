@@ -123,7 +123,11 @@ func _connect_plugin_signals() -> void:
 		var text_received_callback := Callable(self, "_on_plugin_text_received")
 		var ipc_error_callback := Callable(self, "_on_plugin_ipc_error")
 		_plugin_singleton.registerCallbacks(
-			webview_ready_callback, text_received_callback, ipc_error_callback
+			webview_ready_callback,
+			text_received_callback,
+			Callable(self, "_on_plugin_binary_received"),
+			Callable(self, "_on_plugin_data_received"),
+			ipc_error_callback
 		)
 		return
 

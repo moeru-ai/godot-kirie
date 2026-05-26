@@ -1,10 +1,12 @@
 included:
   - packages/kirie/native/ios/Kirie/Sources/Kirie
+  - packages/kirie/native/ios/Kirie/Tests
 
 excluded:
   - packages/kirie/native/ios/Kirie/Sources/Kirie/KirieBridge.mm
   - packages/kirie/native/ios/Kirie/Sources/Kirie/KiriePlugin.h
   - packages/kirie/native/ios/Kirie/Sources/Kirie/KiriePlugin.mm
+  - packages/kirie/native/ios/Kirie/Sources/Kirie/KirieManager.swift
 
 disabled_rules:
   - trailing_comma

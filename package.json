@@ -28,6 +28,7 @@
     "pack:nuget": "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release",
     "release": "bumpp",
     "test:dotnet": "dotnet test --solution GdKirie.slnx --configuration Release",
+    "test:ios-ipc-serialization": "bash scripts/run_basic_ipc_ios.sh",
     "test:unit": "pnpm -rF './packages/*' run test:run",
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },

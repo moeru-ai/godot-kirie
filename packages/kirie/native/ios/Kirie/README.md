@@ -7,8 +7,9 @@ This directory contains the native iOS implementation for `Kirie`, the first-pas
 - Exposes `init_kirie` and `deinit_kirie` entry points for the Godot iOS plugin system.
 - Registers the `Kirie` Godot singleton.
 - Creates a transparent full-screen `WKWebView` through `createWebView`.
-- Bridges IPC with `window.webkit.messageHandlers.kirie.postMessage(...)` and
-  `kirie:ipc-message` DOM events.
+- Bridges text, binary, and data IPC lanes with CBOR packets carried through
+  `window.webkit.messageHandlers.kirie.postMessage(...)` and `kirie:ipc-packet`
+  DOM events.
 - Resolves `res://` web URLs to files exported into the app bundle and serves
   them through Kirie's `WKURLSchemeHandler`.
 

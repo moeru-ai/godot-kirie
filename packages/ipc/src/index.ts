@@ -24,6 +24,13 @@ interface KirieIosMessageHandler {
   postMessage(message: string): void;
 }
 
+type KirieLane = "text" | "binary" | "data";
+
+interface KirieIosPacketMessage {
+  lane: KirieLane;
+  packet: string;
+}
+
 interface KirieIosWebkit {
   messageHandlers?: {
     kirie?: KirieIosMessageHandler;
@@ -185,38 +192,90 @@ function requireIosMessageHandler(): KirieIosMessageHandler {
   return handler;
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(encoded: string): ArrayBuffer {
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer as ArrayBuffer;
+}
+
+function postIosPacket(lane: KirieLane, packet: Uint8Array): void {
+  requireIosMessageHandler().postMessage(
+    JSON.stringify({
+      lane,
+      packet: bytesToBase64(packet),
+    } satisfies KirieIosPacketMessage),
+  );
+}
+
+function listenIos<TMessage>(
+  lane: KirieLane,
+  read: (value: unknown) => TMessage,
+  handler: KirieMessageHandler<TMessage>,
+): () => void {
+  const listener = (event: Event) => {
+    if (!(event instanceof CustomEvent) || !isIosPacketMessage(event.detail)) {
+      return;
+    }
+
+    if (event.detail.lane !== lane) {
+      return;
+    }
+
+    handler(read(base64ToArrayBuffer(event.detail.packet)));
+  };
+
+  window.addEventListener("kirie:ipc-packet", listener);
+  return () => window.removeEventListener("kirie:ipc-packet", listener);
+}
+
+function isIosPacketMessage(value: unknown): value is KirieIosPacketMessage {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const message = value as Partial<KirieIosPacketMessage>;
+  return (
+    (message.lane === "text" || message.lane === "binary" || message.lane === "data") &&
+    typeof message.packet === "string"
+  );
+}
+
 const iosTransport: KirieTransport = {
   sendText(message) {
-    requireIosMessageHandler().postMessage(message);
+    postIosPacket("text", encode(message, ENCODE_OPTIONS));
   },
 
-  sendBinary() {
-    throw new Error("Kirie iOS binary lane is not available yet.");
+  sendBinary(bytes) {
+    postIosPacket("binary", encode(bytes, ENCODE_OPTIONS));
   },
 
-  sendData() {
-    throw new Error("Kirie iOS data lane is not available yet.");
+  sendData(value) {
+    postIosPacket("data", encode(value, ENCODE_OPTIONS));
   },
 
   onTextReceived(handler) {
-    const listener = (event: Event) => {
-      if (!(event instanceof CustomEvent) || typeof event.detail !== "string") {
-        return;
-      }
-
-      handler(event.detail);
-    };
-
-    window.addEventListener("kirie:ipc-message", listener);
-    return () => window.removeEventListener("kirie:ipc-message", listener);
+    return listenIos("text", decodeText, handler);
   },
 
-  onBinaryReceived() {
-    throw new Error("Kirie iOS binary lane is not available yet.");
+  onBinaryReceived(handler) {
+    return listenIos("binary", decodeBinary, handler);
   },
 
-  onDataReceived() {
-    throw new Error("Kirie iOS data lane is not available yet.");
+  onDataReceived(handler) {
+    return listenIos("data", (value) => decode(asUint8Array(value)) as KirieData, handler);
   },
 };
 

@@ -170,6 +170,8 @@ public partial class KirieClient : GodotObject
                 "registerCallbacks",
                 _webViewReadyCallable,
                 _textReceivedCallable,
+                _binaryReceivedCallable,
+                _dataReceivedCallable,
                 _ipcErrorCallable
             );
             return;

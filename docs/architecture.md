@@ -19,10 +19,10 @@ bridge. Eventa adapters live above Kirie and use that low-level text transport.
 
 The Android IPC experiment keeps Kirie core byte-oriented and CBOR-based while
 preserving separate text, binary, and data lanes. Higher-level protocols,
-including Eventa adapters, remain above Kirie. iOS still uses the previous
-text-oriented native path and has not yet been migrated to binary CBOR lanes.
-Desktop compatibility now starts from Godot CEF's IPC lane shape rather than
-from a broader browser-node API.
+including Eventa adapters, remain above Kirie. iOS has a native CBOR
+serialization test target for the same lane payload contract, but its WebView
+transport still uses the previous text-oriented native path and has not yet
+been migrated to binary CBOR lanes.
 
 ## Current Godot API direction
 
@@ -45,9 +45,8 @@ Current public Godot-facing names should stay close to that low-level role:
 
 These names describe the current low-level transport API. Android implements
 the lane shape with AndroidX WebKit ArrayBuffer message channels and CBOR
-packets. iOS remains text-only; the Godot wrapper keeps a compatibility
-fallback to the previous `sendIpcMessage` native method for text sends on
-unmigrated platforms.
+packets. iOS implements the same text, binary, and data lanes with CBOR packets
+carried as base64 strings through WKWebView script messages.
 
 The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side

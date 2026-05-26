@@ -5,7 +5,15 @@ import WebKit
 private extension Notification.Name {
     static let kirieWebViewReady = Notification.Name("KirieWebViewReady")
     static let kirieIpcMessageReceived = Notification.Name("KirieIpcMessageReceived")
+    static let kirieTextReceived = Notification.Name("KirieTextReceived")
+    static let kirieBinaryReceived = Notification.Name("KirieBinaryReceived")
+    static let kirieDataReceived = Notification.Name("KirieDataReceived")
     static let kirieIpcError = Notification.Name("KirieIpcError")
+}
+
+private struct KirieWebPacketMessage: Decodable {
+    let lane: String
+    let packet: String
 }
 
 private struct KirieRuntimeConfig {
@@ -136,38 +144,63 @@ final class KirieManager: NSObject {
             baseURL = nil
         }
 
-        logInfo("Loading HTML string; baseURL=\(baseURL?.absoluteString ?? "<nil>")")
         webView.loadHTMLString(html, baseURL: baseURL)
     }
 
     func sendIpcMessage(_ messageJSON: String) {
-        logInfo("sendIpcMessage message=\(messageJSON)")
+        sendText(messageJSON)
+    }
 
+    func sendText(_ message: String) {
+        dispatchPacket(KirieIpcPacketCodec.encodeText(message), lane: "text")
+    }
+
+    func sendBinary(_ bytes: Data) {
+        dispatchPacket(KirieIpcPacketCodec.encodeBinary(bytes), lane: "binary")
+    }
+
+    func sendDataJSON(_ json: String) {
         guard let webView else {
-            emitIpcError("Cannot send IPC message because the WebView does not exist")
+            emitIpcError("Cannot send data because the WebView does not exist")
             return
         }
 
-        guard let messageData = try? JSONEncoder().encode(messageJSON),
+        do {
+            let jsonData = Data(json.utf8)
+            let object = try JSONSerialization.jsonObject(with: jsonData, options: [.fragmentsAllowed])
+            let value = try KirieIpcValue.fromFoundationObject(object)
+            dispatchPacket(KirieIpcPacketCodec.encodeData(value), lane: "data", in: webView)
+        } catch {
+            emitIpcError("Cannot encode data IPC message: \(error.localizedDescription)")
+        }
+    }
+
+    private func dispatchPacket(_ packet: Data, lane: String, in webView: WKWebView? = nil) {
+        guard let webView = webView ?? self.webView else {
+            emitIpcError("Cannot send \(lane) because the WebView does not exist")
+            return
+        }
+
+        let message = [
+            "lane": lane,
+            "packet": packet.base64EncodedString(),
+        ]
+
+        guard let messageData = try? JSONSerialization.data(withJSONObject: message),
               let messageLiteral = String(data: messageData, encoding: .utf8) else {
-            emitIpcError("Cannot encode IPC message for JavaScript dispatch")
+            emitIpcError("Cannot encode \(lane) IPC packet for JavaScript dispatch")
             return
         }
 
         let script = """
-        window.dispatchEvent(new CustomEvent("kirie:ipc-message", { detail: \(messageLiteral) }));
+        window.dispatchEvent(new CustomEvent("kirie:ipc-packet", { detail: \(messageLiteral) }));
         """
 
         webView.evaluateJavaScript(script) { [weak self] _, error in
             if let error {
                 Task { @MainActor in
-                    self?.emitIpcError("Failed to dispatch IPC message to WebView: \(error.localizedDescription)")
+                    self?.emitIpcError("Failed to dispatch \(lane) to WebView: \(error.localizedDescription)")
                 }
-                return
-            }
-
-            Task { @MainActor in
-                self?.logInfo("Dispatched IPC message to WebView")
             }
         }
     }
@@ -292,26 +325,32 @@ final class KirieManager: NSObject {
     }
 
     private func emitWebViewReady() {
-        logInfo("Emitting webview_ready")
         notificationCenter.post(name: .kirieWebViewReady, object: nil)
     }
 
     private func emitIpcMessage(_ messageJSON: String) {
-        logInfo("ipc_message_received message=\(messageJSON)")
         notificationCenter.post(name: .kirieIpcMessageReceived, object: messageJSON)
     }
 
+    private func emitTextMessage(_ message: String) {
+        notificationCenter.post(name: .kirieTextReceived, object: message)
+    }
+
+    private func emitBinaryMessage(_ bytes: Data) {
+        notificationCenter.post(name: .kirieBinaryReceived, object: bytes)
+    }
+
+    private func emitDataMessage(_ value: KirieIpcValue) {
+        notificationCenter.post(name: .kirieDataReceived, object: value.foundationObject)
+    }
+
     private func emitIpcError(_ message: String) {
-        logError(message)
+        NSLog("[Kirie] ERROR %@", message)
         notificationCenter.post(name: .kirieIpcError, object: message)
     }
 
     private func logInfo(_ message: String) {
         NSLog("[Kirie][session=%@] %@", sessionID, message)
-    }
-
-    private func logError(_ message: String) {
-        NSLog("[Kirie][session=%@] ERROR %@", sessionID, message)
     }
 }
 
@@ -324,7 +363,7 @@ extension KirieManager: WKScriptMessageHandler {
         }
 
         if let messageJSON = message.body as? String {
-            emitIpcMessage(messageJSON)
+            handleWebPacketMessage(messageJSON)
             return
         }
 
@@ -337,21 +376,33 @@ extension KirieManager: WKScriptMessageHandler {
 
         emitIpcError("Received unsupported IPC message from JavaScript")
     }
+
+    private func handleWebPacketMessage(_ messageJSON: String) {
+        guard let messageData = messageJSON.data(using: .utf8),
+              let message = try? JSONDecoder().decode(KirieWebPacketMessage.self, from: messageData),
+              let packet = Data(base64Encoded: message.packet) else {
+            emitIpcMessage(messageJSON)
+            return
+        }
+
+        do {
+            switch message.lane {
+            case "text":
+                emitTextMessage(try KirieIpcPacketCodec.decodeText(packet))
+            case "binary":
+                emitBinaryMessage(try KirieIpcPacketCodec.decodeBinary(packet))
+            case "data":
+                emitDataMessage(try KirieIpcPacketCodec.decodeData(packet))
+            default:
+                emitIpcError("Received unsupported IPC lane from JavaScript: \(message.lane)")
+            }
+        } catch {
+            emitIpcError("Failed to decode \(message.lane) IPC packet: \(error.localizedDescription)")
+        }
+    }
 }
 
 extension KirieManager: WKNavigationDelegate {
-    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        logInfo("Navigation started url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
-    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        logInfo("Navigation committed url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        logInfo("Navigation finished url=\(webView.url?.absoluteString ?? "<nil>")")
-    }
-
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         emitIpcError("Navigation failed: \(error.localizedDescription)")
     }

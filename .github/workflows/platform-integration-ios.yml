@@ -112,13 +112,23 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
 
+      - name: Run iOS IPC serialization test
+        timeout-minutes: 10
+        run: mise x -- corepack pnpm run test:ios-ipc-serialization
+
+      - name: Install integration app
+        run: xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
+
+      - name: Pre-warm WebKit processes
+        run: |
+          xcrun simctl launch "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
+          sleep 35
+          xcrun simctl terminate "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
+          sleep 2
+
       - name: Run integration tests
         timeout-minutes: 8
-        env:
-          TIMEOUT_SECONDS: "45"
         run: |
-          xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
-
           scripts/run_integration_ios_test.sh ipc_round_trip_probe
           scripts/run_integration_ios_test.sh webview_lifecycle_probe
           scripts/run_integration_ios_test.sh res_asset_loading_probe
