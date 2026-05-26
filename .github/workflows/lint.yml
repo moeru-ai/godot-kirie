@@ -51,7 +51,7 @@ jobs:
         run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Run lint
-        run: mise x -- corepack pnpm run lint
+        run: mise run lint
 
   format:
     name: Format
@@ -90,7 +90,7 @@ jobs:
         run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Run format
-        run: mise x -- corepack pnpm run format
+        run: mise run format
 
   typecheck:
     name: Typecheck
@@ -129,4 +129,4 @@ jobs:
         run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Run typecheck
-        run: mise x -- corepack pnpm run typecheck
+        run: mise run typecheck

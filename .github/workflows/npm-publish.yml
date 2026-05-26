@@ -30,25 +30,28 @@ jobs:
         with:
           run_install: false
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - name: Install Node
+        uses: jdx/mise-action@v3
         with:
-          node-version: 24.x
-          registry-url: "https://registry.npmjs.org"
-          cache: pnpm
+          install: true
+          install_args: node
+          cache: true
+
+      - name: Enable Corepack
+        run: mise x -- corepack enable pnpm
 
       - name: Install pnpm dependencies
-        run: pnpm install --frozen-lockfile
+        run: mise x -- corepack pnpm install --frozen-lockfile
 
       - name: Typecheck packages
-        run: pnpm run typecheck
+        run: mise run typecheck
 
       - name: Build packages
-        run: pnpm run build:packages
+        run: mise run build:packages
 
       - name: Dry-run publish npm packages
-        run: pnpm publish -r --access public --no-git-checks --dry-run
+        run: mise x -- corepack pnpm publish -r --access public --no-git-checks --dry-run
 
       - name: Publish npm packages
         if: github.event_name == 'push'
-        run: pnpm publish -r --access public --no-git-checks
+        run: mise x -- corepack pnpm publish -r --access public --no-git-checks

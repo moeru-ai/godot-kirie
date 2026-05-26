@@ -266,14 +266,14 @@ configured yet.
   for exported-app platform bridge regressions.
 - Run the relevant lint target through mise after changing a covered language:
   - GDScript: `mise run lint:gdscript`
-  - TypeScript, JSON, CSS, and HTML: `mise x -- corepack pnpm run lint:biome`
+  - TypeScript, JSON, CSS, and HTML: `mise run lint:biome`
   - Kotlin and Gradle Kotlin DSL: `mise run lint:kotlin`
   - Swift: `mise run lint:swift`
 - Run `mise run lint` when changes span multiple covered
   languages or before finalizing broad changes.
 - Use the matching format target when making style-only fixes:
   `mise run format:gdscript`,
-  `mise x -- corepack pnpm run format:biome`,
+  `mise run format:biome`,
   `mise run format:kotlin`, or
   `mise run format:swift`.
 - When changing Android bridge code, validate the Godot-to-native-to-web path as

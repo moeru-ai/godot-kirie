@@ -37,7 +37,7 @@ URL. npm validates that field during trusted publishing.
 1. Run the release bump from the repository root:
 
    ```sh
-   mise x -- corepack pnpm run release
+   mise run release
    ```
 
    `bumpp` updates package versions recursively, runs a package build and

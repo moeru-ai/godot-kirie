@@ -220,7 +220,7 @@ without exporting a separate APK for every test.
 Run the native iOS CBOR serialization test:
 
 ```bash
-mise x -- corepack pnpm run test:ios-ipc-serialization
+mise run test:ios-ipc-serialization
 ```
 
 By default this uses the `iPhone 16` simulator destination. Override the
@@ -228,7 +228,7 @@ destination when a local machine has a different simulator:
 
 ```bash
 IOS_TEST_DESTINATION="platform=iOS Simulator,name=iPhone 15" \
-  mise x -- corepack pnpm run test:ios-ipc-serialization
+  mise run test:ios-ipc-serialization
 ```
 
 Build the staged iOS addon XCFramework first:
