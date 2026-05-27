@@ -1,8 +1,12 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { execa } from "execa";
+import godotCefConfig from "../packages/kirie/addon/addons/kirie/godot_cef.json" with {
+  type: "json",
+};
 
 const rootDir = process.cwd();
 const distDir = "dist";
@@ -24,6 +28,10 @@ const iosDerivedDataPath = `${iosBuildDir}/DerivedData`;
 const integrationProjectDir = "tests/integration";
 const integrationDistDir = "dist/integration";
 const godotSourceRoot = path.join(rootDir, "godot");
+
+const godotCefAssetName = `godot_cef-v${godotCefConfig.version}.zip`;
+const godotCefDownloadUrl = `https://github.com/dsh0416/godot-cef/releases/download/v${godotCefConfig.version}/${godotCefAssetName}`;
+const godotCefAddonProjectPath = godotCefConfig.addon_path.replace(/^res:\/\//, "");
 
 function findSimulatorLibgodot(dirPath: string): string | undefined {
   for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
@@ -71,7 +79,7 @@ function findSymlink(dirPath: string): string | undefined {
   return undefined;
 }
 
-function checkAddonPack(): void {
+export function checkAddonPack(): void {
   assertPathExists(addonStageDir);
   assertPathExists(androidStagedReleaseAar);
   assertPathExists(iosStagedXcframework);
@@ -87,7 +95,75 @@ function checkAddonPack(): void {
   }
 }
 
-async function buildAndroidAar(): Promise<void> {
+async function downloadFile(url: string, outputPath: string): Promise<void> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
+  }
+
+  const bytes = Buffer.from(await response.arrayBuffer());
+  fs.writeFileSync(outputPath, bytes);
+}
+
+function sha256File(filePath: string): string {
+  const hash = crypto.createHash("sha256");
+  hash.update(fs.readFileSync(filePath));
+  return hash.digest("hex");
+}
+
+export async function installGodotCef(projectDirArg?: string): Promise<void> {
+  if (!projectDirArg) {
+    throw new Error(
+      "Missing Godot project directory: mise run install:godot-cef <godot-project-dir>",
+    );
+  }
+
+  const projectDir = path.resolve(rootDir, projectDirArg);
+  if (!fs.existsSync(path.join(projectDir, "project.godot"))) {
+    throw new Error(`Godot project not found: ${projectDir}`);
+  }
+
+  const installDir = path.join(projectDir, godotCefAddonProjectPath);
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "godot-cef-"));
+  const archivePath = path.join(tempDir, godotCefAssetName);
+  const extractDir = path.join(tempDir, "extract");
+
+  console.log(`Downloading Godot CEF ${godotCefConfig.version}...`);
+  await downloadFile(godotCefDownloadUrl, archivePath);
+
+  const actualSha256 = sha256File(archivePath);
+  if (actualSha256 !== godotCefConfig.sha256) {
+    throw new Error(
+      `Godot CEF checksum mismatch: expected ${godotCefConfig.sha256}, got ${actualSha256}`,
+    );
+  }
+
+  fs.mkdirSync(extractDir, { recursive: true });
+  await execa("unzip", ["-q", archivePath, "-d", extractDir], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+
+  const extractedAddon = path.join(extractDir, "dist", godotCefAddonProjectPath);
+  if (
+    !fs.existsSync(
+      path.join(extractedAddon, `${path.basename(godotCefAddonProjectPath)}.gdextension`),
+    )
+  ) {
+    throw new Error(`Downloaded Godot CEF archive does not contain ${godotCefAddonProjectPath}`);
+  }
+
+  fs.mkdirSync(path.dirname(installDir), { recursive: true });
+  fs.rmSync(installDir, { force: true, recursive: true });
+  fs.cpSync(extractedAddon, installDir, { recursive: true });
+  fs.rmSync(tempDir, { force: true, recursive: true });
+
+  console.log(
+    `Installed Godot CEF ${godotCefConfig.version} to ${path.relative(rootDir, installDir)}`,
+  );
+}
+
+export async function buildAndroidAar(): Promise<void> {
   await execa(
     "mise",
     [
@@ -116,7 +192,7 @@ async function buildAndroidAar(): Promise<void> {
   fs.copyFileSync(`${androidAarOutputDir}/Kirie-release.aar`, releaseAar);
 }
 
-async function buildIosXcframework(): Promise<void> {
+export async function buildIosXcframework(): Promise<void> {
   fs.mkdirSync(iosBuildDir, { recursive: true });
   fs.mkdirSync(iosGeneratedDir, { recursive: true });
   fs.mkdirSync(iosOutputDir, { recursive: true });
@@ -210,14 +286,14 @@ async function buildIosXcframework(): Promise<void> {
   );
 }
 
-async function buildIntegrationWeb(): Promise<void> {
+export async function buildIntegrationWeb(): Promise<void> {
   await execa("corepack", ["pnpm", "--filter", "@gd-kirie/integration-web", "run", "build"], {
     cwd: rootDir,
     stdio: "inherit",
   });
 }
 
-async function buildIntegrationAndroid(): Promise<void> {
+export async function buildIntegrationAndroid(): Promise<void> {
   const apkPath = process.env.APK_PATH || `${integrationDistDir}/android_debug.apk`;
   fs.mkdirSync(path.dirname(apkPath), { recursive: true });
 
@@ -244,7 +320,7 @@ async function buildIntegrationAndroid(): Promise<void> {
   console.log(`Exported ${apkPath}`);
 }
 
-async function buildIntegrationIos(): Promise<void> {
+export async function buildIntegrationIos(): Promise<void> {
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
   const xcodeExportDir = `${integrationDistDir}/ios_xcode`;
   const projectName = "integration";
@@ -367,7 +443,7 @@ async function buildIntegrationIos(): Promise<void> {
   console.log(`Successfully built: ${appPath}`);
 }
 
-async function packAddon(): Promise<void> {
+export async function packAddon(): Promise<void> {
   fs.rmSync(addonStageDir, { force: true, recursive: true });
   fs.mkdirSync(path.dirname(addonStageDir), { recursive: true });
   fs.cpSync(addonSourceDir, addonStageDir, {
@@ -384,31 +460,4 @@ async function packAddon(): Promise<void> {
     cwd: path.join(rootDir, distDir),
     stdio: "inherit",
   });
-}
-
-const tasks: Record<string, () => void | Promise<void>> = {
-  "build-android-aar": buildAndroidAar,
-  "build-integration-android": buildIntegrationAndroid,
-  "build-integration-ios": buildIntegrationIos,
-  "build-integration-web": buildIntegrationWeb,
-  "build-ios-xcframework": buildIosXcframework,
-  "check-addon-pack": checkAddonPack,
-  "pack-addon": packAddon,
-};
-
-function printUsage(): void {
-  console.error("Usage: node scripts/build.ts <task>");
-  console.error(`Available tasks: ${Object.keys(tasks).sort().join(", ")}`);
-}
-
-const taskName = process.argv[2];
-if (!taskName) {
-  printUsage();
-  process.exitCode = 1;
-} else if (!tasks[taskName]) {
-  console.error(`Unknown build task: ${taskName}`);
-  printUsage();
-  process.exitCode = 1;
-} else {
-  await tasks[taskName]();
 }

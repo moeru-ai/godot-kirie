@@ -62,6 +62,13 @@ This creates a WebView if needed, loads
 
 Recommended to use [mise](https://mise.jdx.dev/) to manage Godot versions.
 
+Desktop runs use the pinned Godot CEF addon. Install it into this example before
+running on macOS, Windows, or Linux:
+
+```sh
+mise run install:godot-cef examples/basic-ipc
+```
+
 Run the Godot editor with the current project:
 
 

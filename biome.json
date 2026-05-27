@@ -13,7 +13,8 @@
       "**/*.json",
       "**/*.jsonc",
       "**/*.ts",
-      "**/*.tsx"
+      "**/*.tsx",
+      "!scripts/run-build-task.js"
     ]
   },
   "formatter": {

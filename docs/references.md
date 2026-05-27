@@ -82,6 +82,12 @@ packaging, or platform WebView bridge details.
 - [Godot CEF methods](https://godotcef.org/api/methods)
   Reference for `CefTexture` browser controls, JavaScript `eval`, and Godot CEF
   JavaScript IPC send APIs.
+- [Godot CEF properties](https://godotcef.org/api/properties)
+  Reference for `CefTexture.preload_script`, `preload_script_path`, and URL
+  loading behavior.
+- [Godot CEF releases](https://github.com/dsh0416/godot-cef/releases)
+  Desktop artifact source for Kirie. The current pin lives in
+  `addons/kirie/godot_cef.json`.
 - [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
   Stable CBOR specification used as the primary reference for Kirie IPC v1
   packet encoding.

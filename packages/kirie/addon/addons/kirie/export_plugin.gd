@@ -3,6 +3,7 @@ extends EditorExportPlugin
 
 const PLUGIN_NAME := "Kirie"
 const DEFAULT_WEB_ROOT := "res://web"
+const GodotCefConfig = preload("res://addons/kirie/godot_cef_config.gd")
 
 const OPTION_ENABLE_WEB_INSPECTOR := "kirie/debug/enable_web_inspector"
 const OPTION_ALLOW_TLS_BYPASS := "kirie/debug/allow_tls_bypass"
@@ -60,7 +61,11 @@ func _get_name() -> String:
 
 
 func _supports_platform(platform: EditorExportPlatform) -> bool:
-	return platform is EditorExportPlatformAndroid or platform is EditorExportPlatformIOS
+	return (
+		platform is EditorExportPlatformAndroid
+		or platform is EditorExportPlatformIOS
+		or _export_platform_is_desktop(platform)
+	)
 
 
 func _get_export_options(_platform: EditorExportPlatform) -> Array[Dictionary]:
@@ -87,6 +92,10 @@ func _get_export_options(_platform: EditorExportPlatform) -> Array[Dictionary]:
 func _export_begin(
 	features: PackedStringArray, _is_debug: bool, _path: String, _flags: int
 ) -> void:
+	if _features_are_desktop(features):
+		_assert_godot_cef_available()
+		return
+
 	if not features.has("ios"):
 		return
 
@@ -225,3 +234,35 @@ func _add_ios_native_plugin() -> void:
 	for system_framework in IOS_SYSTEM_FRAMEWORKS:
 		add_apple_embedded_platform_framework(system_framework)
 	add_apple_embedded_platform_cpp_code(IOS_PLUGIN_CPP_CODE)
+
+
+func _export_platform_is_desktop(platform: EditorExportPlatform) -> bool:
+	var platform_name := platform.get_os_name().to_lower()
+	return platform_name in ["macos", "windows", "linux", "linuxbsd", "freebsd", "netbsd", "openbsd"]
+
+
+func _features_are_desktop(features: PackedStringArray) -> bool:
+	return (
+		features.has("macos")
+		or features.has("windows")
+		or features.has("linux")
+		or features.has("linuxbsd")
+		or features.has("bsd")
+	)
+
+
+func _assert_godot_cef_available() -> void:
+	var config := GodotCefConfig.load()
+	if DirAccess.dir_exists_absolute(str(config["addon_path"])):
+		return
+
+	var message := (
+		"[Kirie][export] desktop export requires Godot CEF %s at %s. Install it with: %s %s"
+		% [
+			config["version"],
+			config["addon_path"],
+			config["setup_command"],
+			ProjectSettings.globalize_path("res://"),
+		]
+	)
+	assert(false, message)

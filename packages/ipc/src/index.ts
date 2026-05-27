@@ -37,6 +37,11 @@ interface KirieIosWebkit {
   };
 }
 
+interface KirieCefListener<TMessage> {
+  addListener(handler: KirieMessageHandler<TMessage>): void;
+  removeListener(handler: KirieMessageHandler<TMessage>): void;
+}
+
 declare global {
   interface Window {
     kirie?: KirieRuntime;
@@ -44,6 +49,12 @@ declare global {
     KirieBinaryChannel?: KirieAndroidChannel;
     KirieDataChannel?: KirieAndroidChannel;
     webkit?: KirieIosWebkit;
+    sendIpcMessage(message: string): void;
+    sendIpcBinaryMessage(message: ArrayBuffer): void;
+    sendIpcData(message: KirieData): void;
+    ipcMessage: KirieCefListener<string>;
+    ipcBinaryMessage: KirieCefListener<ArrayBuffer>;
+    ipcDataMessage: KirieCefListener<KirieData>;
   }
 }
 
@@ -279,9 +290,46 @@ const iosTransport: KirieTransport = {
   },
 };
 
+function listenCef<TMessage>(
+  listener: KirieCefListener<TMessage>,
+  handler: KirieMessageHandler<TMessage>,
+): () => void {
+  listener.addListener(handler);
+  return () => listener.removeListener(handler);
+}
+
+const cefTransport: KirieTransport = {
+  sendText(message) {
+    window.sendIpcMessage(message);
+  },
+
+  sendBinary(bytes) {
+    window.sendIpcBinaryMessage(asArrayBuffer(bytes));
+  },
+
+  sendData(value) {
+    window.sendIpcData(value);
+  },
+
+  onTextReceived(handler) {
+    return listenCef(window.ipcMessage, handler);
+  },
+
+  onBinaryReceived(handler) {
+    return listenCef(window.ipcBinaryMessage, (value) => handler(new Uint8Array(value)));
+  },
+
+  onDataReceived(handler) {
+    return listenCef(window.ipcDataMessage, handler);
+  },
+};
+
 const transports: Record<string, KirieTransport> = {
   "android/webview": androidTransport,
   "ios/wkwebview": iosTransport,
+  "linux/godot-cef": cefTransport,
+  "macos/godot-cef": cefTransport,
+  "windows/godot-cef": cefTransport,
 };
 
 export function sendText(message: string): void {

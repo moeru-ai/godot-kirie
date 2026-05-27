@@ -23,11 +23,11 @@ run = "corepack pnpm run build"
 [tasks."build:addon-pack"]
 description = "Build native artifacts and package the Godot addon"
 depends = ["build:native-artifacts"]
-run = "node scripts/build.ts pack-addon"
+run = "./scripts/run-build-task.js packAddon"
 
 [tasks."build:android-aar"]
 description = "Build Android AAR artifacts"
-run = "node scripts/build.ts build-android-aar"
+run = "./scripts/run-build-task.js buildAndroidAar"
 
 [tasks."build:dotnet"]
 description = "Build .NET projects"
@@ -35,21 +35,25 @@ run = "dotnet build GdKirie.slnx --configuration Release"
 
 [tasks."build:integration-web"]
 description = "Build integration web assets"
-run = "node scripts/build.ts build-integration-web"
+run = "./scripts/run-build-task.js buildIntegrationWeb"
 
 [tasks."build:integration-android"]
 description = "Build Android integration export"
 depends = ["build:integration-web"]
-run = "node scripts/build.ts build-integration-android"
+run = "./scripts/run-build-task.js buildIntegrationAndroid"
 
 [tasks."build:integration-ios"]
 description = "Build iOS integration export"
 depends = ["build:integration-web"]
-run = "node scripts/build.ts build-integration-ios"
+run = "./scripts/run-build-task.js buildIntegrationIos"
 
 [tasks."build:ios-xcframework"]
 description = "Build iOS xcframework artifact"
-run = "node scripts/build.ts build-ios-xcframework"
+run = "./scripts/run-build-task.js buildIosXcframework"
+
+[tasks."install:godot-cef"]
+description = "Install pinned Godot CEF desktop addon into a Godot project"
+run = "./scripts/run-build-task.js installGodotCef"
 
 [tasks."build:native-artifacts"]
 description = "Build all native artifacts"
@@ -62,7 +66,7 @@ run = "corepack pnpm run build:packages"
 
 [tasks."check:addon-pack"]
 description = "Check staged addon package contents"
-run = "node scripts/build.ts check-addon-pack"
+run = "./scripts/run-build-task.js checkAddonPack"
 
 [tasks.format]
 description = "Format all covered source files"

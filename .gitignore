@@ -11,7 +11,7 @@ bin/
 obj/
 godot/
 tests/integration/web/
-**/addons/godot-cef/
+**/addons/godot_cef/
 *.apk
 *.aab
 *.aar

@@ -239,6 +239,10 @@ configured yet.
 - Do not add extra guard code only to beautify errors. Prefer the underlying
   tool, runtime, or filesystem error unless the guard changes behavior or makes
   a likely failure materially easier to debug.
+- Do not add helper functions, quoting layers, duplicate logs, or wrapper
+  messages only to make errors look nicer. When a custom error is required, keep
+  it directly tied to required behavior such as failing invalid configuration,
+  naming the missing input, or printing an exact setup command.
 - Prefer keeping logic close to the module that owns it instead of extracting it
   into cross-cutting helpers too early.
 - Add configuration, extension points, and generic options only when they are

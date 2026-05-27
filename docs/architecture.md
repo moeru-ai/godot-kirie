@@ -164,20 +164,26 @@ documents renderer-side IPC globals such as `window.sendIpcMessage`,
 platform-information object.
 
 Desktop Godot CEF binaries are external downloaded artifacts, not part of the
-default `kirie-addon.zip`. Only desktop run or export flows should check for
-Godot CEF. If a required desktop artifact is missing, fail before export or run
-and print the exact setup command. Android and iOS workflows must not require a
-Godot CEF download.
+default `kirie-addon.zip`. Kirie's pinned Godot CEF version and artifact
+checksum live in `addons/kirie/godot_cef.json`. Only desktop run or export flows
+should check for Godot CEF. If a required desktop artifact is missing, fail
+before export or run and print the exact setup command. Android and iOS workflows
+must not require a Godot CEF download.
 
 Downloaded Godot CEF addons should use the standard Godot addon layout:
 
 ```text
-addons/godot-cef/
+addons/godot_cef/
 ```
 
-This lets Godot recognize the Godot CEF plugin normally. Repository instances of
+This lets Godot load the Godot CEF GDExtension normally. Repository instances of
 that directory are ignored and should not be committed. Download logic must pin
 the Godot CEF version and verify the downloaded artifact before installing it.
+The repository installer command is:
+
+```sh
+mise run install:godot-cef <godot-project-dir>
+```
 
 ## JavaScript runtime injection
 
@@ -198,7 +204,7 @@ globalThis.kirie.platform = Object.freeze({
 });
 ```
 
-The long-term platform mapping for this pre-page-script injection is:
+The platform mapping for this pre-page-script injection is:
 
 - Android: `WebViewCompat.addDocumentStartJavaScript`, registered before
   `loadUrl`, `loadData`, or `loadDataWithBaseURL`. Android documents this as a
@@ -208,26 +214,15 @@ The long-term platform mapping for this pre-page-script injection is:
   the `WKUserContentController` before the `WKWebView` loads content. Apple
   documents this as after creation of the webpage document element but before
   loading other content.
-- Godot CEF: a future preload or document-start hook backed by
-  `CefRenderProcessHandler::OnContextCreated`, which CEF documents as
-  immediately after the V8 context for a frame has been created. That hook can
-  access the JavaScript global through `CefV8Context::GetGlobal()` but should not
-  rely on the DOM.
+- Godot CEF: set `CefTexture.preload_script` or `preload_script_path` before the
+  `CefTexture` node enters the scene tree or before its browser is otherwise
+  initialized. Godot CEF documents this as running after its built-in JavaScript
+  bridge is registered and before the document loads.
 
-Godot CEF's current public Godot-facing API documents `eval(code)`, but `eval`
-executes JavaScript in the browser's main frame after the page exists. It is not
-a reliable Kirie runtime injection mechanism because it cannot guarantee that the
+Godot CEF's public Godot-facing API also documents `eval(code)`, but `eval`
+executes JavaScript in the browser's main frame after the page exists. Do not use
+`eval` for Kirie's runtime initialization because it cannot guarantee that the
 runtime is available before the user's module bundle runs.
-
-Until Godot CEF exposes or receives a proper pre-page-script hook, Kirie should
-bootstrap local `res://` HTML entrypoints with HTML rewriting:
-
-1. Resolve Kirie-managed local HTML URLs such as `res://web/dist/index.html` or
-   `res://web/`.
-2. Read the HTML before handing it to the backend.
-3. Insert the Kirie runtime script before the user's script bundle.
-4. Load the rewritten HTML through the backend while preserving relative asset
-   loading.
 
 This mirrors established desktop WebView framework patterns. Electron uses a
 preload script that runs before the page is loaded and is commonly used to
