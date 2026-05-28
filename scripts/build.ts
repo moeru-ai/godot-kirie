@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { execa } from "execa";
+import { parse as parseIni } from "ini";
 import godotCefConfig from "../packages/kirie/addon/addons/kirie/godot_cef.json" with {
   type: "json",
 };
@@ -57,6 +58,167 @@ function assertPathExists(pathToCheck: string): void {
   if (!fs.existsSync(pathToCheck)) {
     throw new Error(`Required addon release path is missing: ${pathToCheck}`);
   }
+}
+
+function readExportPresetOption(
+  projectDir: string,
+  presetName: "Android" | "iOS",
+  optionName: string,
+): string {
+  const exportPresetsPath = `${projectDir}/export_presets.cfg`;
+  const config = parseIni(fs.readFileSync(exportPresetsPath, "utf8")) as {
+    preset: Record<string, { name: string; options: Record<string, string> }>;
+  };
+
+  for (const preset of Object.values(config.preset)) {
+    if (preset.name !== presetName) {
+      continue;
+    }
+
+    return preset.options[optionName];
+  }
+
+  throw new Error(`Export preset not found: ${presetName} in ${exportPresetsPath}`);
+}
+
+async function buildExampleWeb(projectDir: string): Promise<void> {
+  await execa("corepack", ["pnpm", "--filter", `./${projectDir}/web`, "run", "build"], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+}
+
+function exampleDistDir(exampleName: string): string {
+  return `${distDir}/examples/${exampleName}`;
+}
+
+async function ensureIosArm64SimulatorTemplate(): Promise<string> {
+  const arm64Source = path.join(
+    godotSourceRoot,
+    "bin/libgodot.ios.template_debug.arm64.simulator.a",
+  );
+
+  if (fs.existsSync(arm64Source)) {
+    console.log(`Using existing Godot iOS arm64 simulator template: ${arm64Source}`);
+    return arm64Source;
+  }
+
+  console.log("Building Godot iOS arm64 simulator template...");
+  await execa(
+    "scons",
+    [
+      "platform=ios",
+      "target=template_debug",
+      "arch=arm64",
+      "simulator=yes",
+      `-j${os.availableParallelism()}`,
+    ],
+    {
+      cwd: godotSourceRoot,
+      stdio: "inherit",
+    },
+  );
+
+  return arm64Source;
+}
+
+async function exportIosSimulatorApp(projectDir: string, appPath: string): Promise<void> {
+  const exportName = path.basename(projectDir);
+  const xcodeExportDir = `${path.dirname(appPath)}/ios_xcode`;
+  const rawBuildDir = `${path.dirname(appPath)}/ios_raw_build`;
+  const rawBuildDirPath = path.resolve(rootDir, rawBuildDir);
+  const appPathAbsolute = path.resolve(rootDir, appPath);
+  const arm64Source = await ensureIosArm64SimulatorTemplate();
+
+  fs.mkdirSync(path.dirname(appPath), { recursive: true });
+  fs.mkdirSync(xcodeExportDir, { recursive: true });
+
+  console.log("Exporting Xcode project...");
+  await execa(
+    "mise",
+    [
+      "x",
+      "--",
+      "godot",
+      "--headless",
+      "--path",
+      projectDir,
+      "--export-debug",
+      "iOS",
+      `../../${xcodeExportDir}/${exportName}.xcodeproj`,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+
+  const simulatorLibgodot = findSimulatorLibgodot(xcodeExportDir);
+  if (!simulatorLibgodot) {
+    throw new Error(`xcframework simulator libgodot.a not found under ${xcodeExportDir}`);
+  }
+
+  const { stdout: simulatorInfo } = await execa("lipo", ["-info", simulatorLibgodot], {
+    cwd: rootDir,
+  });
+
+  if (simulatorInfo.includes("Non-fat")) {
+    console.log("Patching simulator libgodot by creating a fat archive...");
+    await execa("lipo", ["-create", arm64Source, simulatorLibgodot, "-output", simulatorLibgodot], {
+      cwd: rootDir,
+      stdio: "inherit",
+    });
+  } else {
+    console.log("Patching simulator libgodot by replacing the arm64 slice...");
+    const strippedLib = "/tmp/xcfw_stripped.a";
+    await execa("lipo", [simulatorLibgodot, "-remove", "arm64", "-output", strippedLib], {
+      cwd: rootDir,
+      stdio: "inherit",
+    });
+    await execa("lipo", ["-create", arm64Source, strippedLib, "-output", simulatorLibgodot], {
+      cwd: rootDir,
+      stdio: "inherit",
+    });
+  }
+
+  console.log("Building final .app bundle...");
+  await execa(
+    "mise",
+    [
+      "x",
+      "--",
+      "xcodebuild",
+      "-project",
+      `${xcodeExportDir}/${exportName}.xcodeproj`,
+      "-scheme",
+      exportName,
+      "-sdk",
+      "iphonesimulator",
+      "-destination",
+      "generic/platform=iOS Simulator",
+      "-configuration",
+      "Debug",
+      `CONFIGURATION_BUILD_DIR=${rawBuildDirPath}`,
+      "CODE_SIGNING_ALLOWED=NO",
+      "CODE_SIGNING_REQUIRED=NO",
+      "CODE_SIGN_IDENTITY=",
+      "ARCHS=arm64",
+      "EXCLUDED_ARCHS=x86_64",
+      "ONLY_ACTIVE_ARCH=YES",
+      "build",
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+
+  const rawApp = path.join(rawBuildDirPath, `${exportName}.app`);
+  console.log(`Moving ${rawApp} -> ${appPathAbsolute}`);
+  fs.rmSync(appPathAbsolute, { force: true, recursive: true });
+  fs.renameSync(rawApp, appPathAbsolute);
+  fs.rmSync(rawBuildDir, { force: true, recursive: true });
+  console.log(`Successfully built: ${appPath}`);
 }
 
 function findSymlink(dirPath: string): string | undefined {
@@ -286,6 +448,48 @@ export async function buildIosXcframework(): Promise<void> {
   );
 }
 
+export async function testIosIpcSerialization(): Promise<void> {
+  if (!fs.existsSync(`${iosPluginDir}/project.yml`)) {
+    throw new Error("This task must be run from the repository root.");
+  }
+
+  await execa(
+    "xcodegen",
+    [
+      "generate",
+      "--spec",
+      `${iosPluginDir}/project.yml`,
+      "--project-root",
+      iosPluginDir,
+      "--project",
+      iosGeneratedDir,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+
+  await execa(
+    "xcodebuild",
+    [
+      "test",
+      "-project",
+      iosProjectPath,
+      "-scheme",
+      "KirieIpcSerializationTests",
+      "-destination",
+      process.env.IOS_TEST_DESTINATION || "platform=iOS Simulator,name=iPhone 16",
+      "CODE_SIGNING_ALLOWED=NO",
+      "CODE_SIGNING_REQUIRED=NO",
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+}
+
 export async function buildIntegrationWeb(): Promise<void> {
   await execa("corepack", ["pnpm", "--filter", "@gd-kirie/integration-web", "run", "build"], {
     cwd: rootDir,
@@ -322,38 +526,17 @@ export async function buildIntegrationAndroid(): Promise<void> {
 
 export async function buildIntegrationIos(): Promise<void> {
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
-  const xcodeExportDir = `${integrationDistDir}/ios_xcode`;
-  const projectName = "integration";
+  await exportIosSimulatorApp(integrationProjectDir, appPath);
+}
 
-  fs.mkdirSync(path.dirname(appPath), { recursive: true });
-  fs.mkdirSync(xcodeExportDir, { recursive: true });
+async function runExampleAndroid(exampleName: string, projectDir: string): Promise<void> {
+  const apkPath = `${exampleDistDir(exampleName)}/android_debug.apk`;
+  const packageName = readExportPresetOption(projectDir, "Android", "package/unique_name");
 
-  const arm64Source = path.join(
-    godotSourceRoot,
-    "bin/libgodot.ios.template_debug.arm64.simulator.a",
-  );
+  fs.mkdirSync(path.dirname(apkPath), { recursive: true });
+  await buildExampleWeb(projectDir);
+  await buildAndroidAar();
 
-  if (fs.existsSync(arm64Source)) {
-    console.log(`Using existing Godot iOS arm64 simulator template: ${arm64Source}`);
-  } else {
-    console.log("Building Godot iOS arm64 simulator template...");
-    await execa(
-      "scons",
-      [
-        "platform=ios",
-        "target=template_debug",
-        "arch=arm64",
-        "simulator=yes",
-        `-j${os.availableParallelism()}`,
-      ],
-      {
-        cwd: godotSourceRoot,
-        stdio: "inherit",
-      },
-    );
-  }
-
-  console.log("Exporting Xcode project...");
   await execa(
     "mise",
     [
@@ -362,71 +545,13 @@ export async function buildIntegrationIos(): Promise<void> {
       "godot",
       "--headless",
       "--path",
-      integrationProjectDir,
+      projectDir,
+      "--install-android-build-template",
       "--export-debug",
-      "iOS",
-      `../../${xcodeExportDir}/${projectName}.xcodeproj`,
-    ],
-    {
-      cwd: rootDir,
-      stdio: "inherit",
-    },
-  );
-
-  const simulatorLibgodot = findSimulatorLibgodot(xcodeExportDir);
-  if (!simulatorLibgodot) {
-    throw new Error(`xcframework simulator libgodot.a not found under ${xcodeExportDir}`);
-  }
-
-  const { stdout: simulatorInfo } = await execa("lipo", ["-info", simulatorLibgodot], {
-    cwd: rootDir,
-  });
-
-  if (simulatorInfo.includes("Non-fat")) {
-    console.log("Patching simulator libgodot by creating a fat archive...");
-    await execa("lipo", ["-create", arm64Source, simulatorLibgodot, "-output", simulatorLibgodot], {
-      cwd: rootDir,
-      stdio: "inherit",
-    });
-  } else {
-    console.log("Patching simulator libgodot by replacing the arm64 slice...");
-    const strippedLib = "/tmp/xcfw_stripped.a";
-    await execa("lipo", [simulatorLibgodot, "-remove", "arm64", "-output", strippedLib], {
-      cwd: rootDir,
-      stdio: "inherit",
-    });
-    await execa("lipo", ["-create", arm64Source, strippedLib, "-output", simulatorLibgodot], {
-      cwd: rootDir,
-      stdio: "inherit",
-    });
-  }
-
-  console.log("Building final .app bundle...");
-  const rawBuildDir = path.join(rootDir, "dist/integration_raw_build");
-  await execa(
-    "mise",
-    [
-      "x",
+      "Android",
+      `../../${apkPath}`,
       "--",
-      "xcodebuild",
-      "-project",
-      `${xcodeExportDir}/${projectName}.xcodeproj`,
-      "-scheme",
-      projectName,
-      "-sdk",
-      "iphonesimulator",
-      "-destination",
-      "generic/platform=iOS Simulator",
-      "-configuration",
-      "Debug",
-      `CONFIGURATION_BUILD_DIR=${rawBuildDir}`,
-      "CODE_SIGNING_ALLOWED=NO",
-      "CODE_SIGNING_REQUIRED=NO",
-      "CODE_SIGN_IDENTITY=",
-      "ARCHS=arm64",
-      "EXCLUDED_ARCHS=x86_64",
-      "ONLY_ACTIVE_ARCH=YES",
-      "build",
+      "--kirie-android-aar=debug",
     ],
     {
       cwd: rootDir,
@@ -434,13 +559,57 @@ export async function buildIntegrationIos(): Promise<void> {
     },
   );
 
-  const rawApp = path.join(rawBuildDir, `${projectName}.app`);
-  console.log(`Moving ${rawApp} -> ${appPath}`);
-  fs.mkdirSync(path.dirname(appPath), { recursive: true });
-  fs.rmSync(appPath, { force: true, recursive: true });
-  fs.renameSync(rawApp, appPath);
-  fs.rmSync(rawBuildDir, { force: true, recursive: true });
-  console.log(`Successfully built: ${appPath}`);
+  await execa("adb", ["install", "-r", apkPath], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+  await execa(
+    "adb",
+    ["shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+}
+
+async function runExampleIos(exampleName: string, projectDir: string): Promise<void> {
+  const appPath = `${exampleDistDir(exampleName)}/ios_debug.app`;
+  const bundleId = readExportPresetOption(projectDir, "iOS", "application/bundle_identifier");
+  const simulatorId = process.env.SIMULATOR_ID || "booted";
+
+  await buildExampleWeb(projectDir);
+  await buildIosXcframework();
+  await exportIosSimulatorApp(projectDir, appPath);
+
+  await execa("xcrun", ["simctl", "install", simulatorId, appPath], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+  await execa("xcrun", ["simctl", "launch", simulatorId, bundleId], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+}
+
+export async function runExample(platformArg?: string, exampleName?: string): Promise<void> {
+  if (!platformArg || !exampleName) {
+    throw new Error("Usage: mise run run:example -- <android|ios> <example-name>");
+  }
+
+  const platform = platformArg.toLowerCase() as "android" | "ios";
+  const projectDir = `examples/${exampleName}`;
+
+  switch (platform) {
+    case "android":
+      await runExampleAndroid(exampleName, projectDir);
+      return;
+    case "ios":
+      await runExampleIos(exampleName, projectDir);
+      return;
+    default:
+      throw new Error(`Unsupported platform: ${platformArg}`);
+  }
 }
 
 export async function packAddon(): Promise<void> {

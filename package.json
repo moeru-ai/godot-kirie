@@ -10,13 +10,15 @@
     "format:biome": "biome check --write .",
     "lint:biome": "biome check .",
     "release": "bumpp",
-    "test:ios-ipc-serialization": "bash scripts/run_basic_ipc_ios.sh",
+    "test:ios-ipc-serialization": "./scripts/run-build-task.js testIosIpcSerialization",
     "test:unit": "pnpm -rF './packages/*' run test:run",
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@types/ini": "^4.1.1",
     "bumpp": "^11.0.1",
-    "execa": "9.6.1"
+    "execa": "9.6.1",
+    "ini": "^7.0.0"
   }
 }

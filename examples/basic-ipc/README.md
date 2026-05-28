@@ -81,3 +81,17 @@ You can also run the game directly from the command line:
 ```bash
 mise x -- godot --path ./examples/basic-ipc
 ```
+
+## Running an exported mobile app
+
+Build, install, and launch the Android example:
+
+```bash
+mise run run:example -- android basic-ipc
+```
+
+Build, install, and launch the iOS simulator example:
+
+```bash
+mise run run:example -- ios basic-ipc
+```

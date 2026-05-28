@@ -31,3 +31,15 @@ mise x -- godot ./examples/eventa-csharp/project.godot
 ```
 
 Run the scene and press `Create WebView`.
+
+Build, install, and launch the exported Android example:
+
+```sh
+mise run run:example -- android eventa-csharp
+```
+
+Build, install, and launch the exported iOS simulator example:
+
+```sh
+mise run run:example -- ios eventa-csharp
+```
