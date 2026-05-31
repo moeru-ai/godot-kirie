@@ -235,6 +235,9 @@ configured yet.
   older API and the modern API is already used where available.
 - For JavaScript and TypeScript in this repo, avoid unnecessary `void` usage to
   swallow async promises and avoid unnecessary dynamic imports.
+- For JavaScript and TypeScript callbacks, prefer eta reduction when the wrapper
+  does not adapt arguments, bind context, add control flow, or improve
+  readability.
 
 ### Simplicity and abstraction
 

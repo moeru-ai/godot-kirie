@@ -44,6 +44,17 @@ function prepareLogFile(testName: string): string {
   return logFile;
 }
 
+async function openLogStream(logFile: string): Promise<fs.WriteStream> {
+  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+
+  await new Promise<void>((resolve, reject) => {
+    logStream.once("open", resolve);
+    logStream.once("error", reject);
+  });
+
+  return logStream;
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -156,7 +167,7 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
     stdout: "ignore",
   });
 
-  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+  const logStream = await openLogStream(logFile);
   const logcat = execa("adb", ["logcat"], {
     cwd: rootDir,
     stderr: "inherit",
@@ -215,7 +226,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     stdout: "ignore",
   });
 
-  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+  const logStream = await openLogStream(logFile);
   const logProcess = execa(
     "xcrun",
     [
