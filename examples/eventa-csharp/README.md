@@ -43,3 +43,9 @@ Build, install, and launch the exported iOS simulator example:
 ```sh
 mise run run:example -- ios eventa-csharp
 ```
+
+This iOS example runner is currently simulator-only because it reuses the same
+local Godot iOS export path used by integration testing. That is a tooling
+shortcut, not a design requirement for examples. Example smoke runs should
+eventually allow the most useful local target, such as an iOS Simulator, a real
+iOS device, or an iOS app running directly on an Apple Silicon Mac.

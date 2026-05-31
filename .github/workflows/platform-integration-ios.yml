@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: godot/bin/libgodot.ios.template_debug.arm64.simulator.a
-          key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-simulator-template-${{ hashFiles('scripts/build.ts') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-simulator-template-${{ hashFiles('scripts/build*.ts') }}
 
       - name: Enable Corepack
         run: mise x -- corepack enable pnpm
@@ -121,6 +121,7 @@ jobs:
 
       - name: Pre-warm WebKit processes
         run: |
+          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' dist/integration/ios_debug.app/Info.plist)"
           xcrun simctl launch "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
           sleep 35
           xcrun simctl terminate "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
@@ -129,6 +130,6 @@ jobs:
       - name: Run integration tests
         timeout-minutes: 8
         run: |
-          scripts/run_integration_ios_test.sh ipc_round_trip_probe
-          scripts/run_integration_ios_test.sh webview_lifecycle_probe
-          scripts/run_integration_ios_test.sh res_asset_loading_probe
+          mise run test:integration-ios -- ipc_round_trip_probe
+          mise run test:integration-ios -- webview_lifecycle_probe
+          mise run test:integration-ios -- res_asset_loading_probe

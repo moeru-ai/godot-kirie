@@ -49,9 +49,17 @@ the full Godot CEF browser API through Kirie.
 - `tests/integration`
   exported-app platform bridge regression target
 - `scripts/build.ts`
-  native artifact and integration export implementation
-- `scripts`
-  local run helpers for Android and iOS validation
+  mise task entrypoint re-exports
+- `scripts/build-kirie.ts`
+  Kirie addon artifact and packaging tasks
+- `scripts/build-integration.ts`
+  platform integration export tasks
+- `scripts/build-examples.ts`
+  example build, install, and launch tasks
+- `scripts/build-shared.ts`
+  build primitives shared by multiple task domains
+- `scripts/integration-runner.ts`
+  platform integration test launchers
 - `.codex/skills`
   repo-local Codex skills for project maintenance workflows
 - `docs`
@@ -174,22 +182,25 @@ For the current milestone, iOS should be owned by the standard addon tree:
   and command-line tools around them.
 - Start command invocations with the fewest necessary flags and options. Add
   extra flags only after the project or user has a concrete need for them.
-- Native artifact orchestration lives in mise tasks, with implementation in
-  `scripts/build.ts`. Use `mise run build:android-aar`,
+- Native artifact orchestration lives in mise tasks, with entrypoints
+  re-exported from `scripts/build.ts` and Kirie implementation in
+  `scripts/build-kirie.ts`. Use `mise run build:android-aar`,
   `mise run build:ios-xcframework`, or `mise run build:native-artifacts`
   instead of adding new shell-only orchestration for the same artifact path.
-- Addon release packaging also lives in mise tasks, with implementation in
-  `scripts/build.ts`. Use `mise run build:addon-pack` to build native
+- Addon release packaging also lives in mise tasks, with Kirie implementation
+  in `scripts/build-kirie.ts`. Use `mise run build:addon-pack` to build native
   artifacts and produce `dist/kirie-addon.zip`; use
   `mise run check:addon-pack` to verify an already staged addon tree.
-- Integration export orchestration also lives in mise tasks, with
-  implementation in `scripts/build.ts`. Use
+- Integration export orchestration also lives in mise tasks, with implementation
+  in `scripts/build-integration.ts` and shared export primitives in
+  `scripts/build-shared.ts`. Use
   `mise run build:integration-android` or `mise run build:integration-ios`
   instead of adding new integration build shell scripts.
-- Keep `scripts/build.ts` executable by Node's built-in TypeScript type
-  stripping: use erasable TypeScript syntax only and do not add `ts-node`,
-  `tsx`, or other TypeScript runtime loaders unless a real non-erasable
-  TypeScript need appears.
+- Keep repository task TypeScript executable by Node's built-in TypeScript type
+  stripping: use erasable TypeScript syntax only in `scripts/build*.ts`,
+  `scripts/integration-runner.ts`, and `scripts/run-build-task.js`, and do not
+  add `ts-node`, `tsx`, or other TypeScript runtime loaders unless a real
+  non-erasable TypeScript need appears.
 
 ## Engineering Rules
 

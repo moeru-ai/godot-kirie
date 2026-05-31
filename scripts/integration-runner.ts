@@ -1,0 +1,276 @@
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
+import { execa } from "execa";
+import { integrationProjectDir, readExportPresetOption, rootDir } from "./build-shared.ts";
+
+interface MarkerResult {
+  line?: string;
+  status: "pass" | "fail" | "timeout" | "stopped";
+}
+
+function resolveTestName(platform: "android" | "ios", testName?: string): string | undefined {
+  if (!fs.existsSync(`${integrationProjectDir}/project.godot`)) {
+    console.error("This task must be run from the repository root.");
+    process.exitCode = 1;
+    return undefined;
+  }
+
+  if (!testName) {
+    console.error(`Usage: mise run test:integration-${platform} -- <test_name>`);
+    process.exitCode = 1;
+    return undefined;
+  }
+
+  return testName;
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+function readLogFile(logFile: string): string {
+  return fs.existsSync(logFile) ? fs.readFileSync(logFile, "utf8") : "";
+}
+
+function prepareLogFile(testName: string): string {
+  const logFile =
+    process.env.LOG_FILE || `${process.env.TMPDIR || "/tmp"}/kirie-integration-${testName}.log`;
+
+  fs.mkdirSync(path.dirname(logFile), { recursive: true });
+  fs.writeFileSync(logFile, "");
+  return logFile;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function waitForMarker(options: {
+  logFile: string;
+  onPoll?: () => boolean;
+  testName: string;
+  timeoutSeconds: number;
+}): Promise<MarkerResult> {
+  const testNamePattern = escapeRegExp(options.testName);
+  const failPattern = new RegExp(`KIRIE_TEST_FAIL (${testNamePattern}|unknown)( |$)`);
+  const passPattern = new RegExp(`KIRIE_TEST_PASS ${testNamePattern}( |$)`);
+  const deadline = Date.now() + options.timeoutSeconds * 1000;
+
+  while (Date.now() < deadline) {
+    const lines = readLogFile(options.logFile).split(/\r?\n/);
+    const failLine = lines.find((line) => failPattern.test(line));
+    if (failLine) {
+      return { line: failLine, status: "fail" };
+    }
+
+    const passLine = lines.find((line) => passPattern.test(line));
+    if (passLine) {
+      return { line: passLine, status: "pass" };
+    }
+
+    if (options.onPoll?.() === false) {
+      return { status: "stopped" };
+    }
+
+    await sleep(500);
+  }
+
+  return { status: "timeout" };
+}
+
+function printAndroidResult(result: MarkerResult, logFile: string, testName: string): void {
+  if (result.status === "pass") {
+    console.log(result.line);
+    return;
+  }
+
+  if (result.status === "fail") {
+    console.error(result.line);
+  } else {
+    console.error(`Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`);
+    console.error(readLogFile(logFile).split(/\r?\n/).slice(-120).join("\n"));
+  }
+
+  process.exitCode = 1;
+}
+
+async function printIosResult(
+  result: MarkerResult,
+  logFile: string,
+  testName: string,
+): Promise<void> {
+  if (result.status === "pass") {
+    console.log(result.line);
+    return;
+  }
+
+  if (result.status === "stopped") {
+    console.error(`App process exited before KIRIE_TEST_PASS/FAIL for ${testName}`);
+  }
+
+  if (result.status === "timeout" || result.status === "stopped") {
+    console.error(
+      `Timed out (or app exited early) waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
+    );
+  }
+
+  await sleep(300);
+  console.error(`=== Full log: ${logFile} ===`);
+  console.error(readLogFile(logFile));
+  console.error("=== End of log ===");
+
+  if (result.status === "fail") {
+    console.error(result.line);
+  }
+
+  process.exitCode = 1;
+}
+
+export async function runIntegrationAndroidTest(testNameArg?: string): Promise<void> {
+  const testName = resolveTestName("android", testNameArg);
+  if (!testName) {
+    return;
+  }
+
+  const packageName = readExportPresetOption(
+    integrationProjectDir,
+    "Android",
+    "package/unique_name",
+  );
+  const logFile = prepareLogFile(testName);
+  const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "30");
+
+  await execa("adb", ["logcat", "-c"], { cwd: rootDir, stdio: "inherit" });
+  await execa("adb", ["shell", "am", "force-stop", packageName], {
+    cwd: rootDir,
+    reject: false,
+    stderr: "ignore",
+    stdout: "ignore",
+  });
+  await execa("adb", ["shell", "pm", "clear", packageName], {
+    cwd: rootDir,
+    stderr: "inherit",
+    stdout: "ignore",
+  });
+
+  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+  const logcat = execa("adb", ["logcat"], {
+    cwd: rootDir,
+    stderr: "inherit",
+    stdout: logStream,
+  });
+  let result: MarkerResult;
+
+  try {
+    await execa(
+      "adb",
+      [
+        "shell",
+        "am",
+        "start",
+        "-n",
+        `${packageName}/com.godot.game.GodotAppLauncher`,
+        "--es",
+        "kirie_test",
+        testName,
+      ],
+      { cwd: rootDir, stderr: "inherit", stdout: "ignore" },
+    );
+    result = await waitForMarker({ logFile, testName, timeoutSeconds });
+  } finally {
+    logcat.kill();
+    await logcat.catch(() => {});
+    logStream.end();
+  }
+
+  printAndroidResult(result, logFile, testName);
+}
+
+export async function runIntegrationIosTest(testNameArg?: string): Promise<void> {
+  const testName = resolveTestName("ios", testNameArg);
+  if (!testName) {
+    return;
+  }
+
+  const bundleId = readExportPresetOption(
+    integrationProjectDir,
+    "iOS",
+    "application/bundle_identifier",
+  );
+  const simulatorId = process.env.SIMULATOR_ID || "booted";
+  const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
+  const logStreamSettleSeconds = Number(process.env.LOG_STREAM_SETTLE_SECONDS || "1");
+  const logFile = prepareLogFile(testName);
+  const logPredicate =
+    process.env.LOG_PREDICATE ||
+    'eventMessage CONTAINS "KIRIE_TEST_" OR eventMessage CONTAINS "[Kirie]" OR eventMessage CONTAINS "Godot"';
+
+  await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+    cwd: rootDir,
+    reject: false,
+    stderr: "ignore",
+    stdout: "ignore",
+  });
+
+  const logStream = fs.createWriteStream(logFile, { flags: "a" });
+  const logProcess = execa(
+    "xcrun",
+    [
+      "simctl",
+      "spawn",
+      simulatorId,
+      "log",
+      "stream",
+      "--level",
+      "debug",
+      "--style",
+      "compact",
+      "--predicate",
+      logPredicate,
+    ],
+    { cwd: rootDir, stderr: logStream, stdout: logStream },
+  );
+  await sleep(logStreamSettleSeconds * 1000);
+
+  let appExited = false;
+  const consoleProcess = execa(
+    "xcrun",
+    ["simctl", "launch", "--console", simulatorId, bundleId, "--", `--kirie-test=${testName}`],
+    { cwd: rootDir, stderr: logStream, stdout: logStream },
+  );
+  const watchedConsoleProcess = consoleProcess.then(
+    () => {
+      appExited = true;
+    },
+    () => {
+      appExited = true;
+    },
+  );
+  let result: MarkerResult;
+
+  try {
+    result = await waitForMarker({
+      logFile,
+      onPoll: () => !appExited,
+      testName,
+      timeoutSeconds,
+    });
+  } finally {
+    consoleProcess.kill();
+    logProcess.kill();
+    await watchedConsoleProcess.catch(() => {});
+    await logProcess.catch(() => {});
+    logStream.end();
+    await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+      cwd: rootDir,
+      reject: false,
+      stderr: "ignore",
+      stdout: "ignore",
+    });
+  }
+
+  await printIosResult(result, logFile, testName);
+}

@@ -128,6 +128,14 @@ run = "dotnet test --solution GdKirie.slnx --configuration Release"
 description = "Run iOS IPC serialization tests"
 run = "corepack pnpm run test:ios-ipc-serialization"
 
+[tasks."test:integration-android"]
+description = "Run one Android platform integration test"
+run = "./scripts/run-build-task.js runIntegrationAndroidTest"
+
+[tasks."test:integration-ios"]
+description = "Run one iOS platform integration test"
+run = "./scripts/run-build-task.js runIntegrationIosTest"
+
 [tasks."test:unit"]
 description = "Run package unit tests"
 run = "corepack pnpm run test:unit"

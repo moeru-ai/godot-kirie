@@ -188,6 +188,6 @@ packaging, or platform WebView bridge details.
 - When changing npm package publishing, start with npm trusted publishing,
   GitHub Actions OIDC, bumpp, and pnpm publish behavior.
 - When changing native artifact orchestration, start with Node.js TypeScript
-  support and the Gulp task composition references.
+  support, mise task configuration, and Execa.
 - When changing the platform integration web fixture, start with the Vite build
   guide and `@gd-kirie/ipc`.

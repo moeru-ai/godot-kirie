@@ -180,10 +180,10 @@ adb install -r dist/integration/android_debug.apk
 Run one test:
 
 ```bash
-scripts/run_integration_android_test.sh ipc_round_trip_probe
+mise run test:integration-android -- ipc_round_trip_probe
 ```
 
-The run script:
+The test task:
 
 - clears logcat
 - force-stops the package
@@ -245,10 +245,16 @@ mise run build:integration-ios
 
 This task also builds the Vite web fixture before exporting the Godot project.
 
-Install and run tests with the simulator helper:
+The iOS integration runner is currently simulator-specific because it
+uses `simctl` to install, launch with `--kirie-test=...`, and stream logs for
+the pass/fail marker. The example runner currently shares this simulator export
+path, but that is a tooling shortcut rather than a desired examples API shape.
+Examples should not be treated as inherently simulator-only.
+
+Install and run tests with the iOS test task:
 
 ```bash
-scripts/run_integration_ios_test.sh ipc_round_trip_probe
+mise run test:integration-ios -- ipc_round_trip_probe
 ```
 
 The iOS XCFramework and simulator app tasks expect the Godot source checkout at

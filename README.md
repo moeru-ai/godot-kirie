@@ -58,8 +58,12 @@ example, and regression-test areas:
 - `examples/basic-ipc`: the first runnable manual integration example
 - `examples/eventa-csharp`: manual Godot C# Eventa adapter smoke example
 - `tests/integration`: exported-app platform integration tests
-- `scripts/build.ts`: native artifact and integration export implementation
-- `scripts`: local run helpers for native validation
+- `scripts/build.ts`: mise task entrypoint re-exports
+- `scripts/build-kirie.ts`: Kirie addon artifact and packaging tasks
+- `scripts/build-integration.ts`: platform integration export tasks
+- `scripts/build-examples.ts`: example build, install, and launch tasks
+- `scripts/build-shared.ts`: build primitives shared by multiple task domains
+- `scripts/integration-runner.ts`: platform integration test launchers
 - `docs`: project notes and design decisions
   - `docs/dreams`: exploratory notes for ideas outside the current milestone
 
