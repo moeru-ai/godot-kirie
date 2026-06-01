@@ -61,7 +61,6 @@ function escapeRegExp(text: string): string {
 
 async function waitForMarker(options: {
   logFile: string;
-  onPoll?: () => boolean;
   testName: string;
   timeoutSeconds: number;
 }): Promise<MarkerResult> {
@@ -82,10 +81,6 @@ async function waitForMarker(options: {
       return { line: passLine, status: "pass" };
     }
 
-    if (options.onPoll?.() === false) {
-      return { status: "stopped" };
-    }
-
     await sleep(500);
   }
 
@@ -100,6 +95,9 @@ function printAndroidResult(result: MarkerResult, logFile: string, testName: str
 
   if (result.status === "fail") {
     console.error(result.line);
+  } else if (result.status === "stopped") {
+    console.error(result.line);
+    console.error(readLogFile(logFile).split(/\r?\n/).slice(-120).join("\n"));
   } else {
     console.error(`Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`);
     console.error(readLogFile(logFile).split(/\r?\n/).slice(-120).join("\n"));
@@ -119,7 +117,7 @@ async function printIosResult(
   }
 
   if (result.status === "stopped") {
-    console.error(`App process exited before KIRIE_TEST_PASS/FAIL for ${testName}`);
+    console.error(result.line);
   }
 
   if (result.status === "timeout" || result.status === "stopped") {
@@ -170,10 +168,11 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
   const logStream = await openLogStream(logFile);
   const logcat = execa("adb", ["logcat"], {
     cwd: rootDir,
+    reject: false,
     stderr: "inherit",
     stdout: logStream,
   });
-  let result: MarkerResult;
+  let result: MarkerResult | undefined;
 
   try {
     await execa(
@@ -190,14 +189,36 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
       ],
       { cwd: rootDir, stderr: "inherit", stdout: "ignore" },
     );
-    result = await waitForMarker({ logFile, testName, timeoutSeconds });
+    result = await Promise.race([
+      waitForMarker({ logFile, testName, timeoutSeconds }),
+      logcat.then(
+        (logcatResult): MarkerResult => ({
+          line: logcatResult.signal
+            ? `adb logcat exited with signal ${logcatResult.signal} before ${testName} finished`
+            : `adb logcat exited with code ${logcatResult.exitCode ?? "unknown"} before ${testName} finished`,
+          status: "stopped",
+        }),
+      ),
+    ]);
   } finally {
     logcat.kill();
-    await logcat.catch(() => {});
+    const logcatResult = await logcat;
+    if (result?.status === "pass" && logcatResult.failed) {
+      if (logcatResult.signal !== "SIGTERM" && logcatResult.exitCode !== 143) {
+        result = {
+          line: logcatResult.signal
+            ? `adb logcat exited with signal ${logcatResult.signal} during cleanup`
+            : `adb logcat exited with code ${logcatResult.exitCode ?? "unknown"} during cleanup`,
+          status: "stopped",
+        };
+      }
+    }
     logStream.end();
   }
 
-  printAndroidResult(result, logFile, testName);
+  if (result) {
+    printAndroidResult(result, logFile, testName);
+  }
 }
 
 export async function runIntegrationIosTest(testNameArg?: string): Promise<void> {
@@ -242,38 +263,54 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       "--predicate",
       logPredicate,
     ],
-    { cwd: rootDir, stderr: logStream, stdout: logStream },
+    { cwd: rootDir, reject: false, stderr: logStream, stdout: logStream },
   );
   await sleep(logStreamSettleSeconds * 1000);
 
-  let appExited = false;
   const consoleProcess = execa(
     "xcrun",
     ["simctl", "launch", "--console", simulatorId, bundleId, "--", `--kirie-test=${testName}`],
     { cwd: rootDir, stderr: logStream, stdout: logStream },
   );
   const watchedConsoleProcess = consoleProcess.then(
-    () => {
-      appExited = true;
-    },
-    () => {
-      appExited = true;
-    },
+    () => undefined,
+    () => undefined,
   );
-  let result: MarkerResult;
+  let result: MarkerResult | undefined;
 
   try {
-    result = await waitForMarker({
-      logFile,
-      onPoll: () => !appExited,
-      testName,
-      timeoutSeconds,
-    });
+    result = await Promise.race([
+      waitForMarker({ logFile, testName, timeoutSeconds }),
+      logProcess.then(
+        (logProcessResult): MarkerResult => ({
+          line: logProcessResult.signal
+            ? `iOS log stream exited with signal ${logProcessResult.signal} before ${testName} finished`
+            : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} before ${testName} finished`,
+          status: "stopped",
+        }),
+      ),
+      watchedConsoleProcess.then(
+        (): MarkerResult => ({
+          line: `App process exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
+          status: "stopped",
+        }),
+      ),
+    ]);
   } finally {
     consoleProcess.kill();
     logProcess.kill();
-    await watchedConsoleProcess.catch(() => {});
-    await logProcess.catch(() => {});
+    await watchedConsoleProcess;
+    const logProcessResult = await logProcess;
+    if (result?.status === "pass" && logProcessResult.failed) {
+      if (logProcessResult.signal !== "SIGTERM" && logProcessResult.exitCode !== 143) {
+        result = {
+          line: logProcessResult.signal
+            ? `iOS log stream exited with signal ${logProcessResult.signal} during cleanup`
+            : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} during cleanup`,
+          status: "stopped",
+        };
+      }
+    }
     logStream.end();
     await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
       cwd: rootDir,
@@ -283,5 +320,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     });
   }
 
-  await printIosResult(result, logFile, testName);
+  if (result) {
+    await printIosResult(result, logFile, testName);
+  }
 }
