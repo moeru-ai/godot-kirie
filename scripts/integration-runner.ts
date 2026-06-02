@@ -5,16 +5,12 @@ import process from "node:process";
 import { execa } from "execa";
 import { integrationProjectDir, readExportPresetOption, rootDir } from "./build-shared.ts";
 
-type IntegrationPlatform = "android" | "ios" | "desktop";
-
-const DESKTOP_CI_TESTS = ["ipc_round_trip_probe", "res_asset_loading_probe"] as const;
-
 interface MarkerResult {
   line?: string;
   status: "pass" | "fail" | "timeout" | "stopped";
 }
 
-function resolveTestName(platform: IntegrationPlatform, testName?: string): string | undefined {
+function resolveTestName(platform: "android" | "ios" | "desktop", testName?: string): string | undefined {
   if (!fs.existsSync(`${integrationProjectDir}/project.godot`)) {
     console.error("This task must be run from the repository root.");
     process.exitCode = 1;
