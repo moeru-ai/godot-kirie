@@ -388,32 +388,19 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
   const logStream = await openLogStream(logFile);
 
   try {
-    await execa(
-      "mise",
-      ["x", "--", "godot", "--headless", "--editor", "--quit", "--path", integrationProjectDir],
-      {
-        cwd: rootDir,
-        stderr: logStream,
-        stdout: logStream,
-      },
-    );
+    await execa("godot", ["--headless", "--editor", "--quit", "--path", integrationProjectDir], {
+      cwd: rootDir,
+      stderr: logStream,
+      stdout: logStream,
+    });
   } finally {
     logStream.end();
   }
 
   const runtimeLogStream = await openLogStream(logFile);
   const godotProcess = execa(
-    "mise",
-    [
-      "x",
-      "--",
-      "godot",
-      "--headless",
-      "--path",
-      integrationProjectDir,
-      "--",
-      `--kirie-test=${testName}`,
-    ],
+    "godot",
+    ["--headless", "--path", integrationProjectDir, "--", `--kirie-test=${testName}`],
     { cwd: rootDir, stderr: runtimeLogStream, stdout: runtimeLogStream },
   );
   const watchedGodotProcess = godotProcess.then(
