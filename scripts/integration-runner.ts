@@ -385,18 +385,6 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
 
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "60");
   const logFile = prepareLogFile(testName);
-  const logStream = await openLogStream(logFile);
-
-  try {
-    await execa("godot", ["--headless", "--editor", "--quit", "--path", integrationProjectDir], {
-      cwd: rootDir,
-      stderr: logStream,
-      stdout: logStream,
-    });
-  } finally {
-    logStream.end();
-  }
-
   const runtimeLogStream = await openLogStream(logFile);
   const godotProcess = execa(
     "godot",
