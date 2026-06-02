@@ -386,6 +386,34 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "60");
   const logFile = prepareLogFile(testName);
   const godotCommand = process.env.GODOT || "godot";
+  const importLogStream = await openLogStream(logFile);
+  let importError: unknown;
+
+  try {
+    await execa(
+      godotCommand,
+      ["--headless", "--editor", "--quit", "--path", integrationProjectDir],
+      {
+        cwd: rootDir,
+        stderr: importLogStream,
+        stdout: importLogStream,
+      },
+    );
+  } catch (error) {
+    importError = error;
+  } finally {
+    importLogStream.end();
+  }
+
+  if (importError) {
+    await sleep(300);
+    console.error(`Godot editor import failed before running ${testName}`);
+    console.error(`=== Full log: ${logFile} ===`);
+    console.error(readLogFile(logFile));
+    console.error("=== End of log ===");
+    throw importError;
+  }
+
   const runtimeLogStream = await openLogStream(logFile);
   const godotProcess = execa(
     godotCommand,

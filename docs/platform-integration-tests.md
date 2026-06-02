@@ -282,8 +282,9 @@ mise run test:integration-desktop ipc_round_trip_probe
 mise run test:integration-desktop res_asset_loading_probe
 ```
 
-The desktop runner launches the Godot runtime with `--headless`, captures
-stdout, and waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
+The desktop runner first performs a headless editor import so Godot discovers
+GDExtensions such as Godot CEF, then launches the runtime with `--headless`,
+captures stdout, and waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
 
 ## CI Direction
 
