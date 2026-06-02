@@ -88,7 +88,7 @@ jobs:
 
       - name: Install Godot CEF addon
         if: steps.godot-cef-cache.outputs.cache-hit != 'true'
-        run: mise run install:godot-cef -- tests/integration
+        run: mise run install:godot-cef tests/integration
 
       - name: Build integration web fixture
         run: mise run build:integration-web
