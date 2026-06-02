@@ -72,12 +72,15 @@ async function extractZip(archivePath: string, outputDir: string): Promise<void>
         "-NoProfile",
         "-NonInteractive",
         "-Command",
-        "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force",
-        archivePath,
-        outputDir,
+        "Expand-Archive -LiteralPath $env:KIRIE_GODOT_CEF_ARCHIVE -DestinationPath $env:KIRIE_GODOT_CEF_EXTRACT_DIR -Force",
       ],
       {
         cwd: rootDir,
+        env: {
+          ...process.env,
+          KIRIE_GODOT_CEF_ARCHIVE: archivePath,
+          KIRIE_GODOT_CEF_EXTRACT_DIR: outputDir,
+        },
         stdio: "inherit",
       },
     );
