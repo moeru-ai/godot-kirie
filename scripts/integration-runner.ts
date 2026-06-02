@@ -385,9 +385,10 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
 
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "60");
   const logFile = prepareLogFile(testName);
+  const godotCommand = process.env.GODOT || "godot";
   const runtimeLogStream = await openLogStream(logFile);
   const godotProcess = execa(
-    "godot",
+    godotCommand,
     ["--headless", "--path", integrationProjectDir, "--", `--kirie-test=${testName}`],
     { cwd: rootDir, stderr: runtimeLogStream, stdout: runtimeLogStream },
   );

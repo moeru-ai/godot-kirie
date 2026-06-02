@@ -79,15 +79,7 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
-      - name: Cache Godot CEF addon
-        id: godot-cef-cache
-        uses: actions/cache@v5
-        with:
-          path: tests/integration/addons/godot_cef
-          key: ${{ runner.os }}-${{ runner.arch }}-godot-cef-${{ hashFiles('packages/kirie/addon/addons/kirie/godot_cef.json') }}
-
       - name: Install Godot CEF addon
-        if: steps.godot-cef-cache.outputs.cache-hit != 'true'
         run: mise run install:godot-cef tests/integration
 
       - name: Build integration web fixture
