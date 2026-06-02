@@ -1,0 +1,89 @@
+name: Desktop Platform Integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  desktop:
+    name: Desktop (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+          - ubuntu-latest
+    env:
+      MISE_EXEC_AUTO_INSTALL: "false"
+      MISE_NOT_FOUND_AUTO_INSTALL: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Node
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          install_args: node
+          cache: true
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.2
+          use-dotnet: true
+
+      - name: Enable Corepack
+        run: mise x -- corepack enable pnpm
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
+
+      - name: Install pnpm dependencies
+        run: mise x -- corepack pnpm install --frozen-lockfile
+
+      - name: Cache Godot CEF addon
+        id: godot-cef-cache
+        uses: actions/cache@v5
+        with:
+          path: tests/integration/addons/godot_cef
+          key: ${{ runner.os }}-${{ runner.arch }}-godot-cef-${{ hashFiles('packages/kirie/addon/addons/kirie/godot_cef.json') }}
+
+      - name: Install Godot CEF addon
+        if: steps.godot-cef-cache.outputs.cache-hit != 'true'
+        run: mise run install:godot-cef tests/integration
+
+      - name: Build integration web fixture
+        run: mise run build:integration-web
+
+      - name: Run integration tests
+        timeout-minutes: 8
+        run: |
+          mise run test:integration-ios -- ipc_round_trip_probe
+          # mise run test:integration-ios -- webview_lifecycle_probe
+          mise run test:integration-ios -- res_asset_loading_probe

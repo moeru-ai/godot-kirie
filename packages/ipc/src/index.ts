@@ -37,11 +37,6 @@ interface KirieIosWebkit {
   };
 }
 
-interface KirieCefListener<TMessage> {
-  addListener(handler: KirieMessageHandler<TMessage>): void;
-  removeListener(handler: KirieMessageHandler<TMessage>): void;
-}
-
 declare global {
   interface Window {
     kirie?: KirieRuntime;
@@ -52,9 +47,9 @@ declare global {
     sendIpcMessage(message: string): void;
     sendIpcBinaryMessage(message: ArrayBuffer): void;
     sendIpcData(message: KirieData): void;
-    ipcMessage: KirieCefListener<string>;
-    ipcBinaryMessage: KirieCefListener<ArrayBuffer>;
-    ipcDataMessage: KirieCefListener<KirieData>;
+    onIpcMessage?: KirieMessageHandler<string>;
+    onIpcBinaryMessage?: KirieMessageHandler<ArrayBuffer>;
+    onIpcDataMessage?: KirieMessageHandler<KirieData>;
   }
 }
 
@@ -290,12 +285,23 @@ const iosTransport: KirieTransport = {
   },
 };
 
-function listenCef<TMessage>(
-  listener: KirieCefListener<TMessage>,
+type KirieCefCallbackName = "onIpcMessage" | "onIpcBinaryMessage" | "onIpcDataMessage";
+
+function listenCefLegacy<TMessage>(
+  name: KirieCefCallbackName,
   handler: KirieMessageHandler<TMessage>,
 ): () => void {
-  listener.addListener(handler);
-  return () => listener.removeListener(handler);
+  const callbacks = window as unknown as Record<
+    KirieCefCallbackName,
+    KirieMessageHandler<TMessage> | undefined
+  >;
+  callbacks[name] = handler;
+
+  return () => {
+    if (callbacks[name] === handler) {
+      callbacks[name] = undefined;
+    }
+  };
 }
 
 const cefTransport: KirieTransport = {
@@ -312,15 +318,16 @@ const cefTransport: KirieTransport = {
   },
 
   onTextReceived(handler) {
-    return listenCef(window.ipcMessage, handler);
+    // TODO: Switch to Godot CEF listener objects after the upstream addListener lifecycle fix ships.
+    return listenCefLegacy("onIpcMessage", handler);
   },
 
   onBinaryReceived(handler) {
-    return listenCef(window.ipcBinaryMessage, (value) => handler(new Uint8Array(value)));
+    return listenCefLegacy("onIpcBinaryMessage", (value) => handler(new Uint8Array(value)));
   },
 
   onDataReceived(handler) {
-    return listenCef(window.ipcDataMessage, handler);
+    return listenCefLegacy("onIpcDataMessage", handler);
   },
 };
 

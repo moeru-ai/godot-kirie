@@ -7,9 +7,9 @@ tests/integration/
 ```
 
 They are not Android instrumentation tests and are not part of
-`examples/basic-ipc`. Android and iOS should eventually run the same Godot test
-project; the platform only provides the WebView runtime and app launch
-mechanism.
+`examples/basic-ipc`. Android, iOS, and desktop Godot CEF coverage should run
+the same Godot test project; the platform only provides the WebView runtime and
+app launch mechanism.
 
 ## Goals
 
@@ -27,14 +27,9 @@ The current focus is:
 - C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
-The browser fixture currently targets the Android CBOR ArrayBuffer lane path:
-it uses `@gd-kirie/ipc` to encode and decode text, binary, and data lane
-messages. The Godot side still verifies the exported app bridge through
-Kirie's explicit lane API. iOS has a native XCTest coverage point for CBOR
-serialization, but the WebView transport still uses the legacy text-oriented
-native bridge and is not expected to pass this Vite fixture until the iOS lane
-migration lands. Eventa adapter behavior should be tested separately above the
-raw bridge.
+The browser fixture uses `@gd-kirie/ipc` to exercise the text, binary, and data
+lanes across the platform runners. iOS also keeps a native XCTest coverage point
+for CBOR serialization. Eventa adapter behavior should be tested separately.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
@@ -260,11 +255,51 @@ mise run test:integration-ios -- ipc_round_trip_probe
 The iOS XCFramework and simulator app tasks expect the Godot source checkout at
 repo-root `godot/`.
 
+## Desktop Godot CEF Local Flow
+
+Install the pinned Godot CEF addon into the test project:
+
+```bash
+mise run install:godot-cef tests/integration
+```
+
+Build the browser fixture:
+
+```bash
+mise run build:integration-web
+```
+
+Run a test with the headless Godot desktop runtime:
+
+```bash
+mise run test:integration-desktop -- ipc_round_trip_probe
+```
+
+Run the desktop CI smoke set:
+
+```bash
+mise run test:integration-desktop-ci
+```
+
+The desktop runner performs a headless editor import, launches the Godot runtime
+with `--headless`, captures stdout, and waits for `KIRIE_TEST_PASS` or
+`KIRIE_TEST_FAIL`.
+
 ## CI Direction
 
-The CI flows live in `.github/workflows/platform-integration-android.yml` and
-`.github/workflows/platform-integration-ios.yml`. They build the native staging
-artifacts before exporting the integration project.
+The CI flows live in:
+
+- `.github/workflows/platform-integration-android.yml`
+- `.github/workflows/platform-integration-ios.yml`
+- `.github/workflows/platform-integration-desktop.yml`
+
+Android and iOS build the native staging artifacts before exporting the
+integration project.
+
+Desktop CI runs the same Godot CEF smoke set on macOS, Windows, and Linux:
+`ipc_round_trip_probe` and `res_asset_loading_probe`. Keep
+`webview_lifecycle_probe` out of desktop CI until Godot CEF's browser and CEF
+runtime lifecycles are stable enough for destroy/recreate coverage.
 
 CI should reuse the same marker contract and app-session isolation used
 locally.

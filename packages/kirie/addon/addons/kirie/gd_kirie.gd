@@ -261,6 +261,7 @@ func _create_cef_webview(initial_url: String) -> void:
 	if browser.get_parent() != null:
 		if initial_url != "":
 			browser.set("url", initial_url)
+		call_deferred("_emit_cef_webview_ready")
 		return
 
 	var tree := Engine.get_main_loop() as SceneTree
@@ -269,13 +270,29 @@ func _create_cef_webview(initial_url: String) -> void:
 		ipc_error.emit(error)
 		return
 
-	tree.root.add_child(browser)
+	call_deferred("_add_cef_webview_to_scene", initial_url)
+
+
+func _add_cef_webview_to_scene(initial_url: String) -> void:
+	var browser := _plugin_singleton as Node
+	if browser == null:
+		return
+
+	if browser.get_parent() == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree == null:
+			var error := "Cannot create Godot CEF WebView because no scene tree is available"
+			ipc_error.emit(error)
+			return
+
+		tree.root.add_child(browser)
+
 	_configure_cef_layout()
 
 	if initial_url != "":
 		browser.set("url", initial_url)
 
-	call_deferred("_emit_cef_webview_ready")
+	_emit_cef_webview_ready()
 
 
 func _destroy_cef_webview() -> void:

@@ -64,6 +64,32 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
   fs.writeFileSync(outputPath, bytes);
 }
 
+async function extractZip(archivePath: string, outputDir: string): Promise<void> {
+  if (process.platform === "win32") {
+    await execa(
+      "powershell",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force",
+        archivePath,
+        outputDir,
+      ],
+      {
+        cwd: rootDir,
+        stdio: "inherit",
+      },
+    );
+    return;
+  }
+
+  await execa("unzip", ["-q", archivePath, "-d", outputDir], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+}
+
 function sha256File(filePath: string): string {
   const hash = crypto.createHash("sha256");
   hash.update(fs.readFileSync(filePath));
@@ -164,10 +190,7 @@ export async function installGodotCef(projectDirArg?: string): Promise<void> {
   }
 
   fs.mkdirSync(extractDir, { recursive: true });
-  await execa("unzip", ["-q", archivePath, "-d", extractDir], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
+  await extractZip(archivePath, extractDir);
 
   const extractedAddon = path.join(extractDir, "dist", godotCefAddonProjectPath);
   if (

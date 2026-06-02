@@ -15,4 +15,8 @@ export {
 } from "./build-kirie.ts";
 
 // mise task entrypoints re-exported from the integration host runner.
-export { runIntegrationAndroidTest, runIntegrationIosTest } from "./integration-runner.ts";
+export {
+  runIntegrationAndroidTest,
+  runIntegrationDesktopTest,
+  runIntegrationIosTest,
+} from "./integration-runner.ts";

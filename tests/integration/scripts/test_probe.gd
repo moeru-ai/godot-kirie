@@ -5,7 +5,7 @@ const PROBE_INDEX_HTML_PATH := "res://web-src/index.html"
 const DEFAULT_TEST_TIMEOUT_SECONDS := 12.0
 const IOS_TEST_TIMEOUT_SECONDS := 30.0
 
-var _kirie: GdKirie
+var _kirie: Object
 var _binary_messages: Array[PackedByteArray] = []
 var _data_messages: Array[Dictionary] = []
 var _probe_error := ""
@@ -14,7 +14,7 @@ var _tree: SceneTree
 var _webview_is_ready := false
 
 
-func _init(kirie: GdKirie, tree: SceneTree) -> void:
+func _init(kirie: Object, tree: SceneTree) -> void:
 	_kirie = kirie
 	_tree = tree
 

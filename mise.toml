@@ -136,6 +136,10 @@ run = "./scripts/run-build-task.js runIntegrationAndroidTest"
 description = "Run one iOS platform integration test"
 run = "./scripts/run-build-task.js runIntegrationIosTest"
 
+[tasks."test:integration-desktop"]
+description = "Run one desktop Godot CEF platform integration test"
+run = "./scripts/run-build-task.js runIntegrationDesktopTest"
+
 [tasks."test:unit"]
 description = "Run package unit tests"
 run = "corepack pnpm run test:unit"

@@ -52,7 +52,7 @@ func _resolve_test_name() -> String:
 	return ""
 
 
-func _run_test_case(kirie: GdKirie, tree: SceneTree, test_name: String) -> Variant:
+func _run_test_case(kirie: Object, tree: SceneTree, test_name: String) -> Variant:
 	var test_script_path := TEST_CASE_PATH_TEMPLATE % _test_name
 	if not ResourceLoader.exists(test_script_path):
 		_fail("Unknown integration test: %s" % _test_name)

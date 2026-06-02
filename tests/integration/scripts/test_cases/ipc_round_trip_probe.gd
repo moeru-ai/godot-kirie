@@ -4,7 +4,7 @@ const PROBE_NAME := "ipc_round_trip"
 const TestProbeScript = preload("res://scripts/test_probe.gd")
 
 
-func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
+func run(kirie: Object, tree: SceneTree, test_name: String) -> String:
 	var probe: KirieIntegrationProbe = TestProbeScript.new(kirie, tree)
 	probe.reset()
 

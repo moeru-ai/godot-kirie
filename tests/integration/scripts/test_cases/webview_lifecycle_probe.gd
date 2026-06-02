@@ -4,7 +4,7 @@ const DESTROY_SETTLE_SECONDS := 0.4
 const TestProbeScript = preload("res://scripts/test_probe.gd")
 
 
-func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
+func run(kirie: Object, tree: SceneTree, test_name: String) -> String:
 	var probe: KirieIntegrationProbe = TestProbeScript.new(kirie, tree)
 
 	var failure_reason := await _run_probe(kirie, probe, "first_create", test_name)
@@ -19,7 +19,7 @@ func run(kirie: GdKirie, tree: SceneTree, test_name: String) -> String:
 
 
 func _run_probe(
-	kirie: GdKirie,
+	kirie: Object,
 	probe: KirieIntegrationProbe,
 	probe_name: String,
 	test_name: String,

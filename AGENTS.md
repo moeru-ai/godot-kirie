@@ -361,9 +361,8 @@ infrastructure.
   configured.
 - Automated platform integration coverage for the C# `KirieClient` wrapper does
   not exist yet.
-- Automated desktop Godot CEF integration coverage does not exist yet. The next
-  integration-test pass should cover `examples/basic-ipc` desktop run or export
-  with the pinned Godot CEF addon installed.
+- Desktop Godot CEF integration coverage runs through `tests/integration`.
+  Desktop CI and macOS export coverage are not configured yet.
 - Browser-side Eventa adapter support exists in `@gd-kirie/ipc-eventa`.
 - `GdKirie.EventaAdapter` is a .NET 10-only package. It supports Eventa events
   and unary RPC over Kirie text IPC, keeps Eventa source out of `addons/kirie`,
