@@ -56,7 +56,7 @@ description = "Install pinned Godot CEF desktop addon into a Godot project"
 usage = '''
 arg "<godot_project_dir>" help="Godot project directory to install the addon into"
 '''
-run = "./scripts/run-build-task.js installGodotCef {{arg(name=\"godot_project_dir\")}}"
+run = './scripts/run-build-task.js installGodotCef "${usage_godot_project_dir?}"'
 
 [tasks."build:native-artifacts"]
 description = "Build all native artifacts"
@@ -121,7 +121,13 @@ run = "corepack pnpm run release"
 
 [tasks."run:example"]
 description = "Build, install, and launch an example on Android or iOS"
-run = "./scripts/run-build-task.js runExample"
+usage = '''
+arg "<platform>" help="Target platform" {
+  choices "android" "ios"
+}
+arg "<example_name>" help="Example project name"
+'''
+run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_example_name?}"'
 
 [tasks."test:dotnet"]
 description = "Run .NET tests"
@@ -133,15 +139,24 @@ run = "corepack pnpm run test:ios-ipc-serialization"
 
 [tasks."test:integration-android"]
 description = "Run one Android platform integration test"
-run = "./scripts/run-build-task.js runIntegrationAndroidTest"
+usage = '''
+arg "<test_name>" help="Integration test name"
+'''
+run = './scripts/run-build-task.js runIntegrationAndroidTest "${usage_test_name?}"'
 
 [tasks."test:integration-ios"]
 description = "Run one iOS platform integration test"
-run = "./scripts/run-build-task.js runIntegrationIosTest"
+usage = '''
+arg "<test_name>" help="Integration test name"
+'''
+run = './scripts/run-build-task.js runIntegrationIosTest "${usage_test_name?}"'
 
 [tasks."test:integration-desktop"]
 description = "Run one desktop Godot CEF platform integration test"
-run = "./scripts/run-build-task.js runIntegrationDesktopTest"
+usage = '''
+arg "<test_name>" help="Integration test name"
+'''
+run = './scripts/run-build-task.js runIntegrationDesktopTest "${usage_test_name?}"'
 
 [tasks."test:unit"]
 description = "Run package unit tests"
