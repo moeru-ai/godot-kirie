@@ -29,6 +29,7 @@ jobs:
           - windows-latest
           - ubuntu-latest
     env:
+      GODOT_VERSION: 4.6.2
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
       MISE_TASK_RUN_AUTO_INSTALL: "false"
@@ -58,8 +59,15 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.6.2
+          version: ${{ env.GODOT_VERSION }}
           use-dotnet: true
+
+      - name: Select Windows Godot executable
+        if: matrix.os == 'windows-latest'
+        run: |
+          godot_exe="$HOME/godot/Godot_v${GODOT_VERSION}-stable_mono_win64/Godot_v${GODOT_VERSION}-stable_mono_win64.exe"
+          test -f "$godot_exe"
+          echo "GODOT=$(cygpath -w "$godot_exe")" >> "$GITHUB_ENV"
 
       - name: Enable Corepack
         run: mise x -- corepack enable pnpm
