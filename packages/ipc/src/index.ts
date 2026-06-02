@@ -287,14 +287,17 @@ const iosTransport: KirieTransport = {
 
 type KirieCefCallbackName = "onIpcMessage" | "onIpcBinaryMessage" | "onIpcDataMessage";
 
-function listenCefLegacy<TMessage>(
-  name: KirieCefCallbackName,
-  handler: KirieMessageHandler<TMessage>,
+interface KirieCefCallbacks {
+  onIpcMessage?: KirieMessageHandler<string>;
+  onIpcBinaryMessage?: KirieMessageHandler<ArrayBuffer>;
+  onIpcDataMessage?: KirieMessageHandler<KirieData>;
+}
+
+function listenCefLegacy<TName extends KirieCefCallbackName>(
+  name: TName,
+  handler: KirieCefCallbacks[TName],
 ): () => void {
-  const callbacks = window as unknown as Record<
-    KirieCefCallbackName,
-    KirieMessageHandler<TMessage> | undefined
-  >;
+  const callbacks = window as unknown as KirieCefCallbacks;
   callbacks[name] = handler;
 
   return () => {

@@ -10,7 +10,10 @@ interface MarkerResult {
   status: "pass" | "fail" | "timeout" | "stopped";
 }
 
-function resolveTestName(platform: "android" | "ios" | "desktop", testName?: string): string | undefined {
+function resolveTestName(
+  platform: "android" | "ios" | "desktop",
+  testName?: string,
+): string | undefined {
   if (!fs.existsSync(`${integrationProjectDir}/project.godot`)) {
     console.error("This task must be run from the repository root.");
     process.exitCode = 1;
