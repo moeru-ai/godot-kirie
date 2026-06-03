@@ -73,7 +73,7 @@ run = "./scripts/run-build-task.js checkAddonPack"
 
 [tasks.format]
 description = "Format all covered source files"
-run = "corepack pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift"
+run = "corepack pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift && mise format:csharp"
 
 [tasks."format:biome"]
 description = "Format TypeScript, JSON, CSS, and HTML files"
@@ -91,9 +91,13 @@ run = "ktlint --format \"packages/kirie/native/android/**/*.kt\" \"packages/kiri
 description = "Format Swift files"
 run = "swiftlint lint --fix --format --no-cache --config .swiftlint.yml"
 
+[tasks."format:csharp"]
+description = "Format C# files"
+run = "dotnet format style -v diag"
+
 [tasks.lint]
 description = "Run all linters"
-run = "corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift"
+run = "corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
 
 [tasks."lint:biome"]
 description = "Lint TypeScript, JSON, CSS, and HTML files"
@@ -110,6 +114,10 @@ run = "ktlint \"packages/kirie/native/android/**/*.kt\" \"packages/kirie/native/
 [tasks."lint:swift"]
 description = "Lint Swift files"
 run = "swiftlint lint --strict --no-cache --config .swiftlint.yml"
+
+[tasks."lint:csharp"]
+description = "Lint C# files"
+run = "dotnet format analyzers -v diag"
 
 [tasks."pack:nuget"]
 description = "Pack the .NET Eventa adapter NuGet package"
