@@ -54,7 +54,12 @@ func wait_for_webview_ready(probe_name: String) -> String:
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
-			print("[Kirie][DEBUG] wait_for_webview_ready aborted due to probe error: %s" % _probe_error)
+			print(
+				(
+					"[Kirie][DEBUG] wait_for_webview_ready aborted due to probe error: %s"
+					% _probe_error
+				)
+			)
 			return _probe_error
 
 		if _webview_is_ready:
@@ -74,7 +79,9 @@ func wait_for_data_message(message_type: String, probe_name: String) -> String:
 	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if _probe_error != "":
-			print("[Kirie][DEBUG] wait_for_data_message aborted due to probe error: %s" % _probe_error)
+			print(
+				"[Kirie][DEBUG] wait_for_data_message aborted due to probe error: %s" % _probe_error
+			)
 			return _probe_error
 
 		if _has_data_message(message_type, probe_name):
@@ -178,8 +185,10 @@ func _has_data_message(message_type: String, probe_name: String) -> bool:
 		var payload: Variant = message.get("payload", {})
 		if typeof(payload) != TYPE_DICTIONARY:
 			print(
-				"[Kirie][DEBUG] Key 'type' matched '%s', but 'payload' type is %d instead of TYPE_DICTIONARY"
-				% [message_type, typeof(payload)]
+				(
+					"[Kirie][DEBUG] Key 'type' matched '%s', but 'payload' type is %d instead of TYPE_DICTIONARY"
+					% [message_type, typeof(payload)]
+				)
 			)
 			continue
 
@@ -287,22 +296,23 @@ func _on_binary_received(bytes: PackedByteArray) -> void:
 
 func _on_data_received(value: Variant) -> void:
 	var val_type := typeof(value)
-	print(
-		"[Kirie][test] signal data_received raw_type_id=%d value_str=%s"
-		% [val_type, str(value)]
-	)
+	print("[Kirie][test] signal data_received raw_type_id=%d value_str=%s" % [val_type, str(value)])
 
 	if val_type != TYPE_DICTIONARY:
 		print(
-			"[Kirie][WARNING] Ignored data_received payload because type %d is not TYPE_DICTIONARY"
-			% val_type
+			(
+				"[Kirie][WARNING] Ignored data_received payload because type %d is not TYPE_DICTIONARY"
+				% val_type
+			)
 		)
 		return
 
 	var message := value as Dictionary
 	print(
-		"[Kirie][DEBUG] Successfully appended structured dictionary message: %s"
-		% JSON.stringify(message)
+		(
+			"[Kirie][DEBUG] Successfully appended structured dictionary message: %s"
+			% JSON.stringify(message)
+		)
 	)
 	_data_messages.append(message)
 

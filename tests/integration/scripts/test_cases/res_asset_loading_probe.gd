@@ -23,15 +23,18 @@ func run(kirie: Object, tree: SceneTree, test_name: String) -> String:
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_data(
-		{
-			"type": "godot_ready",
-			"payload":
+	(
+		kirie
+		. send_data(
 			{
-				"probe": PROBE_NAME,
-				"test": test_name,
-			},
-		}
+				"type": "godot_ready",
+				"payload":
+				{
+					"probe": PROBE_NAME,
+					"test": test_name,
+				},
+			}
+		)
 	)
 
 	return await probe.wait_for_data_message("web_ack", PROBE_NAME)
