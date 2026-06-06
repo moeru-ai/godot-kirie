@@ -106,8 +106,12 @@ label them as anecdotal when they influence a decision.
 - Desktop Godot CEF support starts with macOS and should preserve the existing
   Kirie public API. Keep the detailed desktop backend, runtime-injection, and
   artifact rules centralized in `docs/architecture.md`.
-- For the current milestone, assume a single active WebView unless the user
-  explicitly asks to reintroduce multi-WebView behavior.
+- For the current milestone, treat `KirieView` as the scene-tree ownership unit
+  for a platform WebView. Users decide whether a `KirieView` lives in the main
+  scene, under a Godot `Window`, or in another scene structure.
+- Keep window organization, named routing, cross-view forwarding, and prefab
+  window helpers above Kirie core until the user explicitly asks for that
+  higher-level work.
 - Keep the Godot-facing wrapper thin; prefer forwarding to the platform
   singleton over reimplementing platform lifecycle logic in GDScript.
 - Keep `KirieClient` as a thin C# wrapper over the same platform singleton.

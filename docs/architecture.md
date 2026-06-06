@@ -68,9 +68,26 @@ Current signals should also stay narrow:
 Browser lifecycle events and higher-level invocation APIs are intentionally
 deferred until there is a real need for them.
 
-For the current milestone, Kirie intentionally supports a single active WebView.
-Multi-WebView support is deferred until the single-WebView bridge is working end
-to end.
+For the current milestone, Kirie should treat `KirieView` as the public
+scene-tree ownership unit for a platform WebView. A user may place a
+`KirieView` under the main scene, under a Godot `Window` node, or in another
+scene structure that fits their project.
+
+Kirie core should not own window organization. Optional higher-level helpers may
+later provide prefab window, panel, workspace, cross-view forwarding, or routing
+APIs, but those helpers must live above the low-level WebView and IPC surface.
+
+The public Godot API should primarily let users address WebViews through node
+references:
+
+- `$KirieView.load_url(url)`
+- `$KirieView.send_text(message)`
+- `$KirieView.send_binary(bytes)`
+- `$KirieView.send_data(value)`
+
+Native implementations may keep internal handles or IDs to manage platform
+instances. Public routing names, browser-driven cross-view forwarding, and
+window helper APIs are deferred higher-level concerns.
 
 Kirie supports loading packaged offline web content from Godot project resources
 through the `res://web` path described below.

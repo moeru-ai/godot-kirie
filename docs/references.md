@@ -7,6 +7,12 @@ packaging, or platform WebView bridge details.
 
 ## Godot
 
+- [Node class (stable)](https://docs.godotengine.org/en/stable/classes/class_node.html)
+  Reference for scene-tree ownership and node lifecycle callbacks used by
+  `KirieView`.
+- [Window class (stable)](https://docs.godotengine.org/en/stable/classes/class_window.html)
+  Reference for Godot window nodes. Kirie users may place `KirieView` under a
+  `Window`, but Kirie core does not own window organization.
 - [Godot Android plugins (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
   Main reference for Godot Android plugin v2 packaging and export flow.
 - [Command line tutorial (stable)](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html)
