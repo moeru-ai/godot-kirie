@@ -55,8 +55,7 @@ without duplicating native lifecycle logic.
 The C# `KirieClient` wrapper follows the same low-level surface and forwards to
 the same platform singleton. Its public API should feel idiomatic to .NET users:
 methods use C# naming, and Kirie signals are exposed as C# events. Internal
-Godot `Callable` usage exists only to connect native singleton signals and iOS
-callbacks.
+Godot `Callable` usage exists only to connect native singleton signals.
 
 Current signals should also stay narrow:
 

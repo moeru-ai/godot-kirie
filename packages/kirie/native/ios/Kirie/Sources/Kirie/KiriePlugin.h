@@ -14,17 +14,10 @@ class KiriePlugin : public Object {
 	void *binary_received_observer = nullptr;
 	void *data_received_observer = nullptr;
 	void *ipc_error_observer = nullptr;
-	Callable webview_ready_callback;
-	Callable ipc_message_received_callback;
-	Callable text_received_callback;
-	Callable binary_received_callback;
-	Callable data_received_callback;
-	Callable ipc_error_callback;
 
 public:
 	static KiriePlugin *get_singleton();
 
-	void registerCallbacks(Callable on_webview_ready, Callable on_text_received, Callable on_binary_received, Callable on_data_received, Callable on_ipc_error);
 	void createWebView(String initial_url);
 	void destroyWebView();
 	void loadUrl(String url);

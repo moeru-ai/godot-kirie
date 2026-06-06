@@ -161,38 +161,24 @@ func _connect_plugin_signals() -> void:
 	if _plugin_singleton == null:
 		return
 
-	if OS.get_name() == "iOS":
-		print("[Kirie][gd] registering iOS callbacks")
-		var webview_ready_callback := Callable(self, "_on_plugin_webview_ready")
-		var text_received_callback := Callable(self, "_on_plugin_text_received")
-		var ipc_error_callback := Callable(self, "_on_plugin_ipc_error")
-		_plugin_singleton.registerCallbacks(
-			webview_ready_callback,
-			text_received_callback,
-			Callable(self, "_on_plugin_binary_received"),
-			Callable(self, "_on_plugin_data_received"),
-			ipc_error_callback
-		)
-		return
-
 	if _plugin_singleton.has_signal(&"webview_ready"):
-		print("[Kirie][gd] connecting Android webview_ready signal")
+		print("[Kirie][gd] connecting webview_ready signal")
 		_plugin_singleton.webview_ready.connect(_on_plugin_webview_ready)
 
 	if _plugin_singleton.has_signal(&"text_received"):
-		print("[Kirie][gd] connecting Android text_received signal")
+		print("[Kirie][gd] connecting text_received signal")
 		_plugin_singleton.text_received.connect(_on_plugin_text_received)
 
 	if _plugin_singleton.has_signal(&"binary_received"):
-		print("[Kirie][gd] connecting Android binary_received signal")
+		print("[Kirie][gd] connecting binary_received signal")
 		_plugin_singleton.binary_received.connect(_on_plugin_binary_received)
 
 	if _plugin_singleton.has_signal(&"data_received"):
-		print("[Kirie][gd] connecting Android data_received signal")
+		print("[Kirie][gd] connecting data_received signal")
 		_plugin_singleton.data_received.connect(_on_plugin_data_received)
 
 	if _plugin_singleton.has_signal(&"ipc_error"):
-		print("[Kirie][gd] connecting Android ipc_error signal")
+		print("[Kirie][gd] connecting ipc_error signal")
 		_plugin_singleton.ipc_error.connect(_on_plugin_ipc_error)
 
 

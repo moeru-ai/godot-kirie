@@ -163,20 +163,6 @@ public partial class KirieClient : GodotObject
             return;
         }
 
-        if (OS.GetName() == "iOS")
-        {
-            GD.Print("[Kirie][cs] registering iOS callbacks");
-            _pluginSingleton.Call(
-                "registerCallbacks",
-                _webViewReadyCallable,
-                _textReceivedCallable,
-                _binaryReceivedCallable,
-                _dataReceivedCallable,
-                _ipcErrorCallable
-            );
-            return;
-        }
-
         ConnectPluginSignal("webview_ready", _webViewReadyCallable);
         ConnectPluginSignal("text_received", _textReceivedCallable);
         ConnectPluginSignal("binary_received", _binaryReceivedCallable);

@@ -199,60 +199,6 @@ static bool require_arg_count(Callable::CallError &r_error, int p_argcount, int 
 	return false;
 }
 
-static void call_callback(const Callable &callback) {
-	if (callback.is_null()) {
-		return;
-	}
-
-	Variant return_value;
-	Callable::CallError call_error;
-	callback.callp(nullptr, 0, return_value, call_error);
-}
-
-static void call_callback(const Callable &callback, const String &value) {
-	if (callback.is_null()) {
-		return;
-	}
-
-	Variant argument = value;
-	const Variant *arguments[] = { &argument };
-	Variant return_value;
-	Callable::CallError call_error;
-	callback.callp(arguments, 1, return_value, call_error);
-}
-
-static void call_callback(const Callable &callback, const PackedByteArray &value) {
-	if (callback.is_null()) {
-		return;
-	}
-
-	Variant argument = value;
-	const Variant *arguments[] = { &argument };
-	Variant return_value;
-	Callable::CallError call_error;
-	callback.callp(arguments, 1, return_value, call_error);
-}
-
-static void call_callback(const Callable &callback, const Variant &value) {
-	if (callback.is_null()) {
-		return;
-	}
-
-	const Variant *arguments[] = { &value };
-	Variant return_value;
-	Callable::CallError call_error;
-	callback.callp(arguments, 1, return_value, call_error);
-}
-
-void KiriePlugin::registerCallbacks(Callable on_webview_ready, Callable on_text_received, Callable on_binary_received, Callable on_data_received, Callable on_ipc_error) {
-	webview_ready_callback = on_webview_ready;
-	ipc_message_received_callback = on_text_received;
-	text_received_callback = on_text_received;
-	binary_received_callback = on_binary_received;
-	data_received_callback = on_data_received;
-	ipc_error_callback = on_ipc_error;
-}
-
 void KiriePlugin::createWebView(String initial_url) {
 	CharString encoded_initial_url = initial_url.utf8();
 	kirie_swift_create_webview(encoded_initial_url.get_data());
@@ -291,7 +237,7 @@ void KiriePlugin::sendData(Variant value) {
 	String error;
 	String json = to_json_string(unwrap_carried_data(value), &error);
 	if (!error.is_empty()) {
-		call_callback(ipc_error_callback, error);
+		emit_signal(StringName("ipc_error"), error);
 		return;
 	}
 
@@ -338,15 +284,6 @@ Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, i
 		}
 
 		createWebView(String(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("registerCallbacks")) {
-		if (!require_arg_count(r_error, p_argcount, 5)) {
-			return Variant();
-		}
-
-		registerCallbacks(Callable(*p_args[0]), Callable(*p_args[1]), Callable(*p_args[2]), Callable(*p_args[3]), Callable(*p_args[4]));
 		return Variant();
 	}
 
@@ -427,6 +364,12 @@ Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, i
 KiriePlugin::KiriePlugin() {
 	singleton = this;
 
+	add_user_signal(MethodInfo("webview_ready"));
+	add_user_signal(MethodInfo("text_received", PropertyInfo(Variant::STRING, "message")));
+	add_user_signal(MethodInfo("binary_received", PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
+	add_user_signal(MethodInfo("data_received", PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
+	add_user_signal(MethodInfo("ipc_error", PropertyInfo(Variant::STRING, "error")));
+
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	NSOperationQueue *main_queue = [NSOperationQueue mainQueue];
 
@@ -435,7 +378,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(__unused NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->webview_ready_callback);
+				singleton->emit_signal(StringName("webview_ready"));
 			}
 		}];
 
@@ -444,7 +387,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->ipc_message_received_callback, to_godot_string(notification.object));
+				singleton->emit_signal(StringName("text_received"), to_godot_string(notification.object));
 			}
 		}];
 
@@ -453,7 +396,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->text_received_callback, to_godot_string(notification.object));
+				singleton->emit_signal(StringName("text_received"), to_godot_string(notification.object));
 			}
 		}];
 
@@ -462,7 +405,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->binary_received_callback, to_godot_bytes(notification.object));
+				singleton->emit_signal(StringName("binary_received"), to_godot_bytes(notification.object));
 			}
 		}];
 
@@ -471,7 +414,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->data_received_callback, to_godot_variant(notification.object));
+				singleton->emit_signal(StringName("data_received"), to_godot_variant(notification.object));
 			}
 		}];
 
@@ -480,7 +423,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				call_callback(singleton->ipc_error_callback, to_godot_string(notification.object));
+				singleton->emit_signal(StringName("ipc_error"), to_godot_string(notification.object));
 			}
 		}];
 }
