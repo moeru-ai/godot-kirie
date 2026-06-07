@@ -312,18 +312,14 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   );
   await sleep(logStreamSettleSeconds * 1000);
 
-  const consoleProcess = execa(
-    "xcrun",
-    ["simctl", "launch", "--console", simulatorId, bundleId, "--", `--kirie-test=${testName}`],
-    { cwd: rootDir, stderr: logStream, stdout: logStream },
-  );
-  const watchedConsoleProcess = consoleProcess.then(
-    () => undefined,
-    () => undefined,
-  );
   let result: MarkerResult | undefined;
 
   try {
+    await execa("xcrun", ["simctl", "launch", simulatorId, bundleId, `--kirie-test=${testName}`], {
+      cwd: rootDir,
+      stderr: logStream,
+      stdout: logStream,
+    });
     result = await Promise.race([
       waitForMarker({ logFile, testName, timeoutSeconds }),
       logProcess.then(
@@ -334,17 +330,9 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
           status: "stopped",
         }),
       ),
-      watchedConsoleProcess.then(
-        (): MarkerResult => ({
-          line: `App process exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
-          status: "stopped",
-        }),
-      ),
     ]);
   } finally {
-    consoleProcess.kill();
     logProcess.kill();
-    await watchedConsoleProcess;
     const logProcessResult = await logProcess;
     if (result?.status === "pass" && logProcessResult.failed) {
       if (logProcessResult.signal !== "SIGTERM" && logProcessResult.exitCode !== 143) {
