@@ -19,13 +19,13 @@ package is a thin browser-side transport wrapper; do not expand it into an
 application event or invocation layer unless the user explicitly asks for that
 higher-level work.
 
-The Android IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based
-with text, binary, and data lanes. JSON belongs to callers or adapters, not to
-Kirie core. Keep Eventa adapters above Kirie and out of `addons/kirie`. iOS
-still uses the previous text-oriented native path and is not yet migrated to the
-Android CBOR lane shape. Desktop compatibility starts with Godot CEF as a
-backend for Kirie's existing WebView and IPC surface, not as a reason to expose
-the full Godot CEF browser API through Kirie.
+The mobile IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based with
+text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
+core. Keep Eventa adapters above Kirie and out of `addons/kirie`. Android uses
+AndroidX WebKit ArrayBuffer channels, while iOS carries CBOR packets as base64
+strings through WKWebView script messages. Desktop compatibility starts with
+Godot CEF as a backend for Kirie's existing WebView and IPC surface, not as a
+reason to expose the full Godot CEF browser API through Kirie.
 
 ## Repository Layout
 
@@ -96,6 +96,11 @@ label them as anecdotal when they influence a decision.
   WebKit `WebMessageListener` ArrayBuffer channels, and native encoding or
   decoding uses Jackson CBOR. Keep Godot-side GDScript and C# wrappers thin;
   do not add a GDScript CBOR codec.
+- On iOS, Swift uses SwiftCBOR for the same lane payload contract and WKWebView
+  script messages carry base64 CBOR packets. Native Godot-facing methods and
+  signals should be registered through ClassDB with `ClassDB::bind_method` and
+  `ADD_SIGNAL`; do not reintroduce a hand-written `callp` dispatch table or a
+  Godot-side callback registry.
 - Use Godot CEF as a learning reference and future compatibility target for
   text, binary, and CBOR-backed data IPC lanes.
 - Desktop Godot CEF support starts with macOS and should preserve the existing

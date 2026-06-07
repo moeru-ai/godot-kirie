@@ -84,13 +84,13 @@ pages, and `GdKirie.EventaAdapter` for .NET 10 C# projects. The C# surface is a
 thin `KirieClient` wrapper over the same platform singleton used by GDScript,
 with C# events for the current Kirie signals.
 
-The Android IPC experiment uses explicit text, binary, and data lanes over CBOR
-packets. The browser package encodes and decodes those packets with
-`cborg`, while Android native code uses Jackson CBOR and converts structured
-data through Jackson's tree model before emitting Godot-compatible values. JSON
-and Eventa envelopes remain caller or adapter choices carried over the text
-lane, not Kirie core payload types. iOS is still on the previous text-oriented
-native path and has not yet been migrated to binary CBOR lanes.
+The mobile IPC experiment uses explicit text, binary, and data lanes over CBOR
+packets. The browser package encodes and decodes those packets with `cborg`.
+Android native code uses Jackson CBOR and converts structured data through
+Jackson's tree model before emitting Godot-compatible values. iOS native code
+uses SwiftCBOR and carries CBOR packets as base64 strings through WKWebView
+script messages. JSON and Eventa envelopes remain caller or adapter choices
+carried over the text lane, not Kirie core payload types.
 
 Desktop compatibility starts with Godot CEF as Kirie's desktop WebView backend,
 with macOS as the first target. Scope and runtime-injection details live in
