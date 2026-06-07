@@ -6,7 +6,7 @@
 #include "core/object/object.h"
 
 class KiriePlugin : public Object {
-	GDSOFTCLASS(KiriePlugin, Object);
+	GDCLASS(KiriePlugin, Object);
 
 	void *webview_ready_observer = nullptr;
 	void *ipc_message_received_observer = nullptr;
@@ -14,6 +14,9 @@ class KiriePlugin : public Object {
 	void *binary_received_observer = nullptr;
 	void *data_received_observer = nullptr;
 	void *ipc_error_observer = nullptr;
+
+protected:
+	static void _bind_methods();
 
 public:
 	static KiriePlugin *get_singleton();

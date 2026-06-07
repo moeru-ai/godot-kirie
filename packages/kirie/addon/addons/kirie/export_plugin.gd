@@ -16,7 +16,8 @@ const ANDROID_META_ALLOW_TLS_BYPASS := "ai.moeru.kirie.ALLOW_TLS_BYPASS"
 
 const IOS_PLIST_ENABLE_WEB_INSPECTOR_KEY := "KirieEnableWebInspector"
 const IOS_PLIST_ALLOW_TLS_BYPASS_KEY := "KirieAllowTlsBypass"
-const IOS_XCFRAMEWORK_PATH := "res://addons/kirie/ios/Kirie.xcframework"
+const IOS_DEBUG_XCFRAMEWORK_PATH := "res://addons/kirie/ios/Kirie.debug.xcframework"
+const IOS_RELEASE_XCFRAMEWORK_PATH := "res://addons/kirie/ios/Kirie.release.xcframework"
 const IOS_SYSTEM_FRAMEWORKS := [
 	"Foundation.framework",
 	"UIKit.framework",
@@ -99,7 +100,7 @@ func _export_begin(
 	if not features.has("ios"):
 		return
 
-	_add_ios_native_plugin()
+	_add_ios_native_plugin(_is_debug)
 	_add_ios_runtime_configuration()
 	_add_ios_web_bundle_files(DEFAULT_WEB_ROOT)
 
@@ -222,15 +223,19 @@ func _add_ios_web_bundle_files(root_path: String) -> void:
 	add_apple_embedded_platform_bundle_file(root_path)
 
 
-func _add_ios_native_plugin() -> void:
-	if not DirAccess.dir_exists_absolute(IOS_XCFRAMEWORK_PATH):
-		var message := "[Kirie][export] iOS framework not found: %s" % IOS_XCFRAMEWORK_PATH
+func _add_ios_native_plugin(is_debug: bool) -> void:
+	var framework_path := IOS_RELEASE_XCFRAMEWORK_PATH
+	if is_debug:
+		framework_path = IOS_DEBUG_XCFRAMEWORK_PATH
+
+	if not DirAccess.dir_exists_absolute(framework_path):
+		var message := "[Kirie][export] iOS framework not found: %s" % framework_path
 		push_error(message)
 		assert(false, message)
 		return
 
-	print("[Kirie][export] add iOS framework: %s" % IOS_XCFRAMEWORK_PATH)
-	add_apple_embedded_platform_framework(IOS_XCFRAMEWORK_PATH)
+	print("[Kirie][export] add iOS framework: %s" % framework_path)
+	add_apple_embedded_platform_framework(framework_path)
 	for system_framework in IOS_SYSTEM_FRAMEWORKS:
 		add_apple_embedded_platform_framework(system_framework)
 	add_apple_embedded_platform_cpp_code(IOS_PLUGIN_CPP_CODE)

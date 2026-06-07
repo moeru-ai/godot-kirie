@@ -22,6 +22,9 @@ packaging, or platform WebView bridge details.
 - [EditorExportPlugin (stable)](https://docs.godotengine.org/en/stable/classes/class_editorexportplugin.html)
   Reference for Android export hooks and Apple embedded platform hooks such as
   framework, plist, and C++ code injection.
+- [Godot Object class architecture (stable)](https://docs.godotengine.org/en/stable/engine_details/architecture/object_class.html)
+  Reference for registering `Object` classes with `GDREGISTER_CLASS`, binding
+  methods in `_bind_methods`, and declaring native signals with `ADD_SIGNAL`.
 - [EditorExportPlatformAndroid (stable)](https://docs.godotengine.org/en/stable/classes/class_editorexportplatformandroid.html)
   Android export platform settings, including Gradle build requirements.
 - [iOS plugins index (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/ios/index.html)
@@ -30,6 +33,10 @@ packaging, or platform WebView bridge details.
   Reference for Godot native iOS plugin entry points and `.xcframework`
   support. Kirie uses addon export hooks instead of a project-local `.gdip`
   shim.
+- [Godot iOS plugins repository](https://github.com/godot-sdk-integrations/godot-ios-plugins)
+  Upstream reference for Godot's official iOS plugin build model, including
+  `release_debug` artifacts for debug export templates and `.xcframework`
+  generation across device and simulator slices.
 - [EditorExportPlatformIOS (stable)](https://docs.godotengine.org/en/stable/classes/class_editorexportplatformios.html)
   iOS export platform settings reference.
 - [C#/.NET (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/index.html)
@@ -171,7 +178,8 @@ packaging, or platform WebView bridge details.
 - When changing Android IPC, start with `WebView`, AndroidX WebKit
   `WebViewCompat` and `WebMessageCompat`, RFC 8949, Jackson CBOR, and `cborg`.
 - When changing iOS IPC or packaging, start with `WKWebView`,
-  `WKScriptMessageHandler`, and `EditorExportPlugin`.
+  `WKScriptMessageHandler`, Godot's iOS plugin guide, the Godot iOS plugins
+  repository, Godot Object class registration docs, and `EditorExportPlugin`.
 - When changing Kirie runtime injection, start with AndroidX WebKit
   `addDocumentStartJavaScript`, `WKUserScriptInjectionTime.atDocumentStart`, CEF
   `OnContextCreated`, and the Electron, Tauri, and Wails runtime injection

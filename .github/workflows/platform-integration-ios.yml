@@ -71,6 +71,7 @@ jobs:
           scons platform=macos target=editor \
             vulkan_sdk_path="${MOLTENVK_PATH}" \
             core/version_generated.gen.h \
+            core/disabled_classes.gen.h \
             core/extension/gdextension_interface.gen.h
 
       - name: Cache Godot iOS simulator template

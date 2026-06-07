@@ -133,7 +133,8 @@ directories.
 For the current milestone, iOS should be owned by the standard addon tree:
 
 - users consume `addons/kirie`
-- `Kirie.xcframework` belongs under `addons/kirie/ios` in staged addon trees
+- `Kirie.debug.xcframework` and `Kirie.release.xcframework` belong under
+  `addons/kirie/ios` in staged addon trees
 - iOS native pieces are injected through `EditorExportPlugin` Apple export hooks
 - do not reintroduce `res://ios/plugins` or `.gdip` shims unless the export hook
   approach fails and the user explicitly chooses that fallback

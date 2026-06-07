@@ -39,9 +39,16 @@ mise run build:ios-xcframework
 The task will:
 
 1. Generate a local Xcode project under `.generated/`
-2. Archive `Kirie` for `iphoneos` and `iphonesimulator`
-3. Create `Kirie.xcframework`
-4. Stage the result under `packages/kirie/addon/addons/kirie/ios/`
+2. Archive `Kirie` for `iphoneos` and `iphonesimulator` in `ReleaseDebug` and
+   `Release` configurations
+3. Create `Kirie.debug.xcframework` and `Kirie.release.xcframework`
+4. Stage both results under `packages/kirie/addon/addons/kirie/ios/`
+
+`ReleaseDebug` is used for `Kirie.debug.xcframework` because Godot's official
+iOS plugin references state that debug export templates are built with the
+`release_debug` target. The project keeps the Godot-required C++ module flags,
+`PTRCALL_ENABLED`, `TYPED_METHOD_BIND`, and the debug-template flags on that
+configuration so the plugin binary matches the exported Godot template.
 
 ## Runtime configuration
 
@@ -61,3 +68,9 @@ framework build configuration.
 - keep iOS native artifacts inside staged `addons/kirie` trees
 - inject iOS native pieces through the addon export plugin
 - do not depend on `res://ios/plugins` or `.gdip` shims
+
+This differs from Godot's automatic `.gdip` discovery path only in packaging
+location. Kirie still follows the native iOS plugin model: it exposes
+initialization and deinitialization entry points, links a static-library
+xcframework into the exported Xcode project, registers its Godot-facing object
+through ClassDB, and binds native signals in `_bind_methods`.
