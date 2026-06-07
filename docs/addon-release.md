@@ -22,10 +22,22 @@ addons/kirie/
 The public addon should include release native artifacts:
 
 - `addons/kirie/libraries/android/Kirie-release.aar`
-- `addons/kirie/ios/Kirie.xcframework`
+- `addons/kirie/ios/Kirie.debug.xcframework`
+- `addons/kirie/ios/Kirie.release.xcframework`
 
-Development-only debug native artifacts and desktop Godot CEF artifacts should
-not be included in the public addon zip.
+The Android debug AAR and desktop Godot CEF artifacts should not be included in
+the public addon zip. The iOS debug xcframework is included because Godot's
+debug iOS export template needs a plugin binary built with matching Godot debug
+template flags. In Godot's official iOS plugin build model this corresponds to
+the `release_debug` target, so Kirie's debug artifact is built from the
+`ReleaseDebug` Xcode configuration rather than from a full `Debug`
+configuration.
+
+The iOS artifacts live under `addons/kirie/ios` instead of
+`res://ios/plugins` because Kirie publishes one standard addon tree for all
+platforms. The addon export plugin injects the selected xcframework and native
+initialization code through Godot's `EditorExportPlugin` Apple embedded platform
+hooks, so users do not need a separate project-local `.gdip` shim.
 
 ## User Install Flow
 
@@ -97,6 +109,8 @@ The `Addon Release` workflow has three intended modes:
 - [GitHub Actions `workflow_dispatch` documentation](https://docs.github.com/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)
 - [GitHub Releases documentation](https://docs.github.com/repositories/releasing-projects-on-github/about-releases)
 - [Godot installing plugins documentation](https://docs.godotengine.org/en/4.4/tutorials/plugins/editor/installing_plugins.html)
+- [Godot iOS plugin documentation](https://docs.godotengine.org/en/stable/tutorials/platform/ios/ios_plugin.html)
+- [Godot iOS plugins repository](https://github.com/godot-sdk-integrations/godot-ios-plugins)
 - [Godot `EditorExportPlugin` documentation](https://docs.godotengine.org/en/stable/classes/class_editorexportplugin.html)
 - [`moeru-ai/airi` release workflow](https://github.com/moeru-ai/airi/blob/main/.github/workflows/release-tamagotchi.yml)
 - [`dsh0416/godot-cef` build workflow](https://github.com/dsh0416/godot-cef/blob/main/.github/workflows/build.yml)

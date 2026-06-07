@@ -240,10 +240,39 @@ For the current milestone, iOS should follow the same addon-centered shape as
 Android:
 
 - users consume `addons/kirie`
-- produced addon trees include `addons/kirie/ios/Kirie.xcframework`
+- produced addon trees include `addons/kirie/ios/Kirie.debug.xcframework` and
+  `addons/kirie/ios/Kirie.release.xcframework`
 - the addon export plugin injects the xcframework, system frameworks, plist
   content, and native initialization glue through Apple export hooks
 - example projects should not carry a separate `res://ios/plugins` shim
+
+This is aligned with Godot's iOS plugin model in behavior, while keeping Kirie's
+install shape addon-centered:
+
+- Godot's iOS plugin guide defines a native iOS plugin as a static library or
+  static-library `.xcframework` with Godot headers, initialization and
+  deinitialization entry points, matching Godot compile flags, optional debug
+  and release variants, and a `.gdip` descriptor.
+- Kirie keeps the same native binary and entry-point model, but does not rely on
+  `.gdip` auto-discovery under `res://ios/plugins`. The addon export plugin owns
+  discovery and injects the selected framework, plist content, bundle resources,
+  and initialization glue through `EditorExportPlugin` Apple embedded platform
+  hooks.
+- Kirie builds `Kirie.debug.xcframework` from the `ReleaseDebug` configuration
+  and `Kirie.release.xcframework` from the `Release` configuration. The
+  `ReleaseDebug` naming follows the upstream Godot iOS plugins repository,
+  which documents that official debug export templates are compiled with
+  `release_debug`, not the full `debug` target.
+- Native iOS Godot-facing classes should be registered through ClassDB and bind
+  their signals in `_bind_methods` with `ADD_SIGNAL`. This keeps signal metadata
+  in Godot's normal object system instead of maintaining a separate callback
+  registry in Kirie.
+
+The official iOS plugin documentation still describes `res://ios/plugins`
+because that is Godot's automatic plugin discovery path. Kirie's exception is
+only the packaging location and activation mechanism; the binary ABI, build
+flags, entry points, and exported Xcode integration remain based on Godot's
+iOS plugin and Apple embedded platform export APIs.
 
 ## GitHub Release addon flow
 

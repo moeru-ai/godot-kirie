@@ -20,8 +20,11 @@ const iosBuildDir = `${iosPluginDir}/.build`;
 const iosGeneratedDir = `${iosPluginDir}/.generated`;
 const iosProjectPath = `${iosGeneratedDir}/Kirie.xcodeproj`;
 const iosOutputDir = "packages/kirie/addon/addons/kirie/ios";
-const iosOutputXcframework = `${iosOutputDir}/Kirie.xcframework`;
-const iosStagedXcframework = `${addonStageDir}/ios/Kirie.xcframework`;
+const iosDebugOutputXcframework = `${iosOutputDir}/Kirie.debug.xcframework`;
+const iosReleaseOutputXcframework = `${iosOutputDir}/Kirie.release.xcframework`;
+const iosLegacyOutputXcframework = `${iosOutputDir}/Kirie.xcframework`;
+const iosStagedDebugXcframework = `${addonStageDir}/ios/Kirie.debug.xcframework`;
+const iosStagedReleaseXcframework = `${addonStageDir}/ios/Kirie.release.xcframework`;
 const iosDerivedDataPath = `${iosBuildDir}/DerivedData`;
 
 const godotCefAssetName = `godot_cef-v${godotCefConfig.version}.zip`;
@@ -118,7 +121,11 @@ async function generateIosProject(): Promise<void> {
   );
 }
 
-async function archiveIosFramework(destination: string, archivePath: string): Promise<void> {
+async function archiveIosFramework(
+  configuration: string,
+  destination: string,
+  archivePath: string,
+): Promise<void> {
   await execa(
     "xcodebuild",
     [
@@ -128,7 +135,7 @@ async function archiveIosFramework(destination: string, archivePath: string): Pr
       "-scheme",
       "Kirie",
       "-configuration",
-      "Release",
+      configuration,
       "-derivedDataPath",
       iosDerivedDataPath,
       `GODOT_SOURCE_ROOT=${godotSourceRoot}`,
@@ -147,12 +154,47 @@ async function archiveIosFramework(destination: string, archivePath: string): Pr
   );
 }
 
+async function createIosXcframework(
+  configuration: string,
+  name: string,
+  outputPath: string,
+): Promise<void> {
+  const deviceArchivePath = `${iosBuildDir}/Kirie-${name}-iOS.xcarchive`;
+  const simulatorArchivePath = `${iosBuildDir}/Kirie-${name}-Simulator.xcarchive`;
+
+  fs.rmSync(deviceArchivePath, { force: true, recursive: true });
+  fs.rmSync(simulatorArchivePath, { force: true, recursive: true });
+  fs.rmSync(outputPath, { force: true, recursive: true });
+
+  await archiveIosFramework(configuration, "generic/platform=iOS", deviceArchivePath);
+  await archiveIosFramework(configuration, "generic/platform=iOS Simulator", simulatorArchivePath);
+
+  await execa(
+    "xcodebuild",
+    [
+      "-create-xcframework",
+      "-framework",
+      `${deviceArchivePath}/Products/Library/Frameworks/Kirie.framework`,
+      "-framework",
+      `${simulatorArchivePath}/Products/Library/Frameworks/Kirie.framework`,
+      "-output",
+      outputPath,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+}
+
 // mise task entrypoint.
 export function checkAddonPack(): void {
   assertPathExists(addonStageDir);
   assertPathExists(androidStagedReleaseAar);
-  assertPathExists(iosStagedXcframework);
-  assertPathExists(`${iosStagedXcframework}/Info.plist`);
+  assertPathExists(iosStagedDebugXcframework);
+  assertPathExists(`${iosStagedDebugXcframework}/Info.plist`);
+  assertPathExists(iosStagedReleaseXcframework);
+  assertPathExists(`${iosStagedReleaseXcframework}/Info.plist`);
 
   if (fs.existsSync(androidStagedDebugAar)) {
     throw new Error(`Development-only debug AAR must not be included: ${androidStagedDebugAar}`);
@@ -252,32 +294,9 @@ export async function buildIosXcframework(): Promise<void> {
 
   await generateIosProject();
 
-  const deviceArchivePath = `${iosBuildDir}/Kirie-iOS.xcarchive`;
-  const simulatorArchivePath = `${iosBuildDir}/Kirie-Simulator.xcarchive`;
-
-  fs.rmSync(deviceArchivePath, { force: true, recursive: true });
-  fs.rmSync(simulatorArchivePath, { force: true, recursive: true });
-  fs.rmSync(iosOutputXcframework, { force: true, recursive: true });
-
-  await archiveIosFramework("generic/platform=iOS", deviceArchivePath);
-  await archiveIosFramework("generic/platform=iOS Simulator", simulatorArchivePath);
-
-  await execa(
-    "xcodebuild",
-    [
-      "-create-xcframework",
-      "-framework",
-      `${deviceArchivePath}/Products/Library/Frameworks/Kirie.framework`,
-      "-framework",
-      `${simulatorArchivePath}/Products/Library/Frameworks/Kirie.framework`,
-      "-output",
-      iosOutputXcframework,
-    ],
-    {
-      cwd: rootDir,
-      stdio: "inherit",
-    },
-  );
+  fs.rmSync(iosLegacyOutputXcframework, { force: true, recursive: true });
+  await createIosXcframework("ReleaseDebug", "debug", iosDebugOutputXcframework);
+  await createIosXcframework("Release", "release", iosReleaseOutputXcframework);
 }
 
 // mise task entrypoint.

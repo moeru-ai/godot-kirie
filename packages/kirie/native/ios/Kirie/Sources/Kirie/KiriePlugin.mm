@@ -1,5 +1,7 @@
 #include "KiriePlugin.h"
 
+#include "core/object/class_db.h"
+
 #include <cstring>
 
 #import <Foundation/Foundation.h>
@@ -327,6 +329,14 @@ String KiriePlugin::getLaunchOption(String key) {
 
 KiriePlugin *KiriePlugin::get_singleton() {
 	return singleton;
+}
+
+void KiriePlugin::_bind_methods() {
+	ADD_SIGNAL(MethodInfo("webview_ready"));
+	ADD_SIGNAL(MethodInfo("text_received", PropertyInfo(Variant::STRING, "message")));
+	ADD_SIGNAL(MethodInfo("binary_received", PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
+	ADD_SIGNAL(MethodInfo("data_received", PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
+	ADD_SIGNAL(MethodInfo("ipc_error", PropertyInfo(Variant::STRING, "error")));
 }
 
 Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
