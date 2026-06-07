@@ -122,15 +122,18 @@ func send_data(value: Variant) -> void:
 	# Dictionary conversion path as a private carrier, then unwrap on Android
 	# before CBOR encoding.
 	var value_type := typeof(value)
-	if value_type not in [
-		TYPE_NIL,
-		TYPE_BOOL,
-		TYPE_INT,
-		TYPE_FLOAT,
-		TYPE_STRING,
-		TYPE_ARRAY,
-		TYPE_DICTIONARY,
-	]:
+	if (
+		value_type
+		not in [
+			TYPE_NIL,
+			TYPE_BOOL,
+			TYPE_INT,
+			TYPE_FLOAT,
+			TYPE_STRING,
+			TYPE_ARRAY,
+			TYPE_DICTIONARY,
+		]
+	):
 		push_error("Unsupported Kirie data type: %s" % type_string(value_type))
 		return
 
@@ -371,20 +374,26 @@ func _emit_cef_webview_ready() -> void:
 
 func _on_cef_load_error(url: String, error_code: int, error_text: String) -> void:
 	_on_plugin_ipc_error(
-		"Godot CEF failed to load %s: %s (%d)" % [
-			url,
-			error_text,
-			error_code,
-		]
+		(
+			"Godot CEF failed to load %s: %s (%d)"
+			% [
+				url,
+				error_text,
+				error_code,
+			]
+		)
 	)
 
 
 func _on_cef_render_process_terminated(status: int, error_message: String) -> void:
 	_on_plugin_ipc_error(
-		"Godot CEF render process terminated: %s (%d)" % [
-			error_message,
-			status,
-		]
+		(
+			"Godot CEF render process terminated: %s (%d)"
+			% [
+				error_message,
+				status,
+			]
+		)
 	)
 
 

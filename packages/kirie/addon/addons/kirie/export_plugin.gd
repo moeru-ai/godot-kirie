@@ -243,7 +243,9 @@ func _add_ios_native_plugin(is_debug: bool) -> void:
 
 func _export_platform_is_desktop(platform: EditorExportPlatform) -> bool:
 	var platform_name := platform.get_os_name().to_lower()
-	return platform_name in ["macos", "windows", "linux", "linuxbsd", "freebsd", "netbsd", "openbsd"]
+	return (
+		platform_name in ["macos", "windows", "linux", "linuxbsd", "freebsd", "netbsd", "openbsd"]
+	)
 
 
 func _features_are_desktop(features: PackedStringArray) -> bool:

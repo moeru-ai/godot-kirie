@@ -25,7 +25,9 @@ func run(kirie: Object, tree: SceneTree, test_name: String) -> String:
 	var text_payload := "godot_text:%s:%s" % [PROBE_NAME, test_name]
 	kirie.send_text(text_payload)
 
-	failure_reason = await probe.wait_for_text_message("web_text_echo:%s" % text_payload, PROBE_NAME)
+	failure_reason = await probe.wait_for_text_message(
+		"web_text_echo:%s" % text_payload, PROBE_NAME
+	)
 	if failure_reason != "":
 		return failure_reason
 
@@ -43,15 +45,18 @@ func run(kirie: Object, tree: SceneTree, test_name: String) -> String:
 		if failure_reason != "":
 			return failure_reason
 
-	kirie.send_data(
-		{
-			"type": "godot_ready",
-			"payload":
+	(
+		kirie
+		. send_data(
 			{
-				"probe": PROBE_NAME,
-				"test": test_name,
-			},
-		}
+				"type": "godot_ready",
+				"payload":
+				{
+					"probe": PROBE_NAME,
+					"test": test_name,
+				},
+			}
+		)
 	)
 
 	return await probe.wait_for_data_message("web_ack", PROBE_NAME)

@@ -40,15 +40,18 @@ func _run_probe(
 	if failure_reason != "":
 		return failure_reason
 
-	kirie.send_data(
-		{
-			"type": "godot_ready",
-			"payload":
+	(
+		kirie
+		. send_data(
 			{
-				"probe": probe_name,
-				"test": test_name,
-			},
-		}
+				"type": "godot_ready",
+				"payload":
+				{
+					"probe": probe_name,
+					"test": test_name,
+				},
+			}
+		)
 	)
 
 	return await probe.wait_for_data_message("web_ack", probe_name)
