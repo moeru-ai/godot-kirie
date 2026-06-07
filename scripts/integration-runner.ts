@@ -283,7 +283,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   const logFile = prepareLogFile(testName);
   const logPredicate =
     process.env.LOG_PREDICATE ||
-    'eventMessage CONTAINS "KIRIE_TEST_" OR eventMessage CONTAINS "[Kirie]" OR eventMessage CONTAINS "Godot"';
+    'eventMessage CONTAINS "KIRIE_TEST_" OR eventMessage CONTAINS "[Kirie]" OR eventMessage CONTAINS "Godot" OR eventMessage CONTAINS "SCRIPT ERROR" OR eventMessage CONTAINS "ERROR:" OR eventMessage CONTAINS "WARNING:"';
 
   await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
     cwd: rootDir,
