@@ -93,7 +93,7 @@ run = "swiftlint lint --fix --format --no-cache --config .swiftlint.yml"
 
 [tasks."format:csharp"]
 description = "Format C# files"
-run = "dotnet restore GdKirie.slnx && dotnet format style GdKirie.slnx --no-restore -v diag"
+run = "dotnet format style -v diag"
 
 [tasks.lint]
 description = "Run all linters"
@@ -117,7 +117,7 @@ run = "swiftlint lint --strict --no-cache --config .swiftlint.yml"
 
 [tasks."lint:csharp"]
 description = "Lint C# files"
-run = "dotnet restore GdKirie.slnx && dotnet format analyzers GdKirie.slnx --no-restore -v diag"
+run = "dotnet format analyzers -v diag"
 
 [tasks."pack:nuget"]
 description = "Pack the .NET Eventa adapter NuGet package"

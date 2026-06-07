@@ -41,13 +41,13 @@ func _ready() -> void:
 
 
 func _resolve_test_name() -> String:
-	for arg in OS.get_cmdline_args() + OS.get_cmdline_user_args():
-		if arg.begins_with("--kirie-test="):
-			return arg.trim_prefix("--kirie-test=").strip_edges()
-
 	var launch_test_name := _kirie.get_launch_option(LAUNCH_TEST_OPTION).strip_edges()
 	if launch_test_name != "":
 		return launch_test_name
+
+	for arg in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if arg.begins_with("--kirie-test="):
+			return arg.trim_prefix("--kirie-test=").strip_edges()
 
 	return ""
 

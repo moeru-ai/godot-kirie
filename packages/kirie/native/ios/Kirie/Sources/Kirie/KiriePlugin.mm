@@ -191,16 +191,6 @@ static Variant unwrap_carried_data(Variant value) {
 	return dictionary[key];
 }
 
-static bool require_arg_count(Callable::CallError &r_error, int p_argcount, int p_expected) {
-	if (p_argcount == p_expected) {
-		return true;
-	}
-
-	r_error.error = p_argcount < p_expected ? Callable::CallError::CALL_ERROR_TOO_FEW_ARGUMENTS : Callable::CallError::CALL_ERROR_TOO_MANY_ARGUMENTS;
-	r_error.expected = p_expected;
-	return false;
-}
-
 void KiriePlugin::createWebView(String initial_url) {
 	CharString encoded_initial_url = initial_url.utf8();
 	kirie_swift_create_webview(encoded_initial_url.get_data());
@@ -278,6 +268,16 @@ KiriePlugin *KiriePlugin::get_singleton() {
 }
 
 void KiriePlugin::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("createWebView", "initial_url"), &KiriePlugin::createWebView);
+	ClassDB::bind_method(D_METHOD("destroyWebView"), &KiriePlugin::destroyWebView);
+	ClassDB::bind_method(D_METHOD("loadUrl", "url"), &KiriePlugin::loadUrl);
+	ClassDB::bind_method(D_METHOD("loadHtmlString", "html", "base_url"), &KiriePlugin::loadHtmlString);
+	ClassDB::bind_method(D_METHOD("sendIpcMessage", "message_json"), &KiriePlugin::sendIpcMessage);
+	ClassDB::bind_method(D_METHOD("sendText", "message"), &KiriePlugin::sendText);
+	ClassDB::bind_method(D_METHOD("sendBinary", "bytes"), &KiriePlugin::sendBinary);
+	ClassDB::bind_method(D_METHOD("sendData", "value"), &KiriePlugin::sendData);
+	ClassDB::bind_method(D_METHOD("getLaunchOption", "key"), &KiriePlugin::getLaunchOption);
+
 	ADD_SIGNAL(MethodInfo("webview_ready"));
 	ADD_SIGNAL(MethodInfo("text_received", PropertyInfo(Variant::STRING, "message")));
 	ADD_SIGNAL(MethodInfo("binary_received", PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
@@ -285,100 +285,8 @@ void KiriePlugin::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("ipc_error", PropertyInfo(Variant::STRING, "error")));
 }
 
-Variant KiriePlugin::callp(const StringName &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error) {
-	r_error.error = Callable::CallError::CALL_OK;
-
-	if (p_method == StringName("createWebView")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		createWebView(String(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("destroyWebView")) {
-		if (!require_arg_count(r_error, p_argcount, 0)) {
-			return Variant();
-		}
-
-		destroyWebView();
-		return Variant();
-	}
-
-	if (p_method == StringName("loadUrl")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		loadUrl(String(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("loadHtmlString")) {
-		if (!require_arg_count(r_error, p_argcount, 2)) {
-			return Variant();
-		}
-
-		loadHtmlString(String(*p_args[0]), String(*p_args[1]));
-		return Variant();
-	}
-
-	if (p_method == StringName("sendIpcMessage")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		sendIpcMessage(String(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("sendText")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		sendText(String(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("sendBinary")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		sendBinary(PackedByteArray(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("sendData")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		sendData(Variant(*p_args[0]));
-		return Variant();
-	}
-
-	if (p_method == StringName("getLaunchOption")) {
-		if (!require_arg_count(r_error, p_argcount, 1)) {
-			return Variant();
-		}
-
-		return getLaunchOption(String(*p_args[0]));
-	}
-
-	return Object::callp(p_method, p_args, p_argcount, r_error);
-}
-
 KiriePlugin::KiriePlugin() {
 	singleton = this;
-
-	add_user_signal(MethodInfo("webview_ready"));
-	add_user_signal(MethodInfo("text_received", PropertyInfo(Variant::STRING, "message")));
-	add_user_signal(MethodInfo("binary_received", PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
-	add_user_signal(MethodInfo("data_received", PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
-	add_user_signal(MethodInfo("ipc_error", PropertyInfo(Variant::STRING, "error")));
 
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	NSOperationQueue *main_queue = [NSOperationQueue mainQueue];

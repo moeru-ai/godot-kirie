@@ -93,7 +93,7 @@ jobs:
 
       - name: Run format
         run: |
-          mise run format
+          mise run lint
           git diff --exit-code
 
   typecheck:
