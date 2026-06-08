@@ -113,10 +113,6 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
 
-      - name: Run iOS IPC serialization test
-        timeout-minutes: 10
-        run: mise run test:ios-ipc-serialization
-
       - name: Install integration app
         run: xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
 

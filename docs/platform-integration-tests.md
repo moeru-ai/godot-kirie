@@ -29,7 +29,9 @@ The current focus is:
 
 The browser fixture uses `@gd-kirie/ipc` to exercise the text, binary, and data
 lanes across the platform runners. iOS also keeps a native XCTest coverage point
-for CBOR serialization. Eventa adapter behavior should be tested separately.
+for CBOR serialization, but that runs in the Unit Tests workflow rather than the
+platform integration workflows. Eventa adapter behavior should be tested
+separately.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the
@@ -217,6 +219,9 @@ Run the native iOS CBOR serialization test:
 ```bash
 mise run test:ios-ipc-serialization
 ```
+
+This is unit-style XCTest coverage for the Swift codec, not an exported-app
+platform integration test.
 
 By default this uses the `iPhone 16` simulator destination. Override the
 destination when a local machine has a different simulator:
