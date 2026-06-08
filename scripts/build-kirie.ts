@@ -103,6 +103,8 @@ function sha256File(filePath: string): string {
 }
 
 async function generateIosProject(): Promise<void> {
+  fs.mkdirSync(iosGeneratedDir, { recursive: true });
+
   await execa(
     "xcodegen",
     [

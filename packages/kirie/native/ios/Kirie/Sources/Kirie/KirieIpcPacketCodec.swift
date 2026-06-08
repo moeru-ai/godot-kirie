@@ -161,7 +161,7 @@ enum KirieIpcPacketCodec {
     /// Decodes exactly one CBOR data item from `packet`, rejecting trailing bytes.
     private static func decodeSingleCBOR(_ packet: Data) throws -> CBOR {
         let bytes = [UInt8](packet)
-        var decoder = CBORDecoder(input: bytes)
+        let decoder = CBORDecoder(input: bytes)
 
         guard let cbor = try decoder.decodeItem() else {
             // Empty input — no item to decode.
