@@ -5,6 +5,8 @@
 
 #include "core/object/object.h"
 
+#include <cstdint>
+
 class KiriePlugin : public Object {
 	GDCLASS(KiriePlugin, Object);
 
@@ -21,14 +23,14 @@ protected:
 public:
 	static KiriePlugin *get_singleton();
 
-	void createWebView(String initial_url);
-	void destroyWebView();
-	void loadUrl(String url);
-	void loadHtmlString(String html, String base_url);
-	void sendIpcMessage(String message_json);
-	void sendText(String message);
-	void sendBinary(PackedByteArray bytes);
-	void sendData(Variant value);
+	void createWebView(int64_t view_id, String initial_url);
+	void destroyWebView(int64_t view_id);
+	void loadUrl(int64_t view_id, String url);
+	void loadHtmlString(int64_t view_id, String html, String base_url);
+	void sendIpcMessage(int64_t view_id, String message_json);
+	void sendText(int64_t view_id, String message);
+	void sendBinary(int64_t view_id, PackedByteArray bytes);
+	void sendData(int64_t view_id, Variant value);
 	String getLaunchOption(String key);
 
 	KiriePlugin();

@@ -12,29 +12,29 @@ import androidx.webkit.WebViewFeature
 
 class KirieWebViewManager(
     private val activityProvider: () -> Activity?,
-    private val onWebViewReady: () -> Unit,
-    private val onTextPacket: (bytes: ByteArray) -> Unit,
-    private val onBinaryPacket: (bytes: ByteArray) -> Unit,
-    private val onDataPacket: (bytes: ByteArray) -> Unit,
-    private val onIpcError: (message: String) -> Unit,
+    private val onWebViewReady: (viewId: Long) -> Unit,
+    private val onTextPacket: (viewId: Long, bytes: ByteArray) -> Unit,
+    private val onBinaryPacket: (viewId: Long, bytes: ByteArray) -> Unit,
+    private val onDataPacket: (viewId: Long, bytes: ByteArray) -> Unit,
+    private val onIpcError: (viewId: Long, message: String) -> Unit,
 ) {
-    private var webView: WebView? = null
-    private var textReplyProxy: JavaScriptReplyProxy? = null
-    private var binaryReplyProxy: JavaScriptReplyProxy? = null
-    private var dataReplyProxy: JavaScriptReplyProxy? = null
+    private val webViews = LinkedHashMap<Long, WebViewSession>()
 
-    fun createWebView(initialUrl: String?) {
+    fun createWebView(
+        viewId: Long,
+        initialUrl: String?,
+    ) {
         val activity = activityProvider()
         if (activity == null) {
-            onIpcError("Cannot create WebView because the host activity is not available")
+            onIpcError(viewId, "Cannot create WebView because the host activity is not available")
             return
         }
 
         runOnUiThread {
-            val existingWebView = webView
-            if (existingWebView != null) {
+            val existingSession = webViews[viewId]
+            if (existingSession != null) {
                 if (!initialUrl.isNullOrBlank()) {
-                    loadResolvedUrl(existingWebView, initialUrl)
+                    loadResolvedUrl(viewId, existingSession.webView, initialUrl)
                 }
                 return@runOnUiThread
             }
@@ -56,10 +56,10 @@ class KirieWebViewManager(
                 WebView.setWebContentsDebuggingEnabled(true)
             }
 
-            if (!installMessageChannels(createdWebView)) {
+            if (!installMessageChannels(viewId, createdWebView)) {
                 return@runOnUiThread
             }
-            if (!installRuntimeScript(createdWebView)) {
+            if (!installRuntimeScript(viewId, createdWebView)) {
                 return@runOnUiThread
             }
 
@@ -71,66 +71,66 @@ class KirieWebViewManager(
                 )
 
             rootView.addView(createdWebView)
-            webView = createdWebView
-            onWebViewReady()
+            webViews[viewId] = WebViewSession(webView = createdWebView)
+            onWebViewReady(viewId)
 
             if (!initialUrl.isNullOrBlank()) {
-                loadResolvedUrl(createdWebView, initialUrl)
+                loadResolvedUrl(viewId, createdWebView, initialUrl)
             }
         }
     }
 
-    fun destroyWebView() {
+    fun destroyWebView(viewId: Long) {
         val activity = activityProvider()
         if (activity == null) {
-            onIpcError("Cannot destroy WebView because the host activity is not available")
+            onIpcError(viewId, "Cannot destroy WebView because the host activity is not available")
             return
         }
 
         runOnUiThread {
-            val existingWebView = webView ?: return@runOnUiThread
-            webView = null
-            textReplyProxy = null
-            binaryReplyProxy = null
-            dataReplyProxy = null
+            val existingWebView = webViews.remove(viewId)?.webView ?: return@runOnUiThread
             existingWebView.stopLoading()
             existingWebView.removeFromSuperview()
             existingWebView.destroy()
         }
     }
 
-    fun loadUrl(url: String) {
+    fun loadUrl(
+        viewId: Long,
+        url: String,
+    ) {
         val activity = activityProvider()
         if (activity == null) {
-            onIpcError("Cannot load URL because the host activity is not available")
+            onIpcError(viewId, "Cannot load URL because the host activity is not available")
             return
         }
 
         runOnUiThread {
-            val existingWebView = webView
+            val existingWebView = webViews[viewId]?.webView
             if (existingWebView == null) {
-                onIpcError("Cannot load URL because the WebView does not exist")
+                onIpcError(viewId, "Cannot load URL because the WebView does not exist")
                 return@runOnUiThread
             }
 
-            loadResolvedUrl(existingWebView, url)
+            loadResolvedUrl(viewId, existingWebView, url)
         }
     }
 
     fun loadHtmlString(
+        viewId: Long,
         html: String,
         baseUrl: String?,
     ) {
         val activity = activityProvider()
         if (activity == null) {
-            onIpcError("Cannot load HTML string because the host activity is not available")
+            onIpcError(viewId, "Cannot load HTML string because the host activity is not available")
             return
         }
 
         runOnUiThread {
-            val existingWebView = webView
+            val existingWebView = webViews[viewId]?.webView
             if (existingWebView == null) {
-                onIpcError("Cannot load HTML string because the WebView does not exist")
+                onIpcError(viewId, "Cannot load HTML string because the WebView does not exist")
                 return@runOnUiThread
             }
 
@@ -138,26 +138,36 @@ class KirieWebViewManager(
         }
     }
 
-    fun sendTextPacket(bytes: ByteArray) = sendBytes(bytes, textReplyProxy, "text")
+    fun sendTextPacket(
+        viewId: Long,
+        bytes: ByteArray,
+    ) = sendBytes(viewId, bytes, webViews[viewId]?.textReplyProxy, "text")
 
-    fun sendBinaryPacket(bytes: ByteArray) = sendBytes(bytes, binaryReplyProxy, "binary")
+    fun sendBinaryPacket(
+        viewId: Long,
+        bytes: ByteArray,
+    ) = sendBytes(viewId, bytes, webViews[viewId]?.binaryReplyProxy, "binary")
 
-    fun sendDataPacket(bytes: ByteArray) = sendBytes(bytes, dataReplyProxy, "data")
+    fun sendDataPacket(
+        viewId: Long,
+        bytes: ByteArray,
+    ) = sendBytes(viewId, bytes, webViews[viewId]?.dataReplyProxy, "data")
 
     private fun sendBytes(
+        viewId: Long,
         bytes: ByteArray,
         replyProxy: JavaScriptReplyProxy?,
         channelName: String,
     ) {
         val activity = activityProvider()
         if (activity == null) {
-            onIpcError("Cannot send $channelName because the host activity is not available")
+            onIpcError(viewId, "Cannot send $channelName because the host activity is not available")
             return
         }
 
         runOnUiThread {
             if (replyProxy == null) {
-                onIpcError("Cannot send $channelName because the WebView $channelName channel is not ready")
+                onIpcError(viewId, "Cannot send $channelName because the WebView $channelName channel is not ready")
                 return@runOnUiThread
             }
 
@@ -171,6 +181,7 @@ class KirieWebViewManager(
     }
 
     private fun loadResolvedUrl(
+        viewId: Long,
         webView: WebView,
         url: String,
     ) {
@@ -178,33 +189,60 @@ class KirieWebViewManager(
             try {
                 KirieUrlResolver.resolveForWebView(url)
             } catch (error: IllegalArgumentException) {
-                onIpcError(error.message ?: "Cannot load URL: $url")
+                onIpcError(viewId, error.message ?: "Cannot load URL: $url")
                 return
             }
 
         webView.loadUrl(resolvedUrl)
     }
 
-    private fun installMessageChannels(webView: WebView): Boolean {
+    private fun installMessageChannels(
+        viewId: Long,
+        webView: WebView,
+    ): Boolean {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            onIpcError("Android WebView does not support WebMessageListener")
+            onIpcError(viewId, "Android WebView does not support WebMessageListener")
             return false
         }
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER)) {
-            onIpcError("Android WebView does not support ArrayBuffer messages")
+            onIpcError(viewId, "Android WebView does not support ArrayBuffer messages")
             return false
         }
 
         val origins = setOf("*")
-        installBytesChannel(webView, TEXT_CHANNEL, origins, { textReplyProxy = it }, onTextPacket)
-        installBytesChannel(webView, BINARY_CHANNEL, origins, { binaryReplyProxy = it }, onBinaryPacket)
-        installBytesChannel(webView, DATA_CHANNEL, origins, { dataReplyProxy = it }, onDataPacket)
+        installBytesChannel(
+            viewId,
+            webView,
+            TEXT_CHANNEL,
+            origins,
+            { webViews[viewId]?.textReplyProxy = it },
+            { onTextPacket(viewId, it) },
+        )
+        installBytesChannel(
+            viewId,
+            webView,
+            BINARY_CHANNEL,
+            origins,
+            { webViews[viewId]?.binaryReplyProxy = it },
+            { onBinaryPacket(viewId, it) },
+        )
+        installBytesChannel(
+            viewId,
+            webView,
+            DATA_CHANNEL,
+            origins,
+            { webViews[viewId]?.dataReplyProxy = it },
+            { onDataPacket(viewId, it) },
+        )
         return true
     }
 
-    private fun installRuntimeScript(webView: WebView): Boolean {
+    private fun installRuntimeScript(
+        viewId: Long,
+        webView: WebView,
+    ): Boolean {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            onIpcError("Android WebView does not support document-start scripts")
+            onIpcError(viewId, "Android WebView does not support document-start scripts")
             return false
         }
 
@@ -213,6 +251,7 @@ class KirieWebViewManager(
     }
 
     private fun installBytesChannel(
+        viewId: Long,
         webView: WebView,
         name: String,
         origins: Set<String>,
@@ -224,7 +263,7 @@ class KirieWebViewManager(
         }
         setReplyProxy(replyProxy)
         if (message.type != WebMessageCompat.TYPE_ARRAY_BUFFER) {
-            onIpcError("Received non-binary message on $name")
+            onIpcError(viewId, "Received non-binary message on $name")
             return@addWebMessageListener
         }
         val packet = message.arrayBuffer
@@ -255,3 +294,10 @@ class KirieWebViewManager(
             """.trimIndent()
     }
 }
+
+private data class WebViewSession(
+    val webView: WebView,
+    var textReplyProxy: JavaScriptReplyProxy? = null,
+    var binaryReplyProxy: JavaScriptReplyProxy? = null,
+    var dataReplyProxy: JavaScriptReplyProxy? = null,
+)

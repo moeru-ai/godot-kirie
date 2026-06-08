@@ -19,6 +19,7 @@ globalThis.kirie.platform = Object.freeze({
 
 var _plugin_singleton = null
 var _godot_cef_config: Dictionary = {}
+var _view_id := get_instance_id()
 
 
 func _init() -> void:
@@ -43,16 +44,24 @@ func create_webview(options: Dictionary = {}) -> void:
 	if options.has("initial_url"):
 		initial_url = str(options["initial_url"])
 
-	print("[Kirie][gd] create_webview initial_url=%s" % initial_url)
-	if _is_godot_cef_backend():
-		_create_cef_webview(initial_url)
+	var parent_candidate: Variant = options.get("parent_node", null)
+	var parent_node := parent_candidate as Node
+	if parent_candidate != null and parent_node == null:
+		var error := "Kirie create_webview parent_node option must be a Node"
+		push_error(error)
+		ipc_error.emit(error)
 		return
 
-	_plugin_singleton.createWebView(initial_url)
+	print("[Kirie][gd] create_webview initial_url=%s" % initial_url)
+	if _is_godot_cef_backend():
+		_create_cef_webview(initial_url, parent_node)
+		return
+
+	_plugin_singleton.createWebView(_view_id, initial_url)
 
 
 func destroy_webview() -> void:
-	if not _ensure_plugin_singleton("destroy_webview"):
+	if _plugin_singleton == null:
 		return
 
 	print("[Kirie][gd] destroy_webview")
@@ -60,7 +69,7 @@ func destroy_webview() -> void:
 		_destroy_cef_webview()
 		return
 
-	_plugin_singleton.destroyWebView()
+	_plugin_singleton.destroyWebView(_view_id)
 
 
 func load_url(url: String) -> void:
@@ -72,7 +81,7 @@ func load_url(url: String) -> void:
 		_plugin_singleton.set("url", url)
 		return
 
-	_plugin_singleton.loadUrl(url)
+	_plugin_singleton.loadUrl(_view_id, url)
 
 
 func load_html_string(html: String, base_url: String = "") -> void:
@@ -84,7 +93,7 @@ func load_html_string(html: String, base_url: String = "") -> void:
 		push_error("Kirie Godot CEF backend does not support load_html_string() yet")
 		return
 
-	_plugin_singleton.loadHtmlString(html, base_url)
+	_plugin_singleton.loadHtmlString(_view_id, html, base_url)
 
 
 func send_text(message: String) -> void:
@@ -96,7 +105,7 @@ func send_text(message: String) -> void:
 		_plugin_singleton.call("send_ipc_message", message)
 		return
 
-	_plugin_singleton.sendText(message)
+	_plugin_singleton.sendText(_view_id, message)
 
 
 func send_binary(bytes: PackedByteArray) -> void:
@@ -108,7 +117,7 @@ func send_binary(bytes: PackedByteArray) -> void:
 		_plugin_singleton.call("send_ipc_binary_message", bytes)
 		return
 
-	_plugin_singleton.sendBinary(bytes)
+	_plugin_singleton.sendBinary(_view_id, bytes)
 
 
 func send_data(value: Variant) -> void:
@@ -141,7 +150,7 @@ func send_data(value: Variant) -> void:
 		_plugin_singleton.call("send_ipc_data", value)
 		return
 
-	_plugin_singleton.sendData({"value": value})
+	_plugin_singleton.sendData(_view_id, {"value": value})
 
 
 func get_launch_option(key: String) -> String:
@@ -189,10 +198,19 @@ func _ensure_plugin_singleton(method_name: String) -> bool:
 	if _plugin_singleton != null:
 		return true
 
+	if _is_desktop_os():
+		_initialize_desktop_cef_backend()
+		if _plugin_singleton != null:
+			return true
+
 	var error := "Kirie platform singleton is not available for %s()" % method_name
 	push_warning(error)
 	ipc_error.emit(error)
 	return false
+
+
+func _should_ignore_view_signal(view_id: int) -> bool:
+	return view_id != -1 and view_id != _view_id
 
 
 func _is_godot_cef_backend() -> bool:
@@ -233,6 +251,7 @@ func _initialize_desktop_cef_backend() -> void:
 	var preload_script := GODOT_CEF_PRELOAD_SCRIPT % JSON.stringify(_desktop_platform_os())
 	_set_cef_property_if_present("preload_script", preload_script)
 	_set_cef_property_if_present("background_color", Color.TRANSPARENT)
+	_set_cef_property_if_present("url", "about:blank")
 	_connect_cef_signals()
 
 
@@ -240,7 +259,7 @@ func _is_desktop_os() -> bool:
 	return OS.get_name() in ["macOS", "Windows", "Linux", "FreeBSD", "NetBSD", "OpenBSD", "BSD"]
 
 
-func _create_cef_webview(initial_url: String) -> void:
+func _create_cef_webview(initial_url: String, parent_node: Node = null) -> void:
 	var browser := _plugin_singleton as Node
 	if browser == null:
 		var error := "Cannot create Godot CEF WebView because the desktop backend does not exist"
@@ -248,6 +267,9 @@ func _create_cef_webview(initial_url: String) -> void:
 		return
 
 	if browser.get_parent() != null:
+		if parent_node != null and browser.get_parent() != parent_node:
+			browser.reparent(parent_node)
+
 		if initial_url != "":
 			browser.set("url", initial_url)
 		call_deferred("_emit_cef_webview_ready")
@@ -259,22 +281,22 @@ func _create_cef_webview(initial_url: String) -> void:
 		ipc_error.emit(error)
 		return
 
-	call_deferred("_add_cef_webview_to_scene", initial_url)
+	call_deferred("_add_cef_webview_to_scene", initial_url, parent_node)
 
 
-func _add_cef_webview_to_scene(initial_url: String) -> void:
+func _add_cef_webview_to_scene(initial_url: String, parent_node: Node = null) -> void:
 	var browser := _plugin_singleton as Node
 	if browser == null:
 		return
 
 	if browser.get_parent() == null:
-		var tree := Engine.get_main_loop() as SceneTree
-		if tree == null:
-			var error := "Cannot create Godot CEF WebView because no scene tree is available"
+		var owner := _resolve_cef_parent_node(parent_node)
+		if owner == null:
+			var error := "Cannot create Godot CEF WebView because no parent node is available"
 			ipc_error.emit(error)
 			return
 
-		tree.root.add_child(browser)
+		owner.add_child(browser)
 
 	_configure_cef_layout()
 
@@ -284,6 +306,17 @@ func _add_cef_webview_to_scene(initial_url: String) -> void:
 	_emit_cef_webview_ready()
 
 
+func _resolve_cef_parent_node(parent_node: Node = null) -> Node:
+	if parent_node != null:
+		return parent_node
+
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+
+	return tree.root
+
+
 func _destroy_cef_webview() -> void:
 	var browser := _plugin_singleton as Node
 	if browser == null:
@@ -291,18 +324,26 @@ func _destroy_cef_webview() -> void:
 
 	browser.queue_free()
 	_plugin_singleton = null
-	_initialize_desktop_cef_backend()
 
 
 func _connect_cef_signals() -> void:
 	if _plugin_singleton.has_signal(&"ipc_message"):
-		_plugin_singleton.connect(&"ipc_message", _on_plugin_text_received)
+		_plugin_singleton.connect(
+			&"ipc_message",
+			func(message: String) -> void: _on_plugin_text_received(-1, message)
+		)
 
 	if _plugin_singleton.has_signal(&"ipc_binary_message"):
-		_plugin_singleton.connect(&"ipc_binary_message", _on_plugin_binary_received)
+		_plugin_singleton.connect(
+			&"ipc_binary_message",
+			func(bytes: PackedByteArray) -> void: _on_plugin_binary_received(-1, bytes)
+		)
 
 	if _plugin_singleton.has_signal(&"ipc_data_message"):
-		_plugin_singleton.connect(&"ipc_data_message", _on_plugin_data_received)
+		_plugin_singleton.connect(
+			&"ipc_data_message",
+			func(value: Variant) -> void: _on_plugin_data_received(-1, value)
+		)
 
 	if _plugin_singleton.has_signal(&"load_error"):
 		_plugin_singleton.connect(&"load_error", _on_cef_load_error)
@@ -360,49 +401,55 @@ func _emit_cef_webview_ready() -> void:
 
 func _on_cef_load_error(url: String, error_code: int, error_text: String) -> void:
 	_on_plugin_ipc_error(
-		(
-			"Godot CEF failed to load %s: %s (%d)"
-			% [
-				url,
-				error_text,
-				error_code,
-			]
-		)
+		-1,
+		"Godot CEF failed to load %s: %s (%d)" % [
+			url,
+			error_text,
+			error_code,
+		]
 	)
 
 
 func _on_cef_render_process_terminated(status: int, error_message: String) -> void:
 	_on_plugin_ipc_error(
-		(
-			"Godot CEF render process terminated: %s (%d)"
-			% [
-				error_message,
-				status,
-			]
-		)
+		-1,
+		"Godot CEF render process terminated: %s (%d)" % [
+			error_message,
+			status,
+		]
 	)
 
 
-func _on_plugin_webview_ready() -> void:
+func _on_plugin_webview_ready(view_id: int) -> void:
+	if _should_ignore_view_signal(view_id): return
+
 	print("[Kirie][gd] signal webview_ready")
 	webview_ready.emit()
 
 
-func _on_plugin_text_received(message: String) -> void:
+func _on_plugin_text_received(view_id: int, message: String) -> void:
+	if _should_ignore_view_signal(view_id): return
+
 	print("[Kirie][gd] signal text_received %s" % message)
 	text_received.emit(message)
 
 
-func _on_plugin_binary_received(bytes: PackedByteArray) -> void:
+func _on_plugin_binary_received(view_id: int, bytes: PackedByteArray) -> void:
+	if _should_ignore_view_signal(view_id): return
+
 	print("[Kirie][gd] signal binary_received bytes=%d" % bytes.size())
 	binary_received.emit(bytes)
 
 
-func _on_plugin_data_received(value: Variant) -> void:
+func _on_plugin_data_received(view_id: int, value: Variant) -> void:
+	if _should_ignore_view_signal(view_id): return
+
 	print("[Kirie][gd] signal data_received %s" % str(value))
 	data_received.emit(value)
 
 
-func _on_plugin_ipc_error(error: String) -> void:
+func _on_plugin_ipc_error(view_id: int, error: String) -> void:
+	if _should_ignore_view_signal(view_id): return
+
 	print("[Kirie][gd] signal ipc_error %s" % error)
 	ipc_error.emit(error)

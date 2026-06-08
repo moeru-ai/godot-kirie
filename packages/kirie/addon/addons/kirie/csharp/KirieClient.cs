@@ -14,6 +14,7 @@ public partial class KirieClient : GodotObject
     private readonly Callable _ipcErrorCallable;
 
     private readonly GodotObject? _pluginSingleton;
+    private readonly long _viewId;
 
     public event Action? WebViewReady;
     public event Action<string>? TextReceived;
@@ -23,11 +24,12 @@ public partial class KirieClient : GodotObject
 
     public KirieClient()
     {
-        _webViewReadyCallable = Callable.From(OnPluginWebViewReady);
-        _textReceivedCallable = Callable.From<string>(OnPluginTextReceived);
-        _binaryReceivedCallable = Callable.From<byte[]>(OnPluginBinaryReceived);
-        _dataReceivedCallable = Callable.From<Variant>(OnPluginDataReceived);
-        _ipcErrorCallable = Callable.From<string>(OnPluginIpcError);
+        _viewId = (long)GetInstanceId();
+        _webViewReadyCallable = Callable.From<long>(OnPluginWebViewReady);
+        _textReceivedCallable = Callable.From<long, string>(OnPluginTextReceived);
+        _binaryReceivedCallable = Callable.From<long, byte[]>(OnPluginBinaryReceived);
+        _dataReceivedCallable = Callable.From<long, Variant>(OnPluginDataReceived);
+        _ipcErrorCallable = Callable.From<long, string>(OnPluginIpcError);
 
         if (!Engine.HasSingleton(PluginSingletonName))
         {
@@ -50,7 +52,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] create_webview initial_url={initialUrl}");
-        _pluginSingleton!.Call("createWebView", initialUrl);
+        _pluginSingleton!.Call("createWebView", _viewId, initialUrl);
     }
 
     public void DestroyWebView()
@@ -61,7 +63,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print("[Kirie][cs] destroy_webview");
-        _pluginSingleton!.Call("destroyWebView");
+        _pluginSingleton!.Call("destroyWebView", _viewId);
     }
 
     public void LoadUrl(string url)
@@ -72,7 +74,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] load_url url={url}");
-        _pluginSingleton!.Call("loadUrl", url);
+        _pluginSingleton!.Call("loadUrl", _viewId, url);
     }
 
     public void LoadHtmlString(string html, string baseUrl = "")
@@ -83,7 +85,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] load_html_string bytes={html.Length} base_url={baseUrl}");
-        _pluginSingleton!.Call("loadHtmlString", html, baseUrl);
+        _pluginSingleton!.Call("loadHtmlString", _viewId, html, baseUrl);
     }
 
     public void SendText(string message)
@@ -94,7 +96,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] send_text bytes={message.Length}");
-        _pluginSingleton!.Call("sendText", message);
+        _pluginSingleton!.Call("sendText", _viewId, message);
     }
 
     public void SendBinary(byte[] bytes)
@@ -105,7 +107,7 @@ public partial class KirieClient : GodotObject
         }
 
         GD.Print($"[Kirie][cs] send_binary bytes={bytes.Length}");
-        _pluginSingleton!.Call("sendBinary", bytes);
+        _pluginSingleton!.Call("sendBinary", _viewId, bytes);
     }
 
     public void SendData(Variant value)
@@ -138,6 +140,7 @@ public partial class KirieClient : GodotObject
 
         _pluginSingleton!.Call(
             "sendData",
+            _viewId,
             new Godot.Collections.Dictionary
             {
                 ["value"] = value,
@@ -193,32 +196,47 @@ public partial class KirieClient : GodotObject
         return false;
     }
 
-    private void OnPluginWebViewReady()
+    private void OnPluginWebViewReady(long viewId)
     {
+        if (viewId != _viewId)
+            return;
+
         GD.Print("[Kirie][cs] signal webview_ready");
         WebViewReady?.Invoke();
     }
 
-    private void OnPluginTextReceived(string message)
+    private void OnPluginTextReceived(long viewId, string message)
     {
+        if (viewId != _viewId)
+            return;
+
         GD.Print($"[Kirie][cs] signal text_received {message}");
         TextReceived?.Invoke(message);
     }
 
-    private void OnPluginBinaryReceived(byte[] bytes)
+    private void OnPluginBinaryReceived(long viewId, byte[] bytes)
     {
+        if (viewId != _viewId)
+            return;
+
         GD.Print($"[Kirie][cs] signal binary_received bytes={bytes.Length}");
         BinaryReceived?.Invoke(bytes);
     }
 
-    private void OnPluginDataReceived(Variant value)
+    private void OnPluginDataReceived(long viewId, Variant value)
     {
+        if (viewId != _viewId)
+            return;
+
         GD.Print($"[Kirie][cs] signal data_received {value}");
         DataReceived?.Invoke(value);
     }
 
-    private void OnPluginIpcError(string error)
+    private void OnPluginIpcError(long viewId, string error)
     {
+        if (viewId != _viewId)
+            return;
+
         GD.Print($"[Kirie][cs] signal ipc_error {error}");
         IpcError?.Invoke(error);
     }

@@ -5,7 +5,7 @@ Current repository scope is intentionally constrained.
 We are standardizing only the minimum plugin shape needed to support:
 
 - a Godot-facing Kirie service
-- a scene-friendly KirieView node
+- a scene-friendly KirieNode node
 - a thin C# KirieClient wrapper for .NET projects
 - Android and iOS native WebView implementations
 - a desktop Godot CEF backend, starting with macOS
@@ -68,9 +68,9 @@ Current signals should also stay narrow:
 Browser lifecycle events and higher-level invocation APIs are intentionally
 deferred until there is a real need for them.
 
-For the current milestone, Kirie should treat `KirieView` as the public
+For the current milestone, Kirie should treat `KirieNode` as the public
 scene-tree ownership unit for a platform WebView. A user may place a
-`KirieView` under the main scene, under a Godot `Window` node, or in another
+`KirieNode` under the main scene, under a Godot `Window` node, or in another
 scene structure that fits their project.
 
 Kirie core should not own window organization. Optional higher-level helpers may
@@ -85,9 +85,8 @@ references:
 - `$KirieView.send_binary(bytes)`
 - `$KirieView.send_data(value)`
 
-Native implementations may keep internal handles or IDs to manage platform
-instances. Public routing names, browser-driven cross-view forwarding, and
-window helper APIs are deferred higher-level concerns.
+Native implementations may keep internal handles or IDs to manage platform instances.
+Android and iOS use private view IDs only to route callbacks back to the owning `KirieNode`; public routing names, browser-driven cross-view forwarding, and window helper APIs are deferred higher-level concerns.
 
 Kirie supports loading packaged offline web content from Godot project resources
 through the `res://web` path described below.

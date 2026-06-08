@@ -2,18 +2,19 @@
 
 #include "core/object/class_db.h"
 
+#include <cstdint>
 #include <cstring>
 
 #import <Foundation/Foundation.h>
 
-extern "C" void kirie_swift_create_webview(const char *initial_url);
-extern "C" void kirie_swift_destroy_webview(void);
-extern "C" void kirie_swift_load_url(const char *url);
-extern "C" void kirie_swift_load_html_string(const char *html, const char *base_url);
-extern "C" void kirie_swift_send_ipc_message(const char *message_json);
-extern "C" void kirie_swift_send_text(const char *message);
-extern "C" void kirie_swift_send_binary(const uint8_t *bytes, intptr_t byte_count);
-extern "C" void kirie_swift_send_data_json(const char *json);
+extern "C" void kirie_swift_create_webview(int64_t view_id, const char *initial_url);
+extern "C" void kirie_swift_destroy_webview(int64_t view_id);
+extern "C" void kirie_swift_load_url(int64_t view_id, const char *url);
+extern "C" void kirie_swift_load_html_string(int64_t view_id, const char *html, const char *base_url);
+extern "C" void kirie_swift_send_ipc_message(int64_t view_id, const char *message_json);
+extern "C" void kirie_swift_send_text(int64_t view_id, const char *message);
+extern "C" void kirie_swift_send_binary(int64_t view_id, const uint8_t *bytes, intptr_t byte_count);
+extern "C" void kirie_swift_send_data_json(int64_t view_id, const char *json);
 
 static NSString *const KirieWebViewReadyNotification = @"KirieWebViewReady";
 static NSString *const KirieIpcMessageReceivedNotification = @"KirieIpcMessageReceived";
@@ -24,6 +25,15 @@ static NSString *const KirieIpcErrorNotification = @"KirieIpcError";
 static const char *DATA_VALUE_KEY = "value";
 
 static KiriePlugin *singleton = nullptr;
+
+static int64_t notification_view_id(NSNotification *notification) {
+	id value = notification.userInfo[@"view_id"];
+	if (![value isKindOfClass:[NSNumber class]]) {
+		return 0;
+	}
+
+	return [(NSNumber *)value longLongValue];
+}
 
 static String to_godot_string(id value) {
 	if (![value isKindOfClass:[NSString class]]) {
@@ -191,50 +201,50 @@ static Variant unwrap_carried_data(Variant value) {
 	return dictionary[key];
 }
 
-void KiriePlugin::createWebView(String initial_url) {
+void KiriePlugin::createWebView(int64_t view_id, String initial_url) {
 	CharString encoded_initial_url = initial_url.utf8();
-	kirie_swift_create_webview(encoded_initial_url.get_data());
+	kirie_swift_create_webview(view_id, encoded_initial_url.get_data());
 }
 
-void KiriePlugin::destroyWebView() {
-	kirie_swift_destroy_webview();
+void KiriePlugin::destroyWebView(int64_t view_id) {
+	kirie_swift_destroy_webview(view_id);
 }
 
-void KiriePlugin::loadUrl(String url) {
+void KiriePlugin::loadUrl(int64_t view_id, String url) {
 	CharString encoded_url = url.utf8();
-	kirie_swift_load_url(encoded_url.get_data());
+	kirie_swift_load_url(view_id, encoded_url.get_data());
 }
 
-void KiriePlugin::loadHtmlString(String html, String base_url) {
+void KiriePlugin::loadHtmlString(int64_t view_id, String html, String base_url) {
 	CharString encoded_html = html.utf8();
 	CharString encoded_base_url = base_url.utf8();
-	kirie_swift_load_html_string(encoded_html.get_data(), encoded_base_url.get_data());
+	kirie_swift_load_html_string(view_id, encoded_html.get_data(), encoded_base_url.get_data());
 }
 
-void KiriePlugin::sendIpcMessage(String message_json) {
+void KiriePlugin::sendIpcMessage(int64_t view_id, String message_json) {
 	CharString encoded_message_json = message_json.utf8();
-	kirie_swift_send_ipc_message(encoded_message_json.get_data());
+	kirie_swift_send_ipc_message(view_id, encoded_message_json.get_data());
 }
 
-void KiriePlugin::sendText(String message) {
+void KiriePlugin::sendText(int64_t view_id, String message) {
 	CharString encoded_message = message.utf8();
-	kirie_swift_send_text(encoded_message.get_data());
+	kirie_swift_send_text(view_id, encoded_message.get_data());
 }
 
-void KiriePlugin::sendBinary(PackedByteArray bytes) {
-	kirie_swift_send_binary(bytes.ptr(), bytes.size());
+void KiriePlugin::sendBinary(int64_t view_id, PackedByteArray bytes) {
+	kirie_swift_send_binary(view_id, bytes.ptr(), bytes.size());
 }
 
-void KiriePlugin::sendData(Variant value) {
+void KiriePlugin::sendData(int64_t view_id, Variant value) {
 	String error;
 	String json = to_json_string(unwrap_carried_data(value), &error);
 	if (!error.is_empty()) {
-		emit_signal(StringName("ipc_error"), error);
+		emit_signal(StringName("ipc_error"), view_id, error);
 		return;
 	}
 
 	CharString encoded_json = json.utf8();
-	kirie_swift_send_data_json(encoded_json.get_data());
+	kirie_swift_send_data_json(view_id, encoded_json.get_data());
 }
 
 String KiriePlugin::getLaunchOption(String key) {
@@ -268,21 +278,21 @@ KiriePlugin *KiriePlugin::get_singleton() {
 }
 
 void KiriePlugin::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("createWebView", "initial_url"), &KiriePlugin::createWebView);
-	ClassDB::bind_method(D_METHOD("destroyWebView"), &KiriePlugin::destroyWebView);
-	ClassDB::bind_method(D_METHOD("loadUrl", "url"), &KiriePlugin::loadUrl);
-	ClassDB::bind_method(D_METHOD("loadHtmlString", "html", "base_url"), &KiriePlugin::loadHtmlString);
-	ClassDB::bind_method(D_METHOD("sendIpcMessage", "message_json"), &KiriePlugin::sendIpcMessage);
-	ClassDB::bind_method(D_METHOD("sendText", "message"), &KiriePlugin::sendText);
-	ClassDB::bind_method(D_METHOD("sendBinary", "bytes"), &KiriePlugin::sendBinary);
-	ClassDB::bind_method(D_METHOD("sendData", "value"), &KiriePlugin::sendData);
+	ClassDB::bind_method(D_METHOD("createWebView", "view_id", "initial_url"), &KiriePlugin::createWebView);
+	ClassDB::bind_method(D_METHOD("destroyWebView", "view_id"), &KiriePlugin::destroyWebView);
+	ClassDB::bind_method(D_METHOD("loadUrl", "view_id", "url"), &KiriePlugin::loadUrl);
+	ClassDB::bind_method(D_METHOD("loadHtmlString", "view_id", "html", "base_url"), &KiriePlugin::loadHtmlString);
+	ClassDB::bind_method(D_METHOD("sendIpcMessage", "view_id", "message_json"), &KiriePlugin::sendIpcMessage);
+	ClassDB::bind_method(D_METHOD("sendText", "view_id", "message"), &KiriePlugin::sendText);
+	ClassDB::bind_method(D_METHOD("sendBinary", "view_id", "bytes"), &KiriePlugin::sendBinary);
+	ClassDB::bind_method(D_METHOD("sendData", "view_id", "value"), &KiriePlugin::sendData);
 	ClassDB::bind_method(D_METHOD("getLaunchOption", "key"), &KiriePlugin::getLaunchOption);
 
-	ADD_SIGNAL(MethodInfo("webview_ready"));
-	ADD_SIGNAL(MethodInfo("text_received", PropertyInfo(Variant::STRING, "message")));
-	ADD_SIGNAL(MethodInfo("binary_received", PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
-	ADD_SIGNAL(MethodInfo("data_received", PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
-	ADD_SIGNAL(MethodInfo("ipc_error", PropertyInfo(Variant::STRING, "error")));
+	ADD_SIGNAL(MethodInfo("webview_ready", PropertyInfo(Variant::INT, "view_id")));
+	ADD_SIGNAL(MethodInfo("text_received", PropertyInfo(Variant::INT, "view_id"), PropertyInfo(Variant::STRING, "message")));
+	ADD_SIGNAL(MethodInfo("binary_received", PropertyInfo(Variant::INT, "view_id"), PropertyInfo(Variant::PACKED_BYTE_ARRAY, "bytes")));
+	ADD_SIGNAL(MethodInfo("data_received", PropertyInfo(Variant::INT, "view_id"), PropertyInfo(Variant::NIL, "value", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NIL_IS_VARIANT)));
+	ADD_SIGNAL(MethodInfo("ipc_error", PropertyInfo(Variant::INT, "view_id"), PropertyInfo(Variant::STRING, "error")));
 }
 
 KiriePlugin::KiriePlugin() {
@@ -294,9 +304,9 @@ KiriePlugin::KiriePlugin() {
 	webview_ready_observer = (__bridge_retained void *)[center addObserverForName:KirieWebViewReadyNotification
 		object:nil
 		queue:main_queue
-		usingBlock:^(__unused NSNotification *notification) {
+		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("webview_ready"));
+				singleton->emit_signal(StringName("webview_ready"), notification_view_id(notification));
 			}
 		}];
 
@@ -305,7 +315,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("text_received"), to_godot_string(notification.object));
+				singleton->emit_signal(StringName("text_received"), notification_view_id(notification), to_godot_string(notification.object));
 			}
 		}];
 
@@ -314,7 +324,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("text_received"), to_godot_string(notification.object));
+				singleton->emit_signal(StringName("text_received"), notification_view_id(notification), to_godot_string(notification.object));
 			}
 		}];
 
@@ -323,7 +333,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("binary_received"), to_godot_bytes(notification.object));
+				singleton->emit_signal(StringName("binary_received"), notification_view_id(notification), to_godot_bytes(notification.object));
 			}
 		}];
 
@@ -332,7 +342,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("data_received"), to_godot_variant(notification.object));
+				singleton->emit_signal(StringName("data_received"), notification_view_id(notification), to_godot_variant(notification.object));
 			}
 		}];
 
@@ -341,7 +351,7 @@ KiriePlugin::KiriePlugin() {
 		queue:main_queue
 		usingBlock:^(NSNotification *notification) {
 			if (singleton) {
-				singleton->emit_signal(StringName("ipc_error"), to_godot_string(notification.object));
+				singleton->emit_signal(StringName("ipc_error"), notification_view_id(notification), to_godot_string(notification.object));
 			}
 		}];
 }

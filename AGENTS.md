@@ -31,7 +31,7 @@ reason to expose the full Godot CEF browser API through Kirie.
 
 - `packages/kirie/addon/addons/kirie`
   Godot-facing plugin files, including `plugin.gd`, `export_plugin.gd`,
-  `gd_kirie.gd`, `kirie_view.gd`, and `csharp/KirieClient.cs`
+  `gd_kirie.gd`, `kirie_node.gd`, and `csharp/KirieClient.cs`
 - `packages/kirie/native/android`
   Kotlin Android implementation
 - `packages/kirie/native/ios`
@@ -79,7 +79,7 @@ label them as anecdotal when they influence a decision.
 ## Design Constraints
 
 - Treat `Kirie` as the service layer API.
-- Treat `KirieView` as a scene-friendly wrapper, not a promise that the native
+- Treat `KirieNode` as a scene-friendly wrapper, not a promise that the native
   WebView behaves like a normal Godot-rendered node.
 - Prefer a small public API and simple message flow over a broad protocol.
 - Treat `kirie` as a low-level WebView and IPC bridge, not as the final
@@ -106,8 +106,8 @@ label them as anecdotal when they influence a decision.
 - Desktop Godot CEF support starts with macOS and should preserve the existing
   Kirie public API. Keep the detailed desktop backend, runtime-injection, and
   artifact rules centralized in `docs/architecture.md`.
-- For the current milestone, treat `KirieView` as the scene-tree ownership unit
-  for a platform WebView. Users decide whether a `KirieView` lives in the main
+- For the current milestone, treat `KirieNode` as the scene-tree ownership unit
+  for a platform WebView. Users decide whether a `KirieNode` lives in the main
   scene, under a Godot `Window`, or in another scene structure.
 - Keep window organization, named routing, cross-view forwarding, and prefab
   window helpers above Kirie core until the user explicitly asks for that
@@ -151,6 +151,7 @@ For the current milestone, iOS should be owned by the standard addon tree:
 ## Working Style
 
 - Keep changes aligned with the current milestone.
+- When a same-session temporary decision is replaced, converge on the latest decision directly; do not add compatibility unless explicitly requested.
 - Use English only for agent-facing communication, project-maintenance notes,
   AGENTS updates, and project documentation unless the user explicitly requests
   a non-English artifact.
@@ -276,7 +277,7 @@ configured yet.
 
 ### Public API stability
 
-- Treat `Kirie` and `KirieView` as the primary public API surfaces.
+- Treat `Kirie` and `KirieNode` as the primary public API surfaces.
 - Prefer low-level public names such as `load_url`, `send_text`, `send_binary`,
   and `send_data` while the bridge remains transport-oriented.
 - When extending IPC v1, keep the explicit text, binary, and data lane APIs

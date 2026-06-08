@@ -10,6 +10,8 @@ interface MarkerResult {
   status: "pass" | "fail" | "timeout" | "stopped";
 }
 
+const DEFAULT_ANDROID_LOG_REGEX = "KIRIE_TEST_|\\[Kirie\\]|SCRIPT ERROR|ERROR:|WARNING:";
+
 function resolveTestName(
   platform: "android" | "ios" | "desktop",
   testName?: string,
@@ -195,7 +197,8 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
     "package/unique_name",
   );
   const logFile = prepareLogFile(testName);
-  const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "30");
+  const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
+  const logPattern = process.env.ANDROID_LOG_REGEX || DEFAULT_ANDROID_LOG_REGEX;
 
   await execa("adb", ["logcat", "-c"], { cwd: rootDir, stdio: "inherit" });
   await execa("adb", ["shell", "am", "force-stop", packageName], {
@@ -211,15 +214,26 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
   });
 
   const logStream = await openLogStream(logFile);
-  const logcat = execa("adb", ["logcat"], {
+  const logcat = execa("adb", ["logcat", "-v", "time", "-e", logPattern], {
     cwd: rootDir,
     reject: false,
     stderr: "inherit",
-    stdout: logStream,
+    stdout: "pipe",
   });
+  if (!logcat.stdout) {
+    throw new Error("adb logcat did not expose stdout");
+  }
+  logcat.stdout.on("data", (chunk: Buffer | string) => {
+    logStream.write(chunk);
+    process.stderr.write(chunk);
+  });
+
   let result: MarkerResult | undefined;
 
   try {
+    console.error(
+      `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; filtered Android log: ${logFile}`,
+    );
     await execa(
       "adb",
       [

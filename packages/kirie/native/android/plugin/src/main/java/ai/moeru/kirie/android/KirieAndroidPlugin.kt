@@ -17,11 +17,20 @@ class KirieAndroidPlugin(
     private val webViewManager by lazy {
         KirieWebViewManager(
             activityProvider = { activity },
-            onWebViewReady = ::handleWebViewReady,
-            onTextPacket = ::handleTextPacket,
-            onBinaryPacket = ::handleBinaryPacket,
-            onDataPacket = ::handleDataPacket,
-            onIpcError = ::handleIpcError,
+            onWebViewReady = { viewId -> emitSignal(SIGNAL_WEBVIEW_READY, viewId) },
+            onTextPacket = { viewId, bytes ->
+                emitSignal(SIGNAL_TEXT_RECEIVED, viewId, cborMapper.readValue(bytes, String::class.java))
+            },
+            onBinaryPacket = { viewId, bytes ->
+                emitSignal(SIGNAL_BINARY_RECEIVED, viewId, cborMapper.readValue(bytes, ByteArray::class.java))
+            },
+            onDataPacket = { viewId, bytes ->
+                emitSignal(SIGNAL_DATA_RECEIVED, viewId, cborMapper.readTree(bytes).toGodotVariant())
+            },
+            onIpcError = { viewId, message ->
+                Log.e(pluginName, "ipc_error view_id=$viewId message=$message")
+                emitSignal(SIGNAL_IPC_ERROR, viewId, message)
+            },
         )
     }
 
@@ -37,36 +46,49 @@ class KirieAndroidPlugin(
         )
 
     @UsedByGodot
-    fun createWebView(initialUrl: String) {
-        webViewManager.createWebView(initialUrl.ifBlank { null })
+    fun createWebView(
+        viewId: Long,
+        initialUrl: String,
+    ) {
+        webViewManager.createWebView(viewId, initialUrl.ifBlank { null })
     }
 
     @UsedByGodot
-    fun destroyWebView() {
-        webViewManager.destroyWebView()
+    fun destroyWebView(viewId: Long) {
+        webViewManager.destroyWebView(viewId)
     }
 
     @UsedByGodot
-    fun loadUrl(url: String) {
-        webViewManager.loadUrl(url)
+    fun loadUrl(
+        viewId: Long,
+        url: String,
+    ) {
+        webViewManager.loadUrl(viewId, url)
     }
 
     @UsedByGodot
     fun loadHtmlString(
+        viewId: Long,
         html: String,
         baseUrl: String,
     ) {
-        webViewManager.loadHtmlString(html, baseUrl.ifBlank { null })
+        webViewManager.loadHtmlString(viewId, html, baseUrl.ifBlank { null })
     }
 
     @UsedByGodot
-    fun sendText(message: String) {
-        webViewManager.sendTextPacket(cborMapper.writeValueAsBytes(message))
+    fun sendText(
+        viewId: Long,
+        message: String,
+    ) {
+        webViewManager.sendTextPacket(viewId, cborMapper.writeValueAsBytes(message))
     }
 
     @UsedByGodot
-    fun sendBinary(bytes: ByteArray) {
-        webViewManager.sendBinaryPacket(cborMapper.writeValueAsBytes(bytes))
+    fun sendBinary(
+        viewId: Long,
+        bytes: ByteArray,
+    ) {
+        webViewManager.sendBinaryPacket(viewId, cborMapper.writeValueAsBytes(bytes))
     }
 
     // Godot's Android bridge converts by registered JVM parameter type and does
@@ -75,46 +97,28 @@ class KirieAndroidPlugin(
     // immediately so the encoded CBOR item remains the caller's original root
     // value.
     @UsedByGodot
-    fun sendData(value: Dictionary) {
-        sendDataValue(value[DATA_VALUE_KEY])
+    fun sendData(
+        viewId: Long,
+        value: Dictionary,
+    ) {
+        webViewManager.sendDataPacket(viewId, cborMapper.writeValueAsBytes(value[DATA_VALUE_KEY].toJsonNode()))
     }
 
     @UsedByGodot
     fun getLaunchOption(key: String): String = activity?.intent?.getStringExtra(key).orEmpty()
 
-    private fun sendDataValue(value: Any?) {
-        webViewManager.sendDataPacket(cborMapper.writeValueAsBytes(value.toJsonNode()))
-    }
-
-    private fun handleWebViewReady() {
-        emitSignal(SIGNAL_WEBVIEW_READY)
-    }
-
-    private fun handleTextPacket(bytes: ByteArray) {
-        emitSignal(SIGNAL_TEXT_RECEIVED, cborMapper.readValue(bytes, String::class.java))
-    }
-
-    private fun handleBinaryPacket(bytes: ByteArray) {
-        emitSignal(SIGNAL_BINARY_RECEIVED, cborMapper.readValue(bytes, ByteArray::class.java))
-    }
-
-    private fun handleDataPacket(bytes: ByteArray) {
-        emitSignal(SIGNAL_DATA_RECEIVED, cborMapper.readTree(bytes).toGodotVariant())
-    }
-
-    private fun handleIpcError(message: String) {
-        Log.e(pluginName, "ipc_error message=$message")
-        emitSignal(SIGNAL_IPC_ERROR, message)
-    }
-
     companion object {
         private val cborMapper = ObjectMapper(CBORFactory())
 
-        private val SIGNAL_WEBVIEW_READY = SignalInfo("webview_ready")
-        private val SIGNAL_TEXT_RECEIVED = SignalInfo("text_received", String::class.java)
-        private val SIGNAL_BINARY_RECEIVED = SignalInfo("binary_received", ByteArray::class.java)
-        private val SIGNAL_DATA_RECEIVED = SignalInfo("data_received", Any::class.java)
-        private val SIGNAL_IPC_ERROR = SignalInfo("ipc_error", String::class.java)
+        private val SIGNAL_WEBVIEW_READY = SignalInfo("webview_ready", Long::class.javaObjectType)
+        private val SIGNAL_TEXT_RECEIVED =
+            SignalInfo("text_received", Long::class.javaObjectType, String::class.java)
+        private val SIGNAL_BINARY_RECEIVED =
+            SignalInfo("binary_received", Long::class.javaObjectType, ByteArray::class.java)
+        private val SIGNAL_DATA_RECEIVED =
+            SignalInfo("data_received", Long::class.javaObjectType, Any::class.java)
+        private val SIGNAL_IPC_ERROR =
+            SignalInfo("ipc_error", Long::class.javaObjectType, String::class.java)
         private const val DATA_VALUE_KEY = "value"
     }
 }
