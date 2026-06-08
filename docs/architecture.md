@@ -80,10 +80,10 @@ APIs, but those helpers must live above the low-level WebView and IPC surface.
 The public Godot API should primarily let users address WebViews through node
 references:
 
-- `$KirieView.load_url(url)`
-- `$KirieView.send_text(message)`
-- `$KirieView.send_binary(bytes)`
-- `$KirieView.send_data(value)`
+- `$KirieNode.load_url(url)`
+- `$KirieNode.send_text(message)`
+- `$KirieNode.send_binary(bytes)`
+- `$KirieNode.send_data(value)`
 
 Native implementations may keep internal handles or IDs to manage platform instances.
 Android and iOS use private view IDs only to route callbacks back to the owning `KirieNode`; public routing names, browser-driven cross-view forwarding, and window helper APIs are deferred higher-level concerns.
