@@ -7,6 +7,7 @@ export {
 } from "./build-integration.ts";
 export {
   buildAndroidAar,
+  buildIosDebugXcframework,
   buildIosXcframework,
   checkAddonPack,
   installGodotCef,

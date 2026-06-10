@@ -189,6 +189,12 @@ async function createIosXcframework(
   );
 }
 
+function prepareIosBuildDirs(): void {
+  fs.mkdirSync(iosBuildDir, { recursive: true });
+  fs.mkdirSync(iosGeneratedDir, { recursive: true });
+  fs.mkdirSync(iosOutputDir, { recursive: true });
+}
+
 // mise task entrypoint.
 export function checkAddonPack(): void {
   assertPathExists(addonStageDir);
@@ -290,15 +296,20 @@ export async function buildAndroidAar(): Promise<void> {
 
 // mise task entrypoint.
 export async function buildIosXcframework(): Promise<void> {
-  fs.mkdirSync(iosBuildDir, { recursive: true });
-  fs.mkdirSync(iosGeneratedDir, { recursive: true });
-  fs.mkdirSync(iosOutputDir, { recursive: true });
-
+  prepareIosBuildDirs();
   await generateIosProject();
 
   fs.rmSync(iosLegacyOutputXcframework, { force: true, recursive: true });
   await createIosXcframework("ReleaseDebug", "debug", iosDebugOutputXcframework);
   await createIosXcframework("Release", "release", iosReleaseOutputXcframework);
+}
+
+// mise task entrypoint.
+export async function buildIosDebugXcframework(): Promise<void> {
+  prepareIosBuildDirs();
+  await generateIosProject();
+
+  await createIosXcframework("ReleaseDebug", "debug", iosDebugOutputXcframework);
 }
 
 // mise task entrypoint.

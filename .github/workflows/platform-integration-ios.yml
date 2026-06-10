@@ -98,8 +98,8 @@ jobs:
       - name: Install pnpm dependencies
         run: mise x -- corepack pnpm install --frozen-lockfile
 
-      - name: Build iOS XCFramework
-        run: mise run build:ios-xcframework
+      - name: Build iOS debug XCFramework
+        run: mise run build:ios-debug-xcframework
 
       - name: Build integration App
         run: mise run build:integration-ios

@@ -51,6 +51,10 @@ run = "./scripts/run-build-task.js buildIntegrationIos"
 description = "Build iOS xcframework artifact"
 run = "./scripts/run-build-task.js buildIosXcframework"
 
+[tasks."build:ios-debug-xcframework"]
+description = "Build iOS debug xcframework artifact"
+run = "./scripts/run-build-task.js buildIosDebugXcframework"
+
 [tasks."install:godot-cef"]
 description = "Install pinned Godot CEF desktop addon into a Godot project"
 usage = '''

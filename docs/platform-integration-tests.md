@@ -231,10 +231,10 @@ IOS_TEST_DESTINATION="platform=iOS Simulator,name=iPhone 15" \
   mise run test:ios-ipc-serialization
 ```
 
-Build the staged iOS addon XCFramework first:
+Build the staged iOS debug addon XCFramework first:
 
 ```bash
-mise run build:ios-xcframework
+mise run build:ios-debug-xcframework
 ```
 
 Build the simulator app:
