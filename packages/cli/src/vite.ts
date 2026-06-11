@@ -17,10 +17,18 @@ export async function startViteDevServer(config: ResolvedKirieConfig): Promise<S
   assertWebEntryExists(config.web.root);
 
   const server = await createServer(createViteConfig(config));
-  await server.listen();
+
+  try {
+    await server.listen();
+  } catch (error) {
+    await server.close();
+    throw error;
+  }
+
   const url = server.resolvedUrls?.local[0];
 
   if (!url) {
+    await server.close();
     throw new Error("Vite did not report a local dev server URL.");
   }
 
@@ -56,7 +64,7 @@ function assertWebEntryExists(webRoot: string): void {
     return;
   }
 
-  throw new Error(`Kirie dev requires ${path.join("src-web", "index.html")} at ${indexPath}.`);
+  throw new Error(`Kirie dev requires ${indexPath}.`);
 }
 
 function assertNoKirieOwnedViteOptions(viteConfig: Record<string, unknown>): void {

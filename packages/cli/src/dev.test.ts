@@ -109,7 +109,7 @@ writeFileSync("godot-capture.json", JSON.stringify({
       runDev({
         cwd: project,
       }),
-    ).rejects.toThrow("Kirie dev requires src-web/index.html");
+    ).rejects.toThrow(/Kirie dev requires .*index\.html/);
   });
 });
 
