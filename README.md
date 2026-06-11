@@ -55,8 +55,8 @@ example, and regression-test areas:
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
-- `examples/basic-ipc`: the first runnable manual integration example
-- `examples/eventa-csharp`: manual Godot C# Eventa adapter smoke example
+- `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
+- `examples/eventa-csharp`: beginner-friendly demo project for Godot C# Eventa adapter usage
 - `tests/integration`: exported-app platform integration tests
 - `scripts/build.ts`: mise task entrypoint re-exports
 - `scripts/build-kirie.ts`: Kirie addon artifact and packaging tasks

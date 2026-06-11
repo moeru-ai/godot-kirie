@@ -1,6 +1,6 @@
 # eventa-csharp
 
-Manual Kirie Eventa smoke example for Godot C# projects.
+Beginner-friendly Kirie Eventa demo project for Godot C# projects.
 
 This example requires the .NET 10 SDK because `GdKirie.EventaAdapter` directly
 depends on the upstream `Eventa` package, which targets `net10.0`. Projects that
@@ -46,6 +46,6 @@ mise run run:example -- ios eventa-csharp
 
 This iOS example runner is currently simulator-only because it reuses the same
 local Godot iOS export path used by integration testing. That is a tooling
-shortcut, not a design requirement for examples. Example smoke runs should
+shortcut, not a design requirement for examples. Manual example runs should
 eventually allow the most useful local target, such as an iOS Simulator, a real
 iOS device, or an iOS app running directly on an Apple Silicon Mac.

@@ -13,11 +13,12 @@ The current milestone is limited to:
 4. add desktop Godot CEF compatibility, starting with macOS
 5. stabilize the Kirie plugin shape before adding larger tooling layers
 
-Do not introduce extra packages, adapters, or CLI workflows unless they are
-required to make the current IPC milestone work. The existing `@gd-kirie/ipc`
-package is a thin browser-side transport wrapper; do not expand it into an
-application event or invocation layer unless the user explicitly asks for that
-higher-level work.
+Do not introduce extra packages, adapters, or broad CLI workflows unless they
+are required to make the current IPC milestone work. The existing
+`@gd-kirie/ipc` package is a thin browser-side transport wrapper; do not expand
+it into an application event or invocation layer unless the user explicitly asks
+for that higher-level work. The planned Kirie CLI v1 exception is limited to
+`kirie dev` for desktop development through Vite and Godot.
 
 The mobile IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based with
 text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
@@ -43,9 +44,9 @@ reason to expose the full Godot CEF browser API through Kirie.
 - `packages/GdKirie.EventaAdapter`
   .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`
-  the first runnable manual integration target
+  beginner-friendly demo project for the raw IPC flow
 - `examples/eventa-csharp`
-  manual Godot C# Eventa adapter smoke example
+  beginner-friendly demo project for Godot C# Eventa adapter usage
 - `tests/integration`
   exported-app platform bridge regression target
 - `scripts/build.ts`
@@ -111,17 +112,53 @@ label them as anecdotal when they influence a decision.
   scene, under a Godot `Window`, or in another scene structure.
 - Keep window organization, named routing, cross-view forwarding, and prefab
   window helpers above Kirie core until the user explicitly asks for that
-  higher-level work.
+  higher-level work. BrowserWindow remains a dream-level API and should not be
+  implemented in GDScript; future high-level window APIs should target C# and
+  TypeScript packages.
 - Keep the Godot-facing wrapper thin; prefer forwarding to the platform
   singleton over reimplementing platform lifecycle logic in GDScript.
 - Keep `KirieClient` as a thin C# wrapper over the same platform singleton.
   Expose Kirie signals as C# events, and keep internal Godot `Callable` usage as
   bridge plumbing rather than public API.
-- Kirie supports packaged web content sourced from project resources through
-  `res://web` loading on the current native paths. Runtime-mounted Godot packs
-  remain out of scope for that loading path.
+- Kirie supports packaged web content sourced from project resources. The
+  planned Kirie app layout standardizes production web content at
+  `res://src-web/dist/index.html`. When that migration is implemented, drop the
+  previous `res://web` behavior instead of preserving a compatibility layer.
+  Runtime-mounted Godot packs remain out of scope for that loading path.
 - If an API is needed by both GDScript and C#, keep the behavior aligned and
   keep C# as a thin wrapper.
+
+## Planned Kirie CLI Direction
+
+The planned Kirie app layout is:
+
+- `kirie.config.ts`
+- `package.json`
+- `project.godot`
+- `src-godot/`
+- `src-web/`
+- `addons/kirie/`
+- optional `addons/godot_cef/`
+
+Kirie CLI v1 should only implement `kirie dev` for desktop Godot development.
+It should be installed through npm, call Vite's JavaScript API directly, let
+Vite resolve port conflicts, launch Godot as a child process, and inject
+`KIRIE_DEV=1` and `KIRIE_WEB_URL=<resolved Vite URL>`.
+
+Keep `kirie create`, `kirie build`, `kirie export`, addon installation, Godot
+CEF installation, export preset management, and mobile dev targets outside the
+CLI v1 scope. These may be implemented later when explicitly planned. Future
+mobile dev targets should use a unified platform and device selector such as
+`kirie dev ios --device <selector>` or
+`kirie dev android --device <selector>`; do not expose simulator and real device
+as separate user-facing target names.
+
+Kirie enforces Vite for user web source. Advanced Vite options belong in
+`kirie.config.ts` under `web.vite`, but Kirie owns `root`, `base`,
+`server.host`, `server.port`, `server.open`, and `build.outDir`.
+
+Kirie user projects should not contain Capacitor-style `ios/` or `android/`
+native project directories. Native features belong in Godot plugins.
 
 ## Android Packaging Direction
 
@@ -291,7 +328,7 @@ configured yet.
 
 ### Validation
 
-- Use `examples/basic-ipc` for manual smoke validation and `tests/integration`
+- Use `examples/basic-ipc` for manual demo validation and `tests/integration`
   for exported-app platform bridge regressions.
 - Run the relevant lint target through mise after changing a covered language:
   - GDScript: `mise run lint:gdscript`
@@ -314,7 +351,7 @@ configured yet.
 - After changing iOS native code under `packages/kirie/native/ios`, always run
   `mise run build:ios-xcframework` before device testing.
 - When changing the IPC shape, make sure at least one real request/response
-  exchange remains manually smoke-tested through `examples/basic-ipc` or covered
+  exchange remains manually exercised through `examples/basic-ipc` or covered
   by integration tests once those tests are migrated to the lane API.
 - When changing `KirieClient`, compile it against the Godot .NET SDK. A platform
   integration smoke test for its C# event API is still pending.
@@ -360,11 +397,11 @@ configured yet.
 - Be explicit about readiness and lifecycle transitions before sending bridge
   messages.
 
-## Planned But Not Yet Configured
+## Configured And Pending Coverage
 
-The following directions are intentional, but they are not fully set up in the
-repository yet. Agents should treat them as targets, not as already-enforced
-infrastructure.
+The following directions are intentional, but some are only partially covered.
+Agents should distinguish already-enforced infrastructure from remaining
+coverage gaps.
 
 - GitHub Actions are configured for lint, Android platform integration, iOS
   platform integration, npm package publishing, and addon release packaging.
@@ -372,8 +409,9 @@ infrastructure.
   configured.
 - Automated platform integration coverage for the C# `KirieClient` wrapper does
   not exist yet.
-- Desktop Godot CEF integration coverage runs through `tests/integration`.
-  Desktop CI and macOS export coverage are not configured yet.
+- Desktop Godot CEF integration coverage runs through `tests/integration`, with
+  desktop CI configured for macOS, Windows, and Linux. macOS export coverage is
+  still not configured yet.
 - Browser-side Eventa adapter support exists in `@gd-kirie/ipc-eventa`.
 - `GdKirie.EventaAdapter` is a .NET 10-only package. It supports Eventa events
   and unary RPC over Kirie text IPC, keeps Eventa source out of `addons/kirie`,

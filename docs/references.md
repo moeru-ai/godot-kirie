@@ -157,6 +157,14 @@ packaging, or platform WebView bridge details.
 - [Vite build guide](https://vite.dev/guide/build)
   Reference for production HTML builds used by the platform integration web
   fixture.
+- [Vite JavaScript API](https://vite.dev/guide/api-javascript.html)
+  Reference for `createServer()`, `build()`, `mergeConfig()`, and dev server
+  `resolvedUrls`, which underpin the planned `kirie dev` implementation.
+- [Vite server options](https://vite.dev/config/server-options.html)
+  Reference for development server host, port, strict port behavior, and related
+  options owned by Kirie CLI defaults.
+- [Electron BrowserWindow](https://www.electronjs.org/docs/latest/api/browser-window)
+  Comparison point for future high-level host-side browser window APIs.
 - [Electron preload scripts](https://www.electronjs.org/docs/latest/tutorial/tutorial-preload)
   Comparison point for renderer-side runtime injection before a page is loaded.
 - [Tauri WebviewWindowBuilder initialization scripts](https://docs.rs/tauri/latest/src/tauri/webview/webview_window.rs.html)
@@ -205,3 +213,5 @@ packaging, or platform WebView bridge details.
   support, mise task configuration, and Execa.
 - When changing the platform integration web fixture, start with the Vite build
   guide and `@gd-kirie/ipc`.
+- When changing planned Kirie CLI development-server behavior, start with the
+  Vite JavaScript API and Vite server options.

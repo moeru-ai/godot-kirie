@@ -12,10 +12,10 @@ We are standardizing only the minimum plugin shape needed to support:
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
 
-Anything beyond that, such as CLI tooling or broad application frameworks, is
-deferred until the IPC model is proven. The current `@gd-kirie/ipc` package is
-intentionally only a browser-side transport wrapper on top of the raw native
-bridge. Eventa adapters live above Kirie and use that low-level text transport.
+Anything beyond that, such as broad application frameworks, is deferred until
+the IPC model is proven. The current `@gd-kirie/ipc` package is intentionally
+only a browser-side transport wrapper on top of the raw native bridge. Eventa
+adapters live above Kirie and use that low-level text transport.
 
 The mobile IPC experiment keeps Kirie core byte-oriented and CBOR-based while
 preserving separate text, binary, and data lanes. Higher-level protocols,
@@ -76,6 +76,9 @@ scene structure that fits their project.
 Kirie core should not own window organization. Optional higher-level helpers may
 later provide prefab window, panel, workspace, cross-view forwarding, or routing
 APIs, but those helpers must live above the low-level WebView and IPC surface.
+Do not add Electron-like BrowserWindow APIs to GDScript; future high-level
+window APIs should live in C# and TypeScript packages, with GDScript remaining
+the low-level plugin substrate.
 
 The public Godot API should primarily let users address WebViews through node
 references:
@@ -88,8 +91,10 @@ references:
 Native implementations may keep internal handles or IDs to manage platform instances.
 Android and iOS use private view IDs only to route callbacks back to the owning `KirieNode`; public routing names, browser-driven cross-view forwarding, and window helper APIs are deferred higher-level concerns.
 
-Kirie supports loading packaged offline web content from Godot project resources
-through the `res://web` path described below.
+Kirie supports loading packaged offline web content from Godot project
+resources. The current native resolvers can serve packaged `res://` paths. The
+planned Kirie CLI app layout standardizes production web content at
+`res://src-web/dist/index.html`, as described below.
 
 ## Runtime debug configuration
 
@@ -112,6 +117,99 @@ Exports use `Kirie-release.aar` by default. Repository-local Android native
 debugging can opt into `Kirie-debug.aar` for a single export by passing
 `-- --kirie-android-aar=debug` to the Godot export command.
 
+## Kirie app layout and CLI direction
+
+The planned Kirie application shape is a Godot project with a Vite web frontend
+beside the Godot source:
+
+```text
+kirie.config.ts
+package.json
+pnpm-lock.yaml / bun.lock / package-lock.json
+project.godot
+src-godot/
+  main.tscn
+  main.gd or main.cs
+src-web/
+  index.html
+  src/
+  assets/
+  dist/
+addons/
+  kirie/
+  godot_cef/
+  others/
+```
+
+Directory responsibilities are:
+
+- `src-godot`: Godot host application source.
+- `src-web`: Vite web UI source and production build output.
+- `addons`: Godot plugins. Kirie remains installed as `addons/kirie`, and Godot
+  CEF remains installed as `addons/godot_cef`.
+- `kirie.config.ts`: Kirie CLI development-time configuration.
+
+Kirie does not own native platform project directories. Do not introduce
+Capacitor-style `ios/` or `android/` project trees into Kirie user projects.
+Native capabilities should be provided by Godot plugins.
+
+Kirie CLI v1 is scoped to one command:
+
+```sh
+kirie dev
+```
+
+`kirie dev` targets desktop Godot only in v1. It starts a Vite development
+server through Vite's JavaScript API, reads the actual resolved URL after Vite
+listens, launches Godot as a child process, and injects:
+
+```text
+KIRIE_DEV=1
+KIRIE_WEB_URL=http://127.0.0.1:<actual-port>/
+```
+
+The CLI does not support Finder, Dock, or other non-CLI launched macOS app
+processes. It only supports development sessions that the CLI starts and owns.
+
+Kirie CLI v1 does not implement:
+
+- `kirie create`
+- `kirie build`
+- `kirie export`
+- addon installation
+- Godot CEF installation
+- export preset management
+- BrowserWindow APIs
+
+Kirie enforces Vite as the web toolchain. Users should not hand-write a fixed
+development URL. The CLI should let Vite handle port conflicts, then pass the
+resolved URL to Godot. Advanced Vite configuration belongs under
+`web.vite` in `kirie.config.ts`; Kirie owns the base Vite invariants:
+
+```text
+root = web.root
+base = "./"
+server.host = "127.0.0.1"
+server.port = 5173
+server.strictPort = false
+server.open = false
+build.outDir = "dist"
+```
+
+User-supplied `web.vite` may extend Vite for plugins, aliases, defines, CSS,
+JSON, extra assets, proxying, headers, HMR details, Rollup options, and
+dependency optimization. It must not override Kirie-owned invariants such as
+`root`, `base`, `server.host`, `server.port`, `server.open`, or
+`build.outDir`.
+
+Future mobile development targets should use one platform command with unified
+device selection, for example `kirie dev ios --device <selector>` and
+`kirie dev android --device <selector>`. The user-facing API should not split
+iOS simulator and iOS device into separate target names. Kirie may still use
+different launch backends internally for simulators, real devices, Android
+emulators, and Android devices. Mobile development targets are explicitly out
+of scope for CLI v1.
+
 ## Packaged web resource loading
 
 `res://` web loading is scoped to resources that are exported with the
@@ -126,9 +224,13 @@ When loading `http://`, `https://`, or `file://` URLs, Kirie should keep using
 the platform WebView's default loading behavior instead of intercepting or
 rewriting those URLs.
 
-The addon export plugin currently includes `res://web` in the iOS app bundle.
-Android example exports still rely on the project export preset include filters
-for packaged web files.
+The planned Kirie CLI app layout uses `res://src-web/dist/index.html` as the
+default production entry. When that migration is implemented, the addon export
+plugin should package `res://src-web/dist` for Android and iOS exports, fail
+export when `res://src-web/dist/index.html` is missing, and drop the previous
+`res://web` behavior instead of preserving a compatibility layer. Users should
+continue to use Godot's official export preset flow; Kirie should not create or
+manage export presets.
 
 ## Desktop Godot CEF direction
 

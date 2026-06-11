@@ -10,5 +10,6 @@ and `AGENTS.md`.
 
 Current dream notes:
 
+- [Kirie BrowserWindow](./browser-window.md)
 - [Kirie IPC Interaction TestKit](./kirie-testkit.md)
 - [Kirie Remote Debugging](./remote-debugging.md)
