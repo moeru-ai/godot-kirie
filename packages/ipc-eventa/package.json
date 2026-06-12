@@ -24,12 +24,12 @@
   },
   "dependencies": {
     "@gd-kirie/ipc": "workspace:*",
-    "@moeru/eventa": "^1.0.0-beta.3"
+    "@moeru/eventa": "catalog:"
   },
   "devDependencies": {
-    "tsdown": "^0.21.10",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public",

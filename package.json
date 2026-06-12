@@ -15,10 +15,10 @@
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@types/ini": "^4.1.1",
-    "bumpp": "^11.0.1",
-    "execa": "9.6.1",
-    "ini": "^7.0.0"
+    "@biomejs/biome": "catalog:",
+    "@types/ini": "catalog:",
+    "bumpp": "catalog:",
+    "execa": "catalog:",
+    "ini": "catalog:"
   }
 }
