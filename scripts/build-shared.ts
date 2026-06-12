@@ -39,7 +39,7 @@ export function readExportPresetOption(
 }
 
 export async function buildWebPackage(filter: string): Promise<void> {
-  await execa("corepack", ["pnpm", "--filter", filter, "run", "build"], {
+  await execa("corepack", ["pnpm", "-F", filter, "run", "build"], {
     cwd: rootDir,
     stdio: "inherit",
   });

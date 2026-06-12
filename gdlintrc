@@ -1,0 +1,7 @@
+excluded_directories: !!set
+  .git: null
+  .godot: null
+  build: null
+  dist: null
+  godot_cef: null
+  node_modules: null

@@ -16,7 +16,11 @@ packaging, or platform WebView bridge details.
 - [Godot Android plugins (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
   Main reference for Godot Android plugin v2 packaging and export flow.
 - [Command line tutorial (stable)](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html)
-  Reference for `--remote-debug`, command-line running, and export behavior.
+  Reference for `--import`, `--path`, `--remote-debug`, command-line running,
+  and export behavior.
+- [GDScript reference: registering named classes](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#registering-named-classes)
+  Reference for `class_name` scripts such as `GdKirie` and `KirieNode`, which
+  Godot exposes as named/global script classes after project scanning.
 - [Overview of debugging tools (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/debug/overview_of_debugging_tools.html)
   High-level reference for remote debugging and editor debugging workflows.
 - [Debugger panel (stable)](https://docs.godotengine.org/en/stable/tutorials/scripting/debug/debugger_panel.html)

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import process from "node:process";
 import { execa } from "execa";
 import { buildAndroidAar, buildIosXcframework } from "./build-kirie.ts";
@@ -14,11 +15,20 @@ function exampleDistDir(exampleName: string): string {
   return `${distDir}/examples/${exampleName}`;
 }
 
+// Temporary while examples are split between legacy `web/` packages and the new CLI layout.
+function exampleWebPackageFilter(projectDir: string): string {
+  if (fs.existsSync(`${projectDir}/package.json`)) {
+    return `./${projectDir}`;
+  }
+
+  return `./${projectDir}/web`;
+}
+
 async function runExampleAndroid(exampleName: string, projectDir: string): Promise<void> {
   const apkPath = `${exampleDistDir(exampleName)}/android_debug.apk`;
   const packageName = readExportPresetOption(projectDir, "Android", "package/unique_name");
 
-  await buildWebPackage(`./${projectDir}/web`);
+  await buildWebPackage(exampleWebPackageFilter(projectDir));
   await buildAndroidAar();
   await exportAndroidDebug({
     apkPath,
@@ -45,7 +55,7 @@ async function runExampleIos(exampleName: string, projectDir: string): Promise<v
   const bundleId = readExportPresetOption(projectDir, "iOS", "application/bundle_identifier");
   const simulatorId = process.env.SIMULATOR_ID || "booted";
 
-  await buildWebPackage(`./${projectDir}/web`);
+  await buildWebPackage(exampleWebPackageFilter(projectDir));
   await buildIosXcframework();
   await exportIosSimulatorApp(projectDir, appPath);
 

@@ -21,7 +21,7 @@ tests. It demonstrates the first Eventa adapter path:
 Build the web page first:
 
 ```sh
-mise x -- corepack pnpm --filter @gd-kirie/eventa-csharp-web run build
+mise x -- corepack pnpm -F @gd-kirie/eventa-csharp-web run build
 ```
 
 Open the Godot project:

@@ -85,7 +85,7 @@ run = "corepack pnpm run format:biome"
 
 [tasks."format:gdscript"]
 description = "Format GDScript files"
-run = "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts"
+run = "gdformat packages/kirie/addon/addons/kirie examples tests/integration/scripts"
 
 [tasks."format:kotlin"]
 description = "Format Kotlin and Gradle Kotlin DSL files"
@@ -109,7 +109,7 @@ run = "corepack pnpm run lint:biome"
 
 [tasks."lint:gdscript"]
 description = "Lint GDScript files"
-run = "gdlint packages/kirie/addon/addons/kirie examples/basic-ipc/scripts tests/integration/scripts"
+run = "gdlint packages/kirie/addon/addons/kirie examples tests/integration/scripts"
 
 [tasks."lint:kotlin"]
 description = "Lint Kotlin and Gradle Kotlin DSL files"

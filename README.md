@@ -56,6 +56,7 @@ example, and regression-test areas:
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
+- `examples/basic-kirie-cli`: beginner-friendly demo project for the Kirie CLI workflow
 - `examples/eventa-csharp`: beginner-friendly demo project for Godot C# Eventa adapter usage
 - `tests/integration`: exported-app platform integration tests
 - `scripts/build.ts`: mise task entrypoint re-exports

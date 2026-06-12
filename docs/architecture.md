@@ -168,6 +168,17 @@ KIRIE_DEV=1
 KIRIE_WEB_URL=http://127.0.0.1:<actual-port>/
 ```
 
+Before launching the development session, `kirie dev` runs Godot in headless
+import mode for the project. Use Godot's `--import` command-line option for this
+prepare step rather than hand-rolling editor flags; the Godot command-line
+reference defines `--import` as starting the editor, waiting for resources to be
+imported, and then quitting. This is a CLI fresh-project concern: ordinary Godot
+addon usage normally passes through the editor or project manager first, while a
+one-command `kirie dev` run may otherwise parse the main scene before Godot has
+registered addon `class_name` scripts such as `GdKirie` in the global script
+class cache. See `docs/references.md` for the Godot command-line and GDScript
+named-class references.
+
 The CLI does not support Finder, Dock, or other non-CLI launched macOS app
 processes. It only supports development sessions that the CLI starts and owns.
 

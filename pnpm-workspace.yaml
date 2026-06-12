@@ -1,5 +1,6 @@
 packages:
   - "examples/basic-ipc/web"
+  - "examples/basic-kirie-cli"
   - "examples/eventa-csharp/web"
   - "packages/*"
   - "tests/integration/web-src"

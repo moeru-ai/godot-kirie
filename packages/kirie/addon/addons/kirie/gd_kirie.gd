@@ -227,7 +227,10 @@ func _initialize_desktop_cef_backend() -> void:
 	var cef_class_name := str(_godot_cef_config["class_name"])
 	if not ClassDB.class_exists(cef_class_name):
 		var message := (
-			"Kirie desktop backend requires Godot CEF %s. Install it with: %s %s"
+			(
+				"Kirie desktop backend requires Godot CEF %s to be installed "
+				+ "and registered in [native_extensions]. Install it with: %s %s"
+			)
 			% [
 				_godot_cef_config["version"],
 				_godot_cef_config["setup_command"],

@@ -1,0 +1,20 @@
+{
+  "name": "@gd-kirie/basic-kirie-cli",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "kirie build",
+    "dev": "kirie dev",
+    "typecheck": "tsc -p src-web/tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@gd-kirie/ipc": "workspace:*"
+  },
+  "devDependencies": {
+    "@gd-kirie/cli": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}
