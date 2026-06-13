@@ -2,7 +2,7 @@
 import { defineCommand, runMain } from "citty";
 
 import packageJson from "../package.json" with { type: "json" };
-import { runDev } from "./dev";
+import { runDev } from "./dev.ts";
 
 const main = defineCommand({
   meta: {

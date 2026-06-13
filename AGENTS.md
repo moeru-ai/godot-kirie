@@ -45,6 +45,8 @@ reason to expose the full Godot CEF browser API through Kirie.
   .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`
   beginner-friendly demo project for the raw IPC flow
+- `examples/basic-kirie-cli`
+  beginner-friendly demo project for the Kirie CLI workflow
 - `examples/eventa-csharp`
   beginner-friendly demo project for Godot C# Eventa adapter usage
 - `tests/integration`
@@ -145,10 +147,10 @@ It should be installed through npm, call Vite's JavaScript API directly, let
 Vite resolve port conflicts, launch Godot as a child process, and inject
 `KIRIE_DEV=1` and `KIRIE_WEB_URL=<resolved Vite URL>`.
 
-Keep `kirie create`, `kirie build`, `kirie export`, addon installation, Godot
-CEF installation, export preset management, and mobile dev targets outside the
-CLI v1 scope. These may be implemented later when explicitly planned. Future
-mobile dev targets should use a unified platform and device selector such as
+Keep `kirie create`, `kirie export`, addon installation, Godot CEF installation,
+export preset management, and mobile dev targets outside the CLI v1 scope.
+These may be implemented later when explicitly planned. Future mobile dev
+targets should use a unified platform and device selector such as
 `kirie dev ios --device <selector>` or
 `kirie dev android --device <selector>`; do not expose simulator and real device
 as separate user-facing target names.

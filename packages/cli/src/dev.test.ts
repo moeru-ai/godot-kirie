@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { runDev } from "./dev";
+import fakeGodotSource from "../test-fixtures/fake-godot.js?raw";
+import { runDev } from "./dev.ts";
+import { copyBasicKirieCliExample } from "./test-project.ts";
 
+const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
 const testProjects: string[] = [];
 
 afterEach(async () => {
@@ -15,29 +17,15 @@ afterEach(async () => {
 
 describe("runDev", () => {
   it("starts Vite and launches Godot with the resolved dev URL", async () => {
-    const project = await createProject();
-    const captureFile = path.join(project, "godot-capture.json");
+    const project = await copyExampleProject();
 
-    await fs.writeFile(
-      path.join(project, "fake-godot.mjs"),
-      `import { writeFileSync } from "node:fs";
-
-writeFileSync("godot-capture.json", JSON.stringify({
-  argv: process.argv.slice(2),
-  cwd: process.cwd(),
-  env: {
-    KIRIE_DEV: process.env.KIRIE_DEV,
-    KIRIE_WEB_URL: process.env.KIRIE_WEB_URL,
-  },
-}));
-`,
-    );
+    await installFakeGodot(project);
     await writeConfig(
       project,
       `{
   godot: {
     command: process.execPath,
-    args: ["fake-godot.mjs"],
+    args: ["fake-godot.js"],
   },
   web: {
     vite: {
@@ -53,23 +41,25 @@ writeFileSync("godot-capture.json", JSON.stringify({
     });
 
     const realProject = await fs.realpath(project);
-    const capture = JSON.parse(await fs.readFile(captureFile, "utf8")) as {
-      argv: string[];
-      cwd: string;
-      env: {
-        KIRIE_DEV?: string;
-        KIRIE_WEB_URL?: string;
-      };
-    };
+    const [prepareRun, devRun] = await readFakeGodotInvocations(project);
 
-    expect(capture.argv).toEqual(["--path", project]);
-    expect(capture.cwd).toBe(realProject);
-    expect(capture.env.KIRIE_DEV).toBe("1");
-    expect(capture.env.KIRIE_WEB_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    expect(prepareRun).toMatchObject({
+      argv: ["--headless", "--path", project, "--import"],
+      cwd: realProject,
+      env: {},
+    });
+    expect(devRun).toMatchObject({
+      argv: ["--path", project],
+      cwd: realProject,
+      env: {
+        KIRIE_DEV: "1",
+      },
+    });
+    expect(devRun?.env.KIRIE_WEB_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
   });
 
   it("rejects Kirie-owned Vite options", async () => {
-    const project = await createProject();
+    const project = await copyExampleProject();
     await writeConfig(
       project,
       `{
@@ -92,7 +82,8 @@ writeFileSync("godot-capture.json", JSON.stringify({
   });
 
   it("fails clearly when src-web/index.html is missing", async () => {
-    const project = await createProject({ index: false });
+    const project = await copyExampleProject();
+    await fs.rm(path.join(project, "src-web", "index.html"));
     await writeConfig(
       project,
       `{
@@ -113,22 +104,36 @@ writeFileSync("godot-capture.json", JSON.stringify({
   });
 });
 
-async function createProject(options: { index?: boolean } = {}): Promise<string> {
-  const project = await fs.mkdtemp(path.join(os.tmpdir(), "kirie-cli-"));
+async function copyExampleProject(): Promise<string> {
+  const project = await copyBasicKirieCliExample("kirie-cli-dev-");
   testProjects.push(project);
-  await fs.mkdir(path.join(project, "src-web"), { recursive: true });
-  await fs.writeFile(path.join(project, "project.godot"), "");
-
-  if (options.index ?? true) {
-    await fs.writeFile(
-      path.join(project, "src-web", "index.html"),
-      '<main id="app">Kirie dev test</main>',
-    );
-  }
 
   return project;
 }
 
 async function writeConfig(project: string, content: string): Promise<void> {
   await fs.writeFile(path.join(project, "kirie.config.ts"), `export default ${content};\n`);
+}
+
+async function installFakeGodot(project: string): Promise<void> {
+  await fs.writeFile(path.join(project, "fake-godot.js"), fakeGodotSource);
+}
+
+interface GodotInvocation {
+  argv: string[];
+  cwd: string;
+  env: {
+    KIRIE_DEV?: string;
+    KIRIE_WEB_URL?: string;
+  };
+}
+
+async function readFakeGodotInvocations(
+  project: string,
+): Promise<[GodotInvocation, GodotInvocation]> {
+  const invocationsFile = path.join(project, FAKE_GODOT_INVOCATIONS_FILE);
+  const invocations = JSON.parse(await fs.readFile(invocationsFile, "utf8")) as GodotInvocation[];
+
+  expect(invocations).toHaveLength(2);
+  return invocations as [GodotInvocation, GodotInvocation];
 }

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createServer, type InlineConfig, mergeConfig, type ViteDevServer } from "vite";
 
-import type { ResolvedKirieConfig } from "./config";
+import type { ResolvedKirieConfig } from "./config.ts";
 
 const KIRIE_OWNED_VITE_OPTIONS = ["root", "base"] as const;
 const KIRIE_OWNED_VITE_SERVER_OPTIONS = ["host", "port", "strictPort", "open"] as const;

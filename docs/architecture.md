@@ -219,7 +219,9 @@ device selection, for example `kirie dev ios --device <selector>` and
 iOS simulator and iOS device into separate target names. Kirie may still use
 different launch backends internally for simulators, real devices, Android
 emulators, and Android devices. Mobile development targets are explicitly out
-of scope for CLI v1.
+of scope for CLI v1. Future export support should own the production web build
+and Godot export as one workflow, instead of exposing a separate `kirie build`
+command that only wraps Vite.
 
 ## Packaged web resource loading
 
