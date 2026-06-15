@@ -48,7 +48,7 @@ Until that resolver exists, users can manually compose Godot `Window` nodes and
 
 ## Out of scope
 
-Keep BrowserWindow separate from the current CLI v1 work. Do not combine it
+Keep BrowserWindow separate from the current CLI work. Do not combine it
 with:
 
 - `kirie dev`

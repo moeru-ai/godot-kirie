@@ -7,7 +7,9 @@ export interface DevOptions {
 }
 
 export async function runDev(options: DevOptions = {}): Promise<void> {
-  const config = await loadKirieConfig(options.cwd);
+  const config = await loadKirieConfig({
+    cwd: options.cwd,
+  });
   const vite = await startViteDevServer(config);
   let godot: ReturnType<typeof launchGodot> | undefined;
 

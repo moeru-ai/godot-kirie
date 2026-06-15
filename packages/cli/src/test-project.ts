@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const basicKirieCliExample = fileURLToPath(
   import.meta.resolve("../../../examples/basic-kirie-cli"),
 );
+const cliTestFixturesDir = fileURLToPath(import.meta.resolve("../test-fixtures"));
 const repositoryTmpDir = fileURLToPath(import.meta.resolve("../../../.tmp"));
 const ignoredExampleCopyRoots = [".godot", "addons/godot_cef", "node_modules", "src-web/dist"];
 
@@ -24,6 +25,41 @@ export async function copyBasicKirieCliExample(prefix: string): Promise<string> 
   return project;
 }
 
+export function createBasicKirieCliProjectTracker(prefix: string): {
+  cleanup: () => Promise<void>;
+  copy: () => Promise<string>;
+} {
+  const projects: string[] = [];
+
+  return {
+    async copy() {
+      const project = await copyBasicKirieCliExample(prefix);
+      projects.push(project);
+      return project;
+    },
+    async cleanup() {
+      await Promise.all(
+        projects.splice(0).map((project) => fs.rm(project, { force: true, recursive: true })),
+      );
+    },
+  };
+}
+
+export async function installKirieConfigFixture(
+  project: string,
+  fixtureName: string,
+): Promise<void> {
+  await installProjectFixture(project, fixtureName, "kirie.config.ts");
+}
+
+export async function installProjectFixture(
+  project: string,
+  fixtureName: string,
+  outputName: string = fixtureName,
+): Promise<void> {
+  await fs.copyFile(path.join(cliTestFixturesDir, fixtureName), path.join(project, outputName));
+}
+
 function shouldCopyExamplePath(entry: string): boolean {
   const relativePath = path.relative(basicKirieCliExample, entry).split(path.sep).join("/");
 
@@ -31,11 +67,7 @@ function shouldCopyExamplePath(entry: string): boolean {
     return true;
   }
 
-  for (const ignoredRoot of ignoredExampleCopyRoots) {
-    if (relativePath === ignoredRoot || relativePath.startsWith(`${ignoredRoot}/`)) {
-      return false;
-    }
-  }
-
-  return true;
+  return !ignoredExampleCopyRoots.some(
+    (ignoredRoot) => relativePath === ignoredRoot || relativePath.startsWith(`${ignoredRoot}/`),
+  );
 }

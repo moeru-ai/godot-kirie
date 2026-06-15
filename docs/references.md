@@ -16,8 +16,14 @@ packaging, or platform WebView bridge details.
 - [Godot Android plugins (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
   Main reference for Godot Android plugin v2 packaging and export flow.
 - [Command line tutorial (stable)](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html)
-  Reference for `--import`, `--path`, `--remote-debug`, command-line running,
-  and export behavior.
+  Reference for `--import`, `--path`, `--remote-debug`, `--script`,
+  `--build-solutions`, command-line running, and export behavior.
+- [ProjectSettings (stable)](https://docs.godotengine.org/en/stable/classes/class_projectsettings.html)
+  Reference for reading and saving `project.godot` through Godot instead of
+  hand-editing the file from JavaScript.
+- [ConfigFile (stable)](https://docs.godotengine.org/en/stable/classes/class_configfile.html)
+  Reference for Godot's INI-like configuration file API and Variant-aware
+  reading and writing.
 - [GDScript reference: registering named classes](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_basics.html#registering-named-classes)
   Reference for `class_name` scripts such as `GdKirie` and `KirieNode`, which
   Godot exposes as named/global script classes after project scanning.
@@ -146,6 +152,8 @@ packaging, or platform WebView bridge details.
   Reference for source files included in PackageReference-based NuGet packages.
 - [dotnet pack](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-pack)
   Reference for creating NuGet packages from .NET projects.
+- [dotnet build](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
+  Reference for compiling .NET projects without publishing or packaging them.
 - [dotnet nuget push](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-nuget-push)
   Reference for publishing NuGet packages.
 
@@ -164,6 +172,9 @@ packaging, or platform WebView bridge details.
 - [Vite JavaScript API](https://vite.dev/guide/api-javascript.html)
   Reference for `createServer()`, `build()`, `mergeConfig()`, and dev server
   `resolvedUrls`, which underpin the planned `kirie dev` implementation.
+- [Vite CLI](https://vite.dev/guide/cli)
+  Reference for Vite command-line flags when Kirie chooses to expose or proxy
+  Vite-shaped arguments.
 - [Vite server options](https://vite.dev/config/server-options.html)
   Reference for development server host, port, strict port behavior, and related
   options owned by Kirie CLI defaults.

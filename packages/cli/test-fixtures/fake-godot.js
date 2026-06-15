@@ -1,9 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
-const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
-const invocations = existsSync(FAKE_GODOT_INVOCATIONS_FILE)
-  ? JSON.parse(readFileSync(FAKE_GODOT_INVOCATIONS_FILE, "utf8"))
-  : [];
+const file = "godot-invocations.json";
+const invocations = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
 
 invocations.push({
   argv: process.argv.slice(2),
@@ -14,4 +12,4 @@ invocations.push({
   },
 });
 
-writeFileSync(FAKE_GODOT_INVOCATIONS_FILE, JSON.stringify(invocations));
+writeFileSync(file, JSON.stringify(invocations));

@@ -1,6 +1,12 @@
 import path from "node:path";
 import { loadConfigFromFile, type UserConfig } from "vite";
 
+export interface LoadKirieConfigOptions {
+  command?: "build" | "serve";
+  cwd?: string;
+  mode?: string;
+}
+
 export interface KirieConfig extends Record<string, unknown> {
   godot?: {
     args?: string[];
@@ -31,13 +37,18 @@ export function defineKirieConfig(config: KirieConfig): KirieConfig {
   return config;
 }
 
-export async function loadKirieConfig(cwd: string = process.cwd()): Promise<ResolvedKirieConfig> {
+export async function loadKirieConfig(
+  options: LoadKirieConfigOptions = {},
+): Promise<ResolvedKirieConfig> {
+  const cwd = options.cwd ?? process.cwd();
+  const command = options.command ?? "serve";
+  const mode = options.mode ?? (command === "build" ? "production" : "development");
   const configFile = path.join(cwd, "kirie.config.ts");
   const result = await loadConfigFromFile(
     {
-      command: "serve",
+      command,
       isPreview: false,
-      mode: "development",
+      mode,
     },
     configFile,
     cwd,

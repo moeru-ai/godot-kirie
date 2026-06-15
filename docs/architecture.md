@@ -147,21 +147,28 @@ Directory responsibilities are:
 - `src-web`: Vite web UI source and production build output.
 - `addons`: Godot plugins. Kirie remains installed as `addons/kirie`, and Godot
   CEF remains installed as `addons/godot_cef`.
-- `kirie.config.ts`: Kirie CLI development-time configuration.
+- `kirie.config.ts`: Kirie CLI configuration for coordinating Godot, Vite, and
+  local build inputs.
 
 Kirie does not own native platform project directories. Do not introduce
 Capacitor-style `ios/` or `android/` project trees into Kirie user projects.
 Native capabilities should be provided by Godot plugins.
 
-Kirie CLI v1 is scoped to one command:
+The planned Kirie CLI surface is intentionally small but covers the full local
+app workflow:
 
 ```sh
 kirie dev
+kirie build
+kirie build web
+kirie build dotnet
+kirie init
+kirie doctor
+kirie doctor --fix
 ```
 
-`kirie dev` targets desktop Godot only in v1. It starts a Vite development
-server through Vite's JavaScript API, reads the actual resolved URL after Vite
-listens, launches Godot as a child process, and injects:
+`kirie dev` starts a Vite development server, reads the actual resolved URL
+after Vite listens, launches Godot as a child process, and injects:
 
 ```text
 KIRIE_DEV=1
@@ -182,15 +189,27 @@ named-class references.
 The CLI does not support Finder, Dock, or other non-CLI launched macOS app
 processes. It only supports development sessions that the CLI starts and owns.
 
-Kirie CLI v1 does not implement:
+`kirie build` builds local intermediate artifacts needed by a runnable or
+exportable Godot project, but it does not produce platform application packages.
+It should build every configured or clearly discovered input. `kirie build web`
+builds only the Vite web output, and `kirie build dotnet` builds only the
+Godot C#/.NET project when one is configured or discovered. If no C# project is
+configured or discovered, the aggregate `kirie build` command may skip the
+`.NET` step; if a C# project is present, C# build failure must fail the command.
 
-- `kirie create`
-- `kirie build`
-- `kirie export`
-- addon installation
-- Godot CEF installation
-- export preset management
-- BrowserWindow APIs
+`kirie export` remains future work. When it exists, it should mean a complete
+platform export workflow: build local inputs first, then call Godot's export
+flow for the selected platform or preset. It should not silently create or
+repair project configuration as part of export.
+
+`kirie init` and `kirie doctor --fix` are the explicit commands allowed to
+write configuration. `kirie init` initializes Kirie-owned files and may register
+required Godot project settings. `kirie doctor` is read-only diagnostics.
+`kirie doctor --fix` may apply supported repairs. Any writes to Godot-owned
+configuration files, including `project.godot` and `export_presets.cfg`, must
+go through Godot itself, for example a headless helper script using
+`ProjectSettings` or `ConfigFile`. JavaScript code must not patch
+Godot configuration text directly.
 
 Kirie enforces Vite as the web toolchain. Users should not hand-write a fixed
 development URL. The CLI should let Vite handle port conflicts, then pass the
@@ -211,7 +230,46 @@ User-supplied `web.vite` may extend Vite for plugins, aliases, defines, CSS,
 JSON, extra assets, proxying, headers, HMR details, Rollup options, and
 dependency optimization. It must not override Kirie-owned invariants such as
 `root`, `base`, `server.host`, `server.port`, `server.open`, or
-`build.outDir`.
+`build.outDir`. Explicit command-line flags may override runtime server values
+for a single invocation.
+
+Kirie command-line flags are Kirie API, not an implicit promise to support the
+entire Vite CLI surface. The planned `kirie dev` flags are:
+
+```text
+--config <path>       Kirie config file path, not a Vite config path.
+--project <dir>       Godot project directory, defaulting to the current project.
+--godot <path>        Godot executable override.
+--host <host>         Vite dev server host override.
+--port <number>       Vite dev server port override.
+--strict-port         Fail if the requested Vite port is unavailable.
+--mode <mode>         Vite mode.
+--force               Force Vite dependency pre-bundling.
+--log-level <level>   Vite log level: info, warn, error, or silent.
+--clear-screen        Allow Vite to clear the terminal.
+--no-clear-screen     Prevent Vite from clearing the terminal.
+```
+
+Kirie must either parse and map Vite-shaped flags explicitly to Vite's public
+JavaScript API or proxy them to the real Vite CLI. Unknown flags must fail
+instead of being silently ignored. Arguments after `--` on `kirie dev` are
+reserved for Godot:
+
+```sh
+kirie dev --host 0.0.0.0 --port 5173 --mode staging -- --verbose
+```
+
+`--open` is intentionally not part of `kirie dev` because Kirie launches Godot
+instead of opening a browser. `--base`, `--outDir`, and Vite's own `--config`
+are also not part of the `kirie dev` surface because Kirie owns those values
+through `kirie.config.ts` and the app layout.
+
+The current CLI plan does not implement:
+
+- `kirie create`
+- `kirie export`
+- mobile dev targets
+- BrowserWindow APIs
 
 Future mobile development targets should use one platform command with unified
 device selection, for example `kirie dev ios --device <selector>` and
@@ -219,9 +277,7 @@ device selection, for example `kirie dev ios --device <selector>` and
 iOS simulator and iOS device into separate target names. Kirie may still use
 different launch backends internally for simulators, real devices, Android
 emulators, and Android devices. Mobile development targets are explicitly out
-of scope for CLI v1. Future export support should own the production web build
-and Godot export as one workflow, instead of exposing a separate `kirie build`
-command that only wraps Vite.
+of scope for the current CLI plan.
 
 ## Packaged web resource loading
 
@@ -242,8 +298,10 @@ default production entry. When that migration is implemented, the addon export
 plugin should package `res://src-web/dist` for Android and iOS exports, fail
 export when `res://src-web/dist/index.html` is missing, and drop the previous
 `res://web` behavior instead of preserving a compatibility layer. Users should
-continue to use Godot's official export preset flow; Kirie should not create or
-manage export presets.
+continue to use Godot's official export preset flow by default. Kirie may
+diagnose export preset issues, and explicit setup or repair commands may write
+supported preset changes through Godot, but normal run, build, and export
+commands must not silently mutate export presets.
 
 ## Desktop Godot CEF direction
 

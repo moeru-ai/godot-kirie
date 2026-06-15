@@ -2,39 +2,32 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import fakeGodotSource from "../test-fixtures/fake-godot.js?raw";
 import { runDev } from "./dev.ts";
-import { copyBasicKirieCliExample } from "./test-project.ts";
+import {
+  createBasicKirieCliProjectTracker,
+  installKirieConfigFixture,
+  installProjectFixture,
+} from "./test-project.ts";
 
 const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
-const testProjects: string[] = [];
+const projects = createBasicKirieCliProjectTracker("kirie-cli-dev-");
+
+interface GodotInvocation {
+  argv: string[];
+  cwd: string;
+  env: { KIRIE_DEV?: string; KIRIE_WEB_URL?: string };
+}
 
 afterEach(async () => {
-  await Promise.all(
-    testProjects.splice(0).map((project) => fs.rm(project, { force: true, recursive: true })),
-  );
+  await projects.cleanup();
 });
 
 describe("runDev", () => {
   it("starts Vite and launches Godot with the resolved dev URL", async () => {
-    const project = await copyExampleProject();
+    const project = await projects.copy();
 
-    await installFakeGodot(project);
-    await writeConfig(
-      project,
-      `{
-  godot: {
-    command: process.execPath,
-    args: ["fake-godot.js"],
-  },
-  web: {
-    vite: {
-      logLevel: "silent",
-    },
-  },
-}
-`,
-    );
+    await installProjectFixture(project, "fake-godot.js");
+    await installKirieConfigFixture(project, "dev-fake-godot.kirie.config.ts");
 
     await runDev({
       cwd: project,
@@ -59,20 +52,8 @@ describe("runDev", () => {
   });
 
   it("rejects Kirie-owned Vite options", async () => {
-    const project = await copyExampleProject();
-    await writeConfig(
-      project,
-      `{
-  web: {
-    vite: {
-      server: {
-        port: 4321,
-      },
-    },
-  },
-}
-`,
-    );
+    const project = await projects.copy();
+    await installKirieConfigFixture(project, "dev-owned-server-port.kirie.config.ts");
 
     await expect(
       runDev({
@@ -82,19 +63,9 @@ describe("runDev", () => {
   });
 
   it("fails clearly when src-web/index.html is missing", async () => {
-    const project = await copyExampleProject();
+    const project = await projects.copy();
     await fs.rm(path.join(project, "src-web", "index.html"));
-    await writeConfig(
-      project,
-      `{
-  web: {
-    vite: {
-      logLevel: "silent",
-    },
-  },
-}
-`,
-    );
+    await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
 
     await expect(
       runDev({
@@ -103,30 +74,6 @@ describe("runDev", () => {
     ).rejects.toThrow(/Kirie dev requires .*index\.html/);
   });
 });
-
-async function copyExampleProject(): Promise<string> {
-  const project = await copyBasicKirieCliExample("kirie-cli-dev-");
-  testProjects.push(project);
-
-  return project;
-}
-
-async function writeConfig(project: string, content: string): Promise<void> {
-  await fs.writeFile(path.join(project, "kirie.config.ts"), `export default ${content};\n`);
-}
-
-async function installFakeGodot(project: string): Promise<void> {
-  await fs.writeFile(path.join(project, "fake-godot.js"), fakeGodotSource);
-}
-
-interface GodotInvocation {
-  argv: string[];
-  cwd: string;
-  env: {
-    KIRIE_DEV?: string;
-    KIRIE_WEB_URL?: string;
-  };
-}
 
 async function readFakeGodotInvocations(
   project: string,

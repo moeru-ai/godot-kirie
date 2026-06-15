@@ -17,8 +17,9 @@ Do not introduce extra packages, adapters, or broad CLI workflows unless they
 are required to make the current IPC milestone work. The existing
 `@gd-kirie/ipc` package is a thin browser-side transport wrapper; do not expand
 it into an application event or invocation layer unless the user explicitly asks
-for that higher-level work. The planned Kirie CLI v1 exception is limited to
-`kirie dev` for desktop development through Vite and Godot.
+for that higher-level work. The planned Kirie CLI exception is limited to the
+core app workflow described below: development, local build inputs,
+initialization, and diagnostics.
 
 The mobile IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based with
 text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
@@ -142,22 +143,47 @@ The planned Kirie app layout is:
 - `addons/kirie/`
 - optional `addons/godot_cef/`
 
-Kirie CLI v1 should only implement `kirie dev` for desktop Godot development.
-It should be installed through npm, call Vite's JavaScript API directly, let
-Vite resolve port conflicts, launch Godot as a child process, and inject
-`KIRIE_DEV=1` and `KIRIE_WEB_URL=<resolved Vite URL>`.
+Kirie CLI should be installed through npm and expose these planned commands:
 
-Keep `kirie create`, `kirie export`, addon installation, Godot CEF installation,
-export preset management, and mobile dev targets outside the CLI v1 scope.
-These may be implemented later when explicitly planned. Future mobile dev
-targets should use a unified platform and device selector such as
+- `kirie dev`: start the Vite development server, launch Godot as a child
+  process, and inject `KIRIE_DEV=1` and
+  `KIRIE_WEB_URL=<resolved Vite URL>`.
+- `kirie build`: build every configured local input needed by a runnable or
+  exportable Godot project, without exporting platform packages.
+- `kirie build web`: build only the Vite web output for Godot resource loading.
+- `kirie build dotnet`: build only the Godot C#/.NET project when one is
+  configured or discovered.
+- `kirie init`: explicitly initialize a Kirie project and write required
+  project configuration.
+- `kirie doctor`: diagnose project configuration without writing files.
+- `kirie doctor --fix`: explicitly repair supported configuration problems.
+
+Keep `kirie create`, `kirie export`, and mobile dev targets outside the current
+CLI scope. These may be implemented later when explicitly planned. Future
+mobile dev targets should use a unified platform and device selector such as
 `kirie dev ios --device <selector>` or
 `kirie dev android --device <selector>`; do not expose simulator and real device
 as separate user-facing target names.
 
 Kirie enforces Vite for user web source. Advanced Vite options belong in
 `kirie.config.ts` under `web.vite`, but Kirie owns `root`, `base`,
-`server.host`, `server.port`, `server.open`, and `build.outDir`.
+`server.host`, `server.port`, `server.open`, and `build.outDir`. Explicit CLI
+flags may override runtime server values for a single command invocation.
+Planned `kirie dev` flags include `--config <path>` for the Kirie config,
+`--project <dir>` for the Godot project, `--godot <path>` for a Godot executable
+override, and Vite-shaped flags such as `--host <host>`, `--port <number>`,
+`--strict-port`, `--mode <mode>`, `--force`, `--log-level <level>`,
+`--clear-screen`, and `--no-clear-screen`. Kirie must either parse and map
+Vite-shaped flags explicitly to Vite's public JavaScript API or proxy them to
+the real Vite CLI; unknown flags must not be silently ignored. Arguments after
+`--` on `kirie dev` belong to Godot.
+
+Only explicit setup and repair commands may write Godot configuration.
+`kirie init` and `kirie doctor --fix` may modify `project.godot` or
+`export_presets.cfg`, but those writes must go through Godot itself, for
+example a headless Godot helper using `ProjectSettings` or `ConfigFile`. Runtime
+commands such as `kirie dev`, `kirie build`, and future `kirie export` should
+fail on wrong configuration and point users to `kirie doctor`.
 
 Kirie user projects should not contain Capacitor-style `ios/` or `android/`
 native project directories. Native features belong in Godot plugins.
@@ -191,6 +217,10 @@ For the current milestone, iOS should be owned by the standard addon tree:
 
 - Keep changes aligned with the current milestone.
 - When a same-session temporary decision is replaced, converge on the latest decision directly; do not add compatibility unless explicitly requested.
+- Do not add regression tests solely to prevent an implementation pattern that
+  is already known to be invalid or contrary to the chosen API. Remove or
+  correct the invalid usage instead; keep tests focused on supported behavior
+  and realistic regressions.
 - Use English only for agent-facing communication, project-maintenance notes,
   AGENTS updates, and project documentation unless the user explicitly requests
   a non-English artifact.

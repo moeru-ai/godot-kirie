@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createServer, type InlineConfig, mergeConfig, type ViteDevServer } from "vite";
+import { build, createServer, type InlineConfig, mergeConfig, type ViteDevServer } from "vite";
 
 import type { ResolvedKirieConfig } from "./config.ts";
 
@@ -14,7 +14,7 @@ export interface StartedViteServer {
 }
 
 export async function startViteDevServer(config: ResolvedKirieConfig): Promise<StartedViteServer> {
-  assertWebEntryExists(config.web.root);
+  assertWebEntryExists(config.web.root, "Kirie dev");
 
   const server = await createServer(createViteConfig(config));
 
@@ -38,6 +38,12 @@ export async function startViteDevServer(config: ResolvedKirieConfig): Promise<S
   };
 }
 
+export async function buildViteWeb(config: ResolvedKirieConfig): Promise<void> {
+  assertWebEntryExists(config.web.root, "Kirie build web");
+
+  await build(createViteConfig(config));
+}
+
 export function createViteConfig(config: ResolvedKirieConfig): InlineConfig {
   assertNoKirieOwnedViteOptions(config.web.vite as Record<string, unknown>);
 
@@ -57,14 +63,14 @@ export function createViteConfig(config: ResolvedKirieConfig): InlineConfig {
   }) as InlineConfig;
 }
 
-function assertWebEntryExists(webRoot: string): void {
+function assertWebEntryExists(webRoot: string, commandName: string): void {
   const indexPath = path.join(webRoot, "index.html");
 
   if (fs.existsSync(indexPath)) {
     return;
   }
 
-  throw new Error(`Kirie dev requires ${indexPath}.`);
+  throw new Error(`${commandName} requires ${indexPath}.`);
 }
 
 function assertNoKirieOwnedViteOptions(viteConfig: Record<string, unknown>): void {
