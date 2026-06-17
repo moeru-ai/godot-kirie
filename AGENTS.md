@@ -1,25 +1,24 @@
 # AGENTS
 
-This repository is an experimental but intentionally reusable Godot plugin
-project.
+This repository is an experimental Godot application framework built around an
+intentionally reusable low-level WebView plugin and IPC core.
 
 ## Current Scope
 
-The current milestone is limited to:
+The low-level plugin and IPC milestone covers:
 
 1. create a platform WebView
 2. establish bidirectional IPC between Godot and the WebView
 3. support packaged `res://` web content loading enough for bridge tests
 4. add desktop Godot CEF compatibility, starting with macOS
-5. stabilize the Kirie plugin shape before adding larger tooling layers
+5. stabilize the Kirie plugin shape used by higher-level framework tooling
 
-Do not introduce extra packages, adapters, or broad CLI workflows unless they
-are required to make the current IPC milestone work. The existing
-`@gd-kirie/ipc` package is a thin browser-side transport wrapper; do not expand
-it into an application event or invocation layer unless the user explicitly asks
-for that higher-level work. The planned Kirie CLI exception is limited to the
-core app workflow described below: development, local build inputs,
-initialization, and diagnostics.
+Application-framework behavior belongs above the low-level plugin and IPC core.
+The existing `@gd-kirie/ipc` package is a thin browser-side transport wrapper;
+do not expand it into an application event or invocation layer unless the user
+explicitly asks for that higher-level work. The planned Kirie CLI owns the app
+workflow described below: development sessions, local build inputs, export and
+run semantics, initialization, and diagnostics.
 
 The mobile IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based with
 text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
@@ -143,7 +142,7 @@ The planned Kirie app layout is:
 - `addons/kirie/`
 - optional `addons/godot_cef/`
 
-Kirie CLI should be installed through npm and expose these planned commands:
+Kirie CLI should be installed through npm. The current foundation commands are:
 
 - `kirie dev`: start the Vite development server, launch Godot as a child
   process, and inject `KIRIE_DEV=1` and
@@ -158,9 +157,22 @@ Kirie CLI should be installed through npm and expose these planned commands:
 - `kirie doctor`: diagnose project configuration without writing files.
 - `kirie doctor --fix`: explicitly repair supported configuration problems.
 
-Keep `kirie create`, `kirie export`, and mobile dev targets outside the current
-CLI scope. These may be implemented later when explicitly planned. Future
-mobile dev targets should use a unified platform and device selector such as
+The broader app workflow should keep these command semantics:
+
+- `kirie build [--mode <mode>]`: prepare local inputs and finish. The default
+  mode is `production`; `development` and custom modes are planned but not
+  implemented yet.
+- `kirie export [--mode <mode>]`: build first, then produce a platform package.
+- `kirie run [--mode <mode>]`: build first, then directly run the scene or
+  deploy built outputs by default.
+- `kirie run --export`: explicitly export before running the exported package.
+- `kirie dev`: start the Vite hot-reload server and run a development session;
+  do not run the production web build. Desktop development can run without
+  exporting, while mobile or deploy-style development may use a development
+  export path. C#/.NET may be built when configured.
+
+Keep `kirie create` outside the current CLI scope. Future mobile dev targets
+should use a unified platform and device selector such as
 `kirie dev ios --device <selector>` or
 `kirie dev android --device <selector>`; do not expose simulator and real device
 as separate user-facing target names.

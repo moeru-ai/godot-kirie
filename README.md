@@ -1,7 +1,7 @@
 # godot-kirie
 
-Kirie is an experimental Godot plugin project for embedding platform WebViews and
-building IPC between Godot and web content.
+Kirie is an experimental Godot application framework built around an embeddable
+low-level Godot WebView plugin and IPC core.
 
 ## Installation
 
@@ -70,20 +70,21 @@ example, and regression-test areas:
 
 Primary references live in [docs/references.md](docs/references.md).
 
-The first milestone is limited to:
+The low-level plugin and IPC milestone covers:
 
 1. Create a WebView on mobile and desktop platforms.
 2. Establish bidirectional IPC between Godot and the WebView.
 3. Support packaged `res://` web content loading for bridge tests.
 4. Add desktop Godot CEF compatibility, starting with macOS.
-5. Stabilize the minimum Kirie plugin shape before adding adapters and tooling.
+5. Stabilize the Kirie plugin shape used by higher-level framework tooling.
 
-At this stage, Kirie is intended to stay a low-level WebView and IPC bridge. A
-small `@gd-kirie/ipc` browser package exists as a convenience transport wrapper.
-Eventa adapters live above that bridge: `@gd-kirie/ipc-eventa` for browser
-pages, and `GdKirie.EventaAdapter` for .NET 10 C# projects. The C# surface is a
-thin `KirieClient` wrapper over the same platform singleton used by GDScript,
-with C# events for the current Kirie signals.
+The plugin and IPC layers are intended to stay low-level WebView and IPC
+surfaces. A small `@gd-kirie/ipc` browser package exists as a convenience
+transport wrapper. Eventa adapters live above that bridge:
+`@gd-kirie/ipc-eventa` for browser pages, and `GdKirie.EventaAdapter` for
+.NET 10 C# projects. The C# surface is a thin `KirieClient` wrapper over the
+same platform singleton used by GDScript, with C# events for the current Kirie
+signals.
 
 The mobile IPC experiment uses explicit text, binary, and data lanes over CBOR
 packets. The browser package encodes and decodes those packets with `cborg`.

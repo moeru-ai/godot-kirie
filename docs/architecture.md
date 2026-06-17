@@ -1,8 +1,11 @@
 # Architecture Notes
 
-Current repository scope is intentionally constrained.
+Kirie is evolving into an application framework with an embeddable low-level
+Godot plugin and IPC core. The repository scope is still intentionally
+constrained, but the constraint now applies to where higher-level behavior
+belongs, not to limiting the whole project to a minimum plugin shape.
 
-We are standardizing only the minimum plugin shape needed to support:
+The low-level plugin and IPC core provide:
 
 - a Godot-facing Kirie service
 - a scene-friendly KirieNode node
@@ -12,8 +15,9 @@ We are standardizing only the minimum plugin shape needed to support:
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
 
-Anything beyond that, such as broad application frameworks, is deferred until
-the IPC model is proven. The current `@gd-kirie/ipc` package is intentionally
+Application-framework behavior such as CLI workflows, BrowserWindow-style
+composition, routing, export orchestration, and mobile development sessions
+belongs above that core. The current `@gd-kirie/ipc` package is intentionally
 only a browser-side transport wrapper on top of the raw native bridge. Eventa
 adapters live above Kirie and use that low-level text transport.
 
@@ -154,18 +158,70 @@ Kirie does not own native platform project directories. Do not introduce
 Capacitor-style `ios/` or `android/` project trees into Kirie user projects.
 Native capabilities should be provided by Godot plugins.
 
-The planned Kirie CLI surface is intentionally small but covers the full local
-app workflow:
+The planned Kirie CLI surface is intentionally small. The current implemented
+subset covers desktop development and local build inputs:
 
 ```sh
 kirie dev
 kirie build
 kirie build web
 kirie build dotnet
+```
+
+The broader application workflow should keep these command semantics. The
+`--mode <mode>` option is planned; the current implementation does not support
+it yet:
+
+```sh
+kirie build [--mode <mode>]
+kirie export [--mode <mode>]
+kirie run [--mode <mode>] [--export]
+kirie dev
 kirie init
 kirie doctor
 kirie doctor --fix
 ```
+
+```mermaid
+flowchart TD
+    Command["User command"] --> Which{"Which command?"}
+
+    Which --> Build["kirie build\n--mode <mode>\ndefault: production"]
+    Build --> BuildInputs["Prepare local inputs"]
+    BuildInputs --> BuildDone["Finish"]
+
+    Which --> Export["kirie export\n--mode <mode>\ndefault: production"]
+    Export --> ExportBuild["Prepare local inputs"]
+    ExportBuild --> Package["Produce platform package"]
+    Package --> ExportDone["Finish"]
+
+    Which --> Run["kirie run\n--mode <mode>\ndefault: production"]
+    Run --> RunBuild["Prepare local inputs"]
+    RunBuild --> RunExport{"--export?"}
+    RunExport -->|yes| RunPackage["Produce platform package"]
+    RunPackage --> RunPackageTarget["Run exported package"]
+    RunExport -->|no| RunDirect["Direct run / deploy built outputs"]
+
+    Which --> Dev["kirie dev"]
+    Dev --> DevServer["Start Vite hot-reload server"]
+    DevServer --> DevDotnet["Build C#/.NET if configured"]
+    DevDotnet --> DevTarget{"Target requires deploy package?"}
+    DevTarget -->|desktop no| DevDesktop["Run Godot project directly"]
+    DevTarget -->|mobile/deploy yes| DevPackage["Produce development package"]
+    DevPackage --> DevDeploy["Install / launch / attach logs"]
+```
+
+In this model, `build` prepares local inputs, `export` packages those inputs,
+`run` runs or deploys the built inputs without exporting by default, and `dev`
+runs a hot-reload development session. `run --export` is the explicit form for
+exporting before running; users may also run `kirie export && kirie run` when
+they want the steps separated. `build`, `export`, and `run` default to
+`production` mode and should accept `--mode <mode>` for `development`,
+`staging`, or other user-defined modes once that option is implemented. `dev`
+should never run the production web build because it owns the Vite hot-reload
+server; desktop development can run without exporting, while mobile or
+deploy-style development may use a development export path. `dev` may still
+build the Godot C#/.NET project when one is configured.
 
 `kirie dev` starts a Vite development server, reads the actual resolved URL
 after Vite listens, launches Godot as a child process, and injects:
@@ -197,10 +253,13 @@ Godot C#/.NET project when one is configured or discovered. If no C# project is
 configured or discovered, the aggregate `kirie build` command may skip the
 `.NET` step; if a C# project is present, C# build failure must fail the command.
 
-`kirie export` remains future work. When it exists, it should mean a complete
-platform export workflow: build local inputs first, then call Godot's export
-flow for the selected platform or preset. It should not silently create or
-repair project configuration as part of export.
+`kirie export` and `kirie run` remain future work. `kirie export` should mean a
+complete platform export workflow: build local inputs first, then call Godot's
+export flow for the selected platform or preset. `kirie run` should build local
+inputs first, then directly run the scene or deploy the built outputs by
+default. It should only run an export workflow when the user passes
+`--export`. Neither command should silently create or repair project
+configuration.
 
 `kirie init` and `kirie doctor --fix` are the explicit commands allowed to
 write configuration. `kirie init` initializes Kirie-owned files and may register
