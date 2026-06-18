@@ -178,7 +178,6 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
     return;
   }
 
-  const apkPath = process.env.APK_PATH || `${integrationDistDir}/android_debug.apk`;
   const logFile = prepareLogFile(testName);
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
 
@@ -190,8 +189,6 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
       "android",
       "--project",
       path.resolve(rootDir, integrationProjectDir),
-      "--apk",
-      path.resolve(rootDir, apkPath),
       "--force-stop",
       "--clear-data",
       "--clear-logcat",

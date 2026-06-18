@@ -76,6 +76,21 @@ mise x -- godot --path ./examples/basic-kirie-cli
 
 ## Running an exported mobile app
 
+Manual CLI runs keep export and run as separate steps. Export the Android APK:
+
+```bash
+pnpm kirie export android
+```
+
+Then install and launch that exported APK:
+
+```bash
+pnpm kirie run android
+```
+
+`kirie run android` is expected to install the default Android export output
+before launching the Godot activity.
+
 The mobile example runner builds `src-web/dist` through `kirie build` before
 running the existing Godot export, install, and launch steps.
 

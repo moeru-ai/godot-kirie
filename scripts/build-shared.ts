@@ -12,7 +12,6 @@ export const integrationDistDir = "dist/integration";
 export const godotSourceRoot = path.join(rootDir, "godot");
 
 interface AndroidDebugExportOptions {
-  apkPath: string;
   projectDir: string;
   userArgs?: string[];
 }
@@ -36,14 +35,7 @@ export function kirieCliArgs(args: string[]): string[] {
 }
 
 export async function exportAndroidDebug(options: AndroidDebugExportOptions): Promise<void> {
-  const args = [
-    "export",
-    "android",
-    "--project",
-    path.resolve(rootDir, options.projectDir),
-    "--output",
-    path.resolve(rootDir, options.apkPath),
-  ];
+  const args = ["export", "android", "--project", path.resolve(rootDir, options.projectDir)];
 
   if (options.userArgs && options.userArgs.length > 0) {
     args.push("--", ...options.userArgs);

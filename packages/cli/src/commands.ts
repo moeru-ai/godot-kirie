@@ -20,7 +20,6 @@ const exportArgs = {
 } as const;
 
 const androidRunArgs = {
-  apk: { description: "Android APK path to install before launch.", type: "string" },
   "clear-data": { description: "Clear Android app data before launch.", type: "boolean" },
   "clear-logcat": { description: "Clear Android logcat before launch.", type: "boolean" },
   device: { description: "Target device or simulator selector.", type: "string" },
@@ -134,7 +133,6 @@ export const mainCommand: CommandDef = defineCommand({
           run: ({ args }: { args: RunCommandArgs }) =>
             runAndroid({
               attachLogcat: !args["no-logcat"],
-              apkPath: args.apk,
               clearData: args["clear-data"],
               clearLogcat: args["clear-logcat"],
               cwd: args.project,

@@ -3,6 +3,7 @@ import { readExportPresetOption } from "@gd-kirie/build";
 import { execa } from "execa";
 
 import { loadKirieConfig } from "./config.ts";
+import { resolveExportOutputPath } from "./export.ts";
 
 interface LaunchOptions {
   [key: string]: string;
@@ -10,7 +11,6 @@ interface LaunchOptions {
 
 interface RunAndroidOptions {
   attachLogcat?: boolean;
-  apkPath?: string;
   clearData?: boolean;
   clearLogcat?: boolean;
   cwd?: string;
@@ -44,12 +44,24 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
       projectDir: config.godot.project,
     });
 
-  if (options.apkPath) {
-    await execa("adb", [...adbArgs, "install", "-r", path.resolve(config.cwd, options.apkPath)], {
+  await execa(
+    "adb",
+    [
+      ...adbArgs,
+      "install",
+      "-r",
+      resolveExportOutputPath({
+        configCwd: config.cwd,
+        mode: "debug",
+        platform: "android",
+        preset: options.preset ?? "Android",
+      }),
+    ],
+    {
       cwd: config.cwd,
       stdio: "inherit",
-    });
-  }
+    },
+  );
 
   if (options.clearLogcat) {
     await execa("adb", [...adbArgs, "logcat", "-c"], {
@@ -105,6 +117,7 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   await attachAndroidLogcat({
     adbArgs,
     cwd: config.cwd,
+    packageName,
     pid,
   });
 }
@@ -164,6 +177,7 @@ function androidLaunchOptionArgs(launchOptions: LaunchOptions | undefined): stri
 async function attachAndroidLogcat(options: {
   adbArgs: string[];
   cwd: string;
+  packageName: string;
   pid: string;
 }): Promise<void> {
   const args = [...options.adbArgs, "logcat", "-v", "time", `--pid=${options.pid}`];
@@ -182,7 +196,46 @@ async function attachAndroidLogcat(options: {
     process.stdout.write(chunk);
   });
 
+  let cleanupPromise: Promise<void> | undefined;
+  let interruptedSignal: NodeJS.Signals | undefined;
+  const cleanupAndroidRun = (signal: NodeJS.Signals): Promise<void> => {
+    interruptedSignal = signal;
+    logcat.kill("SIGTERM");
+
+    cleanupPromise ??= execa(
+      "adb",
+      [...options.adbArgs, "shell", "am", "force-stop", options.packageName],
+      {
+        cwd: options.cwd,
+        reject: false,
+        stderr: "inherit",
+        stdout: "ignore",
+      },
+    ).then(() => {});
+
+    return cleanupPromise;
+  };
+  const handleInterrupt = (signal: NodeJS.Signals) => {
+    cleanupAndroidRun(signal).then(() => {
+      process.exitCode = signal === "SIGINT" ? 130 : 143;
+    });
+  };
+
+  process.once("SIGINT", handleInterrupt);
+  process.once("SIGTERM", handleInterrupt);
+
   const result = await logcat;
+  process.off("SIGINT", handleInterrupt);
+  process.off("SIGTERM", handleInterrupt);
+
+  if (cleanupPromise) {
+    await cleanupPromise;
+  }
+  if (interruptedSignal) {
+    process.exitCode = interruptedSignal === "SIGINT" ? 130 : 143;
+    return;
+  }
+
   if (result.failed && result.signal !== "SIGTERM" && result.exitCode !== 143) {
     throw new Error(
       result.signal

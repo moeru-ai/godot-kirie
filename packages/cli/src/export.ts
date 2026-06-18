@@ -29,7 +29,7 @@ export async function runExport(options: ExportOptions = {}): Promise<void> {
   });
   const preset = options.preset ?? resolvePlatformPreset(options.platform);
   const mode = resolveExportMode(options);
-  const outputPath = resolveOutputPath({
+  const outputPath = resolveExportOutputPath({
     configCwd: config.cwd,
     mode,
     output: options.output,
@@ -72,7 +72,7 @@ function resolveExportMode(options: ExportOptions): ExportMode {
   return "debug";
 }
 
-function resolveOutputPath(options: {
+export function resolveExportOutputPath(options: {
   configCwd: string;
   mode: ExportMode;
   output?: string;

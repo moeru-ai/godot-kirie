@@ -1,5 +1,4 @@
 import path from "node:path";
-import process from "node:process";
 import {
   buildWebPackage,
   exportIosSimulatorApp,
@@ -16,16 +15,13 @@ export async function buildIntegrationWeb(): Promise<void> {
 
 // mise task entrypoint.
 export async function buildIntegrationAndroid(): Promise<void> {
-  const apkPath = process.env.APK_PATH || `${integrationDistDir}/android_debug.apk`;
   await runKirieCli([
     "export",
     "android",
     "--project",
     path.resolve(rootDir, integrationProjectDir),
-    "--output",
-    path.resolve(rootDir, apkPath),
   ]);
-  console.log(`Exported ${apkPath}`);
+  console.log("Exported Android integration APK");
 }
 
 // mise task entrypoint.

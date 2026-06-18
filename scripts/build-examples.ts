@@ -12,23 +12,13 @@ function exampleDistDir(exampleName: string): string {
   return `${distDir}/examples/${exampleName}`;
 }
 
-async function runExampleAndroid(exampleName: string, projectDir: string): Promise<void> {
-  const apkPath = `${exampleDistDir(exampleName)}/android_debug.apk`;
-
+async function runExampleAndroid(projectDir: string): Promise<void> {
   await buildAndroidAar();
   await exportAndroidDebug({
-    apkPath,
     projectDir,
     userArgs: ["--kirie-android-aar=debug"],
   });
-  await runKirieCli([
-    "run",
-    "android",
-    "--project",
-    path.resolve(rootDir, projectDir),
-    "--apk",
-    path.resolve(rootDir, apkPath),
-  ]);
+  await runKirieCli(["run", "android", "--project", path.resolve(rootDir, projectDir)]);
 }
 
 async function runExampleIos(exampleName: string, projectDir: string): Promise<void> {
@@ -57,7 +47,7 @@ export async function runExample(platformArg?: string, exampleName?: string): Pr
 
   switch (platform) {
     case "android":
-      await runExampleAndroid(exampleName, projectDir);
+      await runExampleAndroid(projectDir);
       return;
     case "ios":
       await runExampleIos(exampleName, projectDir);
