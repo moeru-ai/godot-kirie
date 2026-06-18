@@ -12,7 +12,7 @@ It is intentionally small and focuses on one path:
 The example now supports two ways to exercise that path:
 
 1. a manual remote page served by the Vite dev server
-2. the local probe page loaded from the built `res://web/dist/index.html`
+2. the local probe page loaded from the built `res://src-web/dist/index.html`
 
 ## Layout
 
@@ -52,7 +52,7 @@ mise x -- corepack pnpm -F @gd-kirie/basic-ipc-web run build
 Open the Godot project and press `Run Probe`.
 
 This creates a WebView if needed, loads
-`res://web/dist/index.html?mode=probe`, and performs a minimal round-trip:
+`res://src-web/dist/?mode=probe`, and performs a minimal round-trip:
 
 1. probe sends `web_ready`
 2. Godot replies with `godot_ready`

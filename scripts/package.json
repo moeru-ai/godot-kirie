@@ -1,0 +1,9 @@
+{
+  "name": "@gd-kirie/repo-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@gd-kirie/cli": "workspace:*",
+    "execa": "catalog:"
+  }
+}

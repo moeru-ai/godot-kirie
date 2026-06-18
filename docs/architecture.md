@@ -153,6 +153,8 @@ Directory responsibilities are:
   CEF remains installed as `addons/godot_cef`.
 - `kirie.config.ts`: Kirie CLI configuration for coordinating Godot, Vite, and
   local build inputs.
+- `@gd-kirie/build`: publishable JavaScript API for build and export automation
+  that can be used without the Kirie CLI.
 
 Kirie does not own native platform project directories. Do not introduce
 Capacitor-style `ios/` or `android/` project trees into Kirie user projects.
@@ -222,6 +224,10 @@ should never run the production web build because it owns the Vite hot-reload
 server; desktop development can run without exporting, while mobile or
 deploy-style development may use a development export path. `dev` may still
 build the Godot C#/.NET project when one is configured.
+
+`@gd-kirie/build` owns explicit-input programmatic build and export primitives.
+Development sessions, mobile device selection, install, launch, launch-option
+injection, log streaming, and watch policy stay in `@gd-kirie/cli`.
 
 `kirie dev` starts a Vite development server, reads the actual resolved URL
 after Vite listens, launches Godot as a child process, and injects:
@@ -323,20 +329,17 @@ instead of opening a browser. `--base`, `--outDir`, and Vite's own `--config`
 are also not part of the `kirie dev` surface because Kirie owns those values
 through `kirie.config.ts` and the app layout.
 
-The current CLI plan does not implement:
+The current CLI plan keeps these outside the application workflow:
 
 - `kirie create`
-- `kirie export`
-- mobile dev targets
 - BrowserWindow APIs
 
-Future mobile development targets should use one platform command with unified
-device selection, for example `kirie dev ios --device <selector>` and
+Mobile development targets should use one platform command with unified device
+selection, for example `kirie dev ios --device <selector>` and
 `kirie dev android --device <selector>`. The user-facing API should not split
 iOS simulator and iOS device into separate target names. Kirie may still use
 different launch backends internally for simulators, real devices, Android
-emulators, and Android devices. Mobile development targets are explicitly out
-of scope for the current CLI plan.
+emulators, and Android devices.
 
 ## Packaged web resource loading
 

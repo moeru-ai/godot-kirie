@@ -52,16 +52,16 @@ tests/integration/
       ipc_round_trip_probe.gd
       webview_lifecycle_probe.gd
       res_asset_loading_probe.gd
-  web-src/
+  src-web/
     index.html
-    src/probe.ts
-  web/
-    index.html
-    assets/
+    src/main.ts
+    dist/
+      index.html
+      assets/
 ```
 
-`web-src` is a minimal Vite fixture package, not an example application.
-`web` is generated output and should not be hand-edited.
+`src-web` is a minimal Vite fixture package, not an example application.
+`src-web/dist` is generated output and should not be hand-edited.
 
 ## Runner Contract
 
@@ -129,11 +129,11 @@ be provided by the test case itself.
 
 ## Web Fixture
 
-The fixture is built from `web-src` with Vite before integration app export.
+The fixture is built from `src-web` with Vite before integration app export.
 It imports `@gd-kirie/ipc`, registers text, binary, and data lane listeners, and
 then sends a data-lane `web_ready` probe message. Tests load it through
-`res://web/?probe=...` so the native resource URL resolver serves the generated
-`web/index.html`.
+`res://src-web/dist/?probe=...` so the native resource URL resolver
+serves the generated `src-web/dist/index.html`.
 
 ## Test Coverage Shape
 
@@ -166,13 +166,8 @@ Build the test APK:
 mise run build:integration-android
 ```
 
-This task builds the Vite web fixture before exporting the Godot project.
-
-Install it once:
-
-```bash
-adb install -r dist/integration/android_debug.apk
-```
+This task uses the Kirie CLI export path, which builds the configured Vite web
+fixture before exporting the Godot project.
 
 Run one test:
 
@@ -182,10 +177,11 @@ mise run test:integration-android -- ipc_round_trip_probe
 
 The test task:
 
-- clears logcat
-- force-stops the package
-- clears app data
-- starts the exported app with `--es kirie_test <test_name>`
+- runs `kirie run android` through the repo scripts package
+- asks the CLI to clear logcat and attach logs for the launched app PID
+- asks the CLI to force-stop the package and clear app data
+- asks the CLI to install and start the exported app
+- passes the test name as the `kirie_test` launch option
 - waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`
 
 The Android package defaults to:
@@ -243,13 +239,15 @@ Build the simulator app:
 mise run build:integration-ios
 ```
 
-This task also builds the Vite web fixture before exporting the Godot project.
+This task uses the Kirie CLI export path, which builds the configured Vite web
+fixture before exporting the Godot project.
 
 The iOS integration runner is currently simulator-specific because it
-uses `simctl` to install, launch with `--kirie-test=...`, and stream logs for
-the pass/fail marker. The example runner currently shares this simulator export
-path, but that is a tooling shortcut rather than a desired examples API shape.
-Examples should not be treated as inherently simulator-only.
+uses the Kirie CLI run helpers to install and launch with the `kirie_test`
+launch option, then streams logs for the pass/fail marker. The example runner
+currently shares this simulator export path, but that is a tooling shortcut
+rather than a desired examples API shape. Examples should not be treated as
+inherently simulator-only.
 
 Install and run tests with the iOS test task:
 

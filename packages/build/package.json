@@ -1,14 +1,11 @@
 {
-  "name": "@gd-kirie/cli",
+  "name": "@gd-kirie/build",
   "version": "0.1.1",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/moeru-ai/godot-kirie.git",
-    "directory": "packages/cli"
-  },
-  "bin": {
-    "kirie": "./dist/cli.js"
+    "directory": "packages/build"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,12 +23,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@gd-kirie/build": "workspace:*",
-    "citty": "catalog:",
     "execa": "catalog:",
+    "ini": "catalog:",
     "vite": "catalog:"
   },
   "devDependencies": {
+    "@types/ini": "catalog:",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",

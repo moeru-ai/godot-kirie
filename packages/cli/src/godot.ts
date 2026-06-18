@@ -1,16 +1,14 @@
+import { prepareGodotProject as prepareGodotProjectWithBuildApi } from "@gd-kirie/build";
 import { execa } from "execa";
 
 import type { ResolvedKirieConfig } from "./config.ts";
 
 export async function prepareGodotProject(config: ResolvedKirieConfig): Promise<void> {
-  await execa(
-    config.godot.command,
-    [...config.godot.args, "--headless", "--path", config.godot.project, "--import"],
-    {
-      cwd: config.godot.project,
-      stdio: "inherit",
-    },
-  );
+  await prepareGodotProjectWithBuildApi({
+    godotArgs: config.godot.args,
+    godotCommand: config.godot.command,
+    projectDir: config.godot.project,
+  });
 }
 
 export function launchGodot(config: ResolvedKirieConfig, webUrl: string): ReturnType<typeof execa> {

@@ -1,7 +1,7 @@
 extends RefCounted
 
 const PROBE_NAME := "res_asset_loading"
-const PROBE_URL := "res://web/?probe=res_asset_loading"
+const PROBE_URL := "res://src-web/dist/?probe=res_asset_loading"
 const TestProbeScript = preload("res://scripts/test_probe.gd")
 
 

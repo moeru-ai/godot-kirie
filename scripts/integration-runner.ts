@@ -3,14 +3,19 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { execa } from "execa";
-import { integrationProjectDir, readExportPresetOption, rootDir } from "./build-shared.ts";
+import {
+  integrationDistDir,
+  integrationProjectDir,
+  kirieCliArgs,
+  rootDir,
+  runKirieCli,
+  scriptsDir,
+} from "./build-shared.ts";
 
 interface MarkerResult {
   line?: string;
   status: "pass" | "fail" | "timeout" | "stopped";
 }
-
-const DEFAULT_ANDROID_LOG_REGEX = "KIRIE_TEST_|\\[Kirie\\]|SCRIPT ERROR|ERROR:|WARNING:";
 
 function resolveTestName(
   platform: "android" | "ios" | "desktop",
@@ -61,6 +66,16 @@ async function openLogStream(logFile: string): Promise<fs.WriteStream> {
   return logStream;
 }
 
+async function readBundleId(appPath: string): Promise<string> {
+  const result = await execa("/usr/libexec/PlistBuddy", [
+    "-c",
+    "Print :CFBundleIdentifier",
+    path.join(appPath, "Info.plist"),
+  ]);
+
+  return result.stdout.trim();
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -102,81 +117,53 @@ async function waitForMarker(options: {
   return { status: "timeout" };
 }
 
-function printAndroidResult(result: MarkerResult, logFile: string, testName: string): void {
+async function printIntegrationResult(
+  result: MarkerResult,
+  logFile: string,
+  testName: string,
+  options: {
+    earlyExitSubject?: string;
+    logOnFail?: boolean;
+    logTailLines?: number;
+    settleMilliseconds?: number;
+  } = {},
+): Promise<void> {
   if (result.status === "pass") {
     console.log(result.line);
     return;
   }
 
-  if (result.status === "fail") {
+  const logOnFail = options.logOnFail ?? true;
+  if (result.status === "fail" && !logOnFail) {
     console.error(result.line);
-  } else if (result.status === "stopped") {
+    process.exitCode = 1;
+    return;
+  }
+
+  if (result.status === "stopped") {
     console.error(result.line);
-    console.error(readLogFile(logFile).split(/\r?\n/).slice(-120).join("\n"));
-  } else {
+  }
+
+  if (result.status === "timeout") {
     console.error(`Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`);
-    console.error(readLogFile(logFile).split(/\r?\n/).slice(-120).join("\n"));
-  }
-
-  process.exitCode = 1;
-}
-
-async function printIosResult(
-  result: MarkerResult,
-  logFile: string,
-  testName: string,
-): Promise<void> {
-  if (result.status === "pass") {
-    console.log(result.line);
-    return;
-  }
-
-  if (result.status === "stopped") {
-    console.error(result.line);
-  }
-
-  if (result.status === "timeout" || result.status === "stopped") {
+  } else if (result.status === "stopped" && options.earlyExitSubject) {
     console.error(
-      `Timed out (or app exited early) waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
+      `Timed out (or ${options.earlyExitSubject} exited early) waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
     );
   }
 
-  await sleep(300);
-  console.error(`=== Full log: ${logFile} ===`);
-  console.error(readLogFile(logFile));
-  console.error("=== End of log ===");
-
-  if (result.status === "fail") {
-    console.error(result.line);
+  if (options.settleMilliseconds) {
+    await sleep(options.settleMilliseconds);
   }
 
-  process.exitCode = 1;
-}
-
-async function printDesktopResult(
-  result: MarkerResult,
-  logFile: string,
-  testName: string,
-): Promise<void> {
-  if (result.status === "pass") {
-    console.log(result.line);
-    return;
+  const log = readLogFile(logFile);
+  if (options.logTailLines) {
+    console.error(log.split(/\r?\n/).slice(-options.logTailLines).join("\n"));
+  } else {
+    console.error(`=== Full log: ${logFile} ===`);
+    console.error(log);
+    console.error("=== End of log ===");
   }
-
-  if (result.status === "stopped") {
-    console.error(result.line);
-  }
-
-  if (result.status === "timeout" || result.status === "stopped") {
-    console.error(
-      `Timed out (or Godot exited early) waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
-    );
-  }
-
-  await sleep(300);
-  console.error(`=== Full log: ${logFile} ===`);
-  console.error(readLogFile(logFile));
-  console.error("=== End of log ===");
 
   if (result.status === "fail") {
     console.error(result.line);
@@ -191,92 +178,70 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
     return;
   }
 
-  const packageName = readExportPresetOption(
-    integrationProjectDir,
-    "Android",
-    "package/unique_name",
-  );
+  const apkPath = process.env.APK_PATH || `${integrationDistDir}/android_debug.apk`;
   const logFile = prepareLogFile(testName);
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
-  const logPattern = process.env.ANDROID_LOG_REGEX || DEFAULT_ANDROID_LOG_REGEX;
-
-  await execa("adb", ["logcat", "-c"], { cwd: rootDir, stdio: "inherit" });
-  await execa("adb", ["shell", "am", "force-stop", packageName], {
-    cwd: rootDir,
-    reject: false,
-    stderr: "ignore",
-    stdout: "ignore",
-  });
-  await execa("adb", ["shell", "pm", "clear", packageName], {
-    cwd: rootDir,
-    stderr: "inherit",
-    stdout: "ignore",
-  });
 
   const logStream = await openLogStream(logFile);
-  const logcat = execa("adb", ["logcat", "-v", "time", "-e", logPattern], {
-    cwd: rootDir,
-    reject: false,
-    stderr: "inherit",
-    stdout: "pipe",
-  });
-  if (!logcat.stdout) {
-    throw new Error("adb logcat did not expose stdout");
+  const kirieRun = execa(
+    "corepack",
+    kirieCliArgs([
+      "run",
+      "android",
+      "--project",
+      path.resolve(rootDir, integrationProjectDir),
+      "--apk",
+      path.resolve(rootDir, apkPath),
+      "--force-stop",
+      "--clear-data",
+      "--clear-logcat",
+      "--launch-option",
+      `kirie_test=${testName}`,
+    ]),
+    {
+      cwd: scriptsDir,
+      reject: false,
+      stderr: "inherit",
+      stdout: "pipe",
+    },
+  );
+  if (!kirieRun.stdout) {
+    throw new Error("kirie run android did not expose stdout");
   }
-  logcat.stdout.on("data", (chunk: Buffer | string) => {
+  kirieRun.stdout.on("data", (chunk: Buffer | string) => {
     logStream.write(chunk);
     process.stderr.write(chunk);
   });
+
+  const watchedKirieRun = kirieRun.then(
+    (): MarkerResult =>
+      findMarker({ logFile, testName }) || {
+        line: `kirie run android exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
+        status: "stopped",
+      },
+  );
 
   let result: MarkerResult | undefined;
 
   try {
     console.error(
-      `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; filtered Android log: ${logFile}`,
-    );
-    await execa(
-      "adb",
-      [
-        "shell",
-        "am",
-        "start",
-        "-n",
-        `${packageName}/com.godot.game.GodotAppLauncher`,
-        "--es",
-        "kirie_test",
-        testName,
-      ],
-      { cwd: rootDir, stderr: "inherit", stdout: "ignore" },
+      `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; Android log: ${logFile}`,
     );
     result = await Promise.race([
       waitForMarker({ logFile, testName, timeoutSeconds }),
-      logcat.then(
-        (logcatResult): MarkerResult => ({
-          line: logcatResult.signal
-            ? `adb logcat exited with signal ${logcatResult.signal} before ${testName} finished`
-            : `adb logcat exited with code ${logcatResult.exitCode ?? "unknown"} before ${testName} finished`,
-          status: "stopped",
-        }),
-      ),
+      watchedKirieRun,
     ]);
   } finally {
-    logcat.kill();
-    const logcatResult = await logcat;
-    if (result?.status === "pass" && logcatResult.failed) {
-      if (logcatResult.signal !== "SIGTERM" && logcatResult.exitCode !== 143) {
-        result = {
-          line: logcatResult.signal
-            ? `adb logcat exited with signal ${logcatResult.signal} during cleanup`
-            : `adb logcat exited with code ${logcatResult.exitCode ?? "unknown"} during cleanup`,
-          status: "stopped",
-        };
-      }
-    }
+    kirieRun.kill();
+    await watchedKirieRun;
     logStream.end();
   }
 
   if (result) {
-    printAndroidResult(result, logFile, testName);
+    await printIntegrationResult(result, logFile, testName, {
+      logOnFail: false,
+      logTailLines: 120,
+    });
   }
 }
 
@@ -286,25 +251,14 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     return;
   }
 
-  const bundleId = readExportPresetOption(
-    integrationProjectDir,
-    "iOS",
-    "application/bundle_identifier",
-  );
   const simulatorId = process.env.SIMULATOR_ID || "booted";
+  const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
   const logStreamSettleSeconds = Number(process.env.LOG_STREAM_SETTLE_SECONDS || "1");
   const logFile = prepareLogFile(testName);
   const logPredicate =
     process.env.LOG_PREDICATE ||
     'eventMessage CONTAINS "KIRIE_TEST_" OR eventMessage CONTAINS "[Kirie]" OR eventMessage CONTAINS "Godot" OR eventMessage CONTAINS "SCRIPT ERROR" OR eventMessage CONTAINS "ERROR:" OR eventMessage CONTAINS "WARNING:"';
-
-  await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
-    cwd: rootDir,
-    reject: false,
-    stderr: "ignore",
-    stdout: "ignore",
-  });
 
   const logStream = await openLogStream(logFile);
   const logProcess = execa(
@@ -329,11 +283,19 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   let result: MarkerResult | undefined;
 
   try {
-    await execa("xcrun", ["simctl", "launch", simulatorId, bundleId, `--kirie-test=${testName}`], {
-      cwd: rootDir,
-      stderr: logStream,
-      stdout: logStream,
-    });
+    await runKirieCli([
+      "run",
+      "ios",
+      "--project",
+      path.resolve(rootDir, integrationProjectDir),
+      "--app",
+      path.resolve(rootDir, appPath),
+      "--device",
+      simulatorId,
+      "--terminate-existing",
+      "--launch-option",
+      `kirie_test=${testName}`,
+    ]);
     result = await Promise.race([
       waitForMarker({ logFile, testName, timeoutSeconds }),
       logProcess.then(
@@ -359,6 +321,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       }
     }
     logStream.end();
+    const bundleId = await readBundleId(path.resolve(rootDir, appPath));
     await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
       cwd: rootDir,
       reject: false,
@@ -368,7 +331,10 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   }
 
   if (result) {
-    await printIosResult(result, logFile, testName);
+    await printIntegrationResult(result, logFile, testName, {
+      earlyExitSubject: "app",
+      settleMilliseconds: 300,
+    });
   }
 }
 
@@ -378,7 +344,7 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
     return;
   }
 
-  const webIndex = `${integrationProjectDir}/web/index.html`;
+  const webIndex = `${integrationProjectDir}/src-web/dist/index.html`;
   if (!fs.existsSync(webIndex)) {
     console.error("Missing integration web fixture. Run: mise run build:integration-web");
     process.exitCode = 1;
@@ -447,6 +413,9 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
   }
 
   if (result) {
-    await printDesktopResult(result, logFile, testName);
+    await printIntegrationResult(result, logFile, testName, {
+      earlyExitSubject: "Godot",
+      settleMilliseconds: 300,
+    });
   }
 }

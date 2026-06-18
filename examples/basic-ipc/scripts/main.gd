@@ -1,7 +1,7 @@
 extends Control
 
-const PAGE_URL := "res://web/dist/index.html"
-const PROBE_PAGE_URL := "res://web/dist/index.html?mode=probe"
+const PAGE_URL := "res://src-web/dist/index.html"
+const PROBE_PAGE_URL := "res://src-web/dist/?mode=probe"
 
 var _kirie := GdKirie.new()
 var _log_lines: PackedStringArray = PackedStringArray()

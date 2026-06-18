@@ -86,7 +86,6 @@ jobs:
           arch: x86_64
           profile: pixel_7
           script: |
-            adb install -r dist/integration/android_debug.apk
             mise run test:integration-android -- ipc_round_trip_probe
             mise run test:integration-android -- webview_lifecycle_probe
             mise run test:integration-android -- res_asset_loading_probe

@@ -41,6 +41,8 @@ reason to expose the full Godot CEF browser API through Kirie.
   thin browser-side IPC transport wrapper for WebView pages
 - `packages/ipc-eventa`
   browser-side Eventa adapter over Kirie text IPC
+- `packages/build`
+  publishable programmatic build and export primitives for Kirie projects
 - `packages/GdKirie.EventaAdapter`
   .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`
@@ -60,7 +62,8 @@ reason to expose the full Godot CEF browser API through Kirie.
 - `scripts/build-examples.ts`
   example build, install, and launch tasks
 - `scripts/build-shared.ts`
-  build primitives shared by multiple task domains
+  current repo-local build primitives; migrate reusable build and export logic
+  into `packages/build` APIs
 - `scripts/integration-runner.ts`
   platform integration test launchers
 - `.codex/skills`
@@ -171,8 +174,13 @@ The broader app workflow should keep these command semantics:
   exporting, while mobile or deploy-style development may use a development
   export path. C#/.NET may be built when configured.
 
-Keep `kirie create` outside the current CLI scope. Future mobile dev targets
-should use a unified platform and device selector such as
+`@gd-kirie/build` is a public explicit-input build and export API. Keep dev
+sessions, device selection, install, launch, log streaming, and watch policy in
+`@gd-kirie/cli`. Repository integration and example tasks should exercise CLI
+workflows where practical.
+
+Keep `kirie create` outside the current CLI scope. Mobile dev targets should
+use a unified platform and device selector such as
 `kirie dev ios --device <selector>` or
 `kirie dev android --device <selector>`; do not expose simulator and real device
 as separate user-facing target names.
@@ -284,8 +292,8 @@ For the current milestone, iOS should be owned by the standard addon tree:
   artifacts and produce `dist/kirie-addon.zip`; use
   `mise run check:addon-pack` to verify an already staged addon tree.
 - Integration export orchestration also lives in mise tasks, with implementation
-  in `scripts/build-integration.ts` and shared export primitives in
-  `scripts/build-shared.ts`. Use
+  in `scripts/build-integration.ts`. Integration export tasks should exercise
+  the CLI workflow where practical. Use
   `mise run build:integration-android` or `mise run build:integration-ios`
   instead of adding new integration build shell scripts.
 - Keep repository task TypeScript executable by Node's built-in TypeScript type

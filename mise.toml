@@ -39,12 +39,12 @@ run = "./scripts/run-build-task.js buildIntegrationWeb"
 
 [tasks."build:integration-android"]
 description = "Build Android integration export"
-depends = ["build:integration-web"]
+depends = ["build:packages"]
 run = "./scripts/run-build-task.js buildIntegrationAndroid"
 
 [tasks."build:integration-ios"]
 description = "Build iOS integration export"
-depends = ["build:integration-web"]
+depends = ["build:packages"]
 run = "./scripts/run-build-task.js buildIntegrationIos"
 
 [tasks."build:ios-xcframework"]
@@ -133,6 +133,7 @@ run = "corepack pnpm run release"
 
 [tasks."run:example"]
 description = "Build, install, and launch an example on Android or iOS"
+depends = ["build:packages"]
 usage = '''
 arg "<platform>" help="Target platform" {
   choices "android" "ios"
@@ -151,6 +152,7 @@ run = "corepack pnpm run test:ios-ipc-serialization"
 
 [tasks."test:integration-android"]
 description = "Run one Android platform integration test"
+depends = ["build:packages"]
 usage = '''
 arg "<test_name>" help="Integration test name"
 '''
@@ -158,6 +160,7 @@ run = './scripts/run-build-task.js runIntegrationAndroidTest "${usage_test_name?
 
 [tasks."test:integration-ios"]
 description = "Run one iOS platform integration test"
+depends = ["build:packages"]
 usage = '''
 arg "<test_name>" help="Integration test name"
 '''

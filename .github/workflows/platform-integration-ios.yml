@@ -113,17 +113,6 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
 
-      - name: Install integration app
-        run: xcrun simctl install $SIMULATOR_ID dist/integration/ios_debug.app
-
-      - name: Pre-warm WebKit processes
-        run: |
-          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' dist/integration/ios_debug.app/Info.plist)"
-          xcrun simctl launch "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
-          sleep 35
-          xcrun simctl terminate "${SIMULATOR_ID}" "${BUNDLE_ID}" >/dev/null 2>&1 || true
-          sleep 2
-
       - name: Run integration tests
         timeout-minutes: 8
         run: |

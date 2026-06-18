@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { loadConfigFromFile, type UserConfig } from "vite";
 
@@ -20,8 +21,9 @@ export interface KirieConfig extends Record<string, unknown> {
 }
 
 export interface ResolvedKirieConfig {
-  configFile: string;
+  configFile?: string;
   cwd: string;
+  mode: string;
   godot: {
     args: string[];
     command: string;
@@ -40,10 +42,17 @@ export function defineKirieConfig(config: KirieConfig): KirieConfig {
 export async function loadKirieConfig(
   options: LoadKirieConfigOptions = {},
 ): Promise<ResolvedKirieConfig> {
-  const cwd = options.cwd ?? process.cwd();
+  const cwd = path.resolve(options.cwd ?? process.cwd());
   const command = options.command ?? "serve";
   const mode = options.mode ?? (command === "build" ? "production" : "development");
   const configFile = path.join(cwd, "kirie.config.ts");
+  if (!fs.existsSync(configFile)) {
+    return resolveKirieConfig(undefined, {
+      cwd,
+      mode,
+    });
+  }
+
   const result = await loadConfigFromFile(
     {
       command,
@@ -53,20 +62,20 @@ export async function loadKirieConfig(
     configFile,
     cwd,
   );
-
   if (!result) {
-    throw new Error("Missing kirie.config.ts.");
+    throw new Error(`Could not load Kirie config: ${configFile}`);
   }
 
   return resolveKirieConfig(result.config as KirieConfig, {
     configFile: result.path,
     cwd,
+    mode,
   });
 }
 
 export function resolveKirieConfig(
   input: KirieConfig | undefined,
-  context: { configFile: string; cwd: string },
+  context: { configFile?: string; cwd: string; mode?: string },
 ): ResolvedKirieConfig {
   const config = input ?? {};
   const godot = config.godot ?? {};
@@ -77,6 +86,7 @@ export function resolveKirieConfig(
   return {
     configFile: context.configFile,
     cwd: context.cwd,
+    mode: context.mode ?? "production",
     godot: {
       args: godot.args ?? [],
       command: godot.command ?? "godot",

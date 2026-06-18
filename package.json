@@ -16,9 +16,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@types/ini": "catalog:",
     "bumpp": "catalog:",
-    "execa": "catalog:",
-    "ini": "catalog:"
+    "execa": "catalog:"
   }
 }

@@ -7,6 +7,10 @@
 node_modules/
 dist/
 build/
+!packages/build/
+!packages/build/**
+packages/build/dist/
+packages/build/node_modules/
 bin/
 obj/
 godot/

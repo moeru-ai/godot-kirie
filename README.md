@@ -54,6 +54,7 @@ example, and regression-test areas:
   plugin code
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
+- `packages/build`: public build and export automation API for scripts
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
 - `examples/basic-kirie-cli`: beginner-friendly demo project for the Kirie CLI workflow
@@ -63,7 +64,8 @@ example, and regression-test areas:
 - `scripts/build-kirie.ts`: Kirie addon artifact and packaging tasks
 - `scripts/build-integration.ts`: platform integration export tasks
 - `scripts/build-examples.ts`: example build, install, and launch tasks
-- `scripts/build-shared.ts`: build primitives shared by multiple task domains
+- `scripts/build-shared.ts`: repo-local task glue around CLI and package build
+  primitives
 - `scripts/integration-runner.ts`: platform integration test launchers
 - `docs`: project notes and design decisions
   - `docs/dreams`: exploratory notes for ideas outside the current milestone

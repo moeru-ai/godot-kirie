@@ -5,7 +5,7 @@ using Godot;
 
 public partial class Main : Control
 {
-    private const string PageUrl = "res://web/dist/index.html";
+    private const string PageUrl = "res://src-web/dist/index.html";
 
     private readonly EventDefinition<WebReadyPayload> _webReady = new("web:ready");
     private readonly InvokeEventDefinition<EchoResponse, EchoRequest> _godotEcho = new("godot:echo");

@@ -11,14 +11,20 @@ for .NET adapter packages.
 
 - `@gd-kirie/ipc` is published from `packages/ipc`.
 - `@gd-kirie/ipc-eventa` is published from `packages/ipc-eventa`.
+- `@gd-kirie/build` is published from `packages/build` as a public
+  programmatic build and export API package.
+- `@gd-kirie/cli` is the command-line owner for development sessions.
 
 `@gd-kirie/ipc-eventa` uses the same npm publishing lane while keeping Eventa
 protocol behavior above the low-level `@gd-kirie/ipc` transport package.
+`@gd-kirie/cli` may depend on `@gd-kirie/build`, but `@gd-kirie/build` must not
+depend on the CLI.
 
 ## npm Setup
 
 The npm organization and package scope is `gd-kirie`; browser packages include
-`@gd-kirie/ipc` and `@gd-kirie/ipc-eventa`.
+`@gd-kirie/ipc` and `@gd-kirie/ipc-eventa`. Future published packages include
+`@gd-kirie/build` and `@gd-kirie/cli`.
 
 Configure trusted publishing for each public browser package on npmjs.com. These
 fields identify the GitHub repository that is allowed to publish the package:
@@ -31,6 +37,9 @@ fields identify the GitHub repository that is allowed to publish the package:
 
 The package manifest must keep `repository.url` set to the GitHub repository
 URL. npm validates that field during trusted publishing.
+
+Workspace package dependencies should use `workspace:*` inside the repository;
+pnpm rewrites them to published version ranges when packing or publishing.
 
 ## Release Flow
 
@@ -59,3 +68,4 @@ Actual publishing is restricted to pushed release tags.
 - [GitHub Actions OIDC reference](https://docs.github.com/en/actions/reference/security/oidc)
 - [bumpp](https://github.com/antfu-collective/bumpp)
 - [pnpm publish behavior](https://pnpm.io/cli/publish)
+- [pnpm workspace protocol](https://pnpm.io/workspaces#workspace-protocol-workspace)

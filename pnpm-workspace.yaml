@@ -1,9 +1,10 @@
 packages:
-  - "examples/basic-ipc/web"
+  - "examples/basic-ipc/src-web"
   - "examples/basic-kirie-cli"
-  - "examples/eventa-csharp/web"
+  - "examples/eventa-csharp/src-web"
   - "packages/*"
-  - "tests/integration/web-src"
+  - "scripts"
+  - "tests/integration/src-web"
 
 catalog:
   "@biomejs/biome": 2.2.4

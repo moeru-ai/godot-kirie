@@ -53,20 +53,14 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.2.4
-      '@types/ini':
-        specifier: 'catalog:'
-        version: 4.1.1
       bumpp:
         specifier: 'catalog:'
         version: 11.0.1
       execa:
         specifier: 'catalog:'
         version: 9.6.1
-      ini:
-        specifier: 'catalog:'
-        version: 7.0.0
 
-  examples/basic-ipc/web:
+  examples/basic-ipc/src-web:
     dependencies:
       '@gd-kirie/ipc':
         specifier: workspace:*
@@ -101,7 +95,7 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
 
-  examples/eventa-csharp/web:
+  examples/eventa-csharp/src-web:
     dependencies:
       '@gd-kirie/ipc-eventa':
         specifier: workspace:*
@@ -120,8 +114,39 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
 
+  packages/build:
+    dependencies:
+      execa:
+        specifier: 'catalog:'
+        version: 9.6.1
+      ini:
+        specifier: 'catalog:'
+        version: 7.0.0
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
+    devDependencies:
+      '@types/ini':
+        specifier: 'catalog:'
+        version: 4.1.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.0
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.2(typescript@6.0.3)(unrun@0.2.37)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@types/node@25.6.0)(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
+
   packages/cli:
     dependencies:
+      '@gd-kirie/build':
+        specifier: workspace:*
+        version: link:../build
       citty:
         specifier: 'catalog:'
         version: 0.2.2
@@ -179,7 +204,16 @@ importers:
 
   packages/kirie: {}
 
-  tests/integration/web-src:
+  scripts:
+    dependencies:
+      '@gd-kirie/cli':
+        specifier: workspace:*
+        version: link:../packages/cli
+      execa:
+        specifier: 'catalog:'
+        version: 9.6.1
+
+  tests/integration/src-web:
     dependencies:
       '@gd-kirie/ipc':
         specifier: workspace:*

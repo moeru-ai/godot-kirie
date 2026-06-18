@@ -1,72 +1,49 @@
-import fs from "node:fs";
-import process from "node:process";
-import { execa } from "execa";
+import path from "node:path";
 import { buildAndroidAar, buildIosXcframework } from "./build-kirie.ts";
 import {
-  buildWebPackage,
   distDir,
   exportAndroidDebug,
   exportIosSimulatorApp,
-  readExportPresetOption,
   rootDir,
+  runKirieCli,
 } from "./build-shared.ts";
 
 function exampleDistDir(exampleName: string): string {
   return `${distDir}/examples/${exampleName}`;
 }
 
-// Temporary while examples are split between legacy `web/` packages and the new CLI layout.
-function exampleWebPackageFilter(projectDir: string): string {
-  if (fs.existsSync(`${projectDir}/package.json`)) {
-    return `./${projectDir}`;
-  }
-
-  return `./${projectDir}/web`;
-}
-
 async function runExampleAndroid(exampleName: string, projectDir: string): Promise<void> {
   const apkPath = `${exampleDistDir(exampleName)}/android_debug.apk`;
-  const packageName = readExportPresetOption(projectDir, "Android", "package/unique_name");
 
-  await buildWebPackage(exampleWebPackageFilter(projectDir));
   await buildAndroidAar();
   await exportAndroidDebug({
     apkPath,
     projectDir,
     userArgs: ["--kirie-android-aar=debug"],
   });
-
-  await execa("adb", ["install", "-r", apkPath], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
-  await execa(
-    "adb",
-    ["shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"],
-    {
-      cwd: rootDir,
-      stdio: "inherit",
-    },
-  );
+  await runKirieCli([
+    "run",
+    "android",
+    "--project",
+    path.resolve(rootDir, projectDir),
+    "--apk",
+    path.resolve(rootDir, apkPath),
+  ]);
 }
 
 async function runExampleIos(exampleName: string, projectDir: string): Promise<void> {
   const appPath = `${exampleDistDir(exampleName)}/ios_debug.app`;
-  const bundleId = readExportPresetOption(projectDir, "iOS", "application/bundle_identifier");
-  const simulatorId = process.env.SIMULATOR_ID || "booted";
 
-  await buildWebPackage(exampleWebPackageFilter(projectDir));
   await buildIosXcframework();
   await exportIosSimulatorApp(projectDir, appPath);
-
-  await execa("xcrun", ["simctl", "install", simulatorId, appPath], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
-  await execa("xcrun", ["simctl", "launch", simulatorId, bundleId], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
+  await runKirieCli([
+    "run",
+    "ios",
+    "--project",
+    path.resolve(rootDir, projectDir),
+    "--app",
+    path.resolve(rootDir, appPath),
+  ]);
 }
 
 // mise task entrypoint.

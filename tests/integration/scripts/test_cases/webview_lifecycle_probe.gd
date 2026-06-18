@@ -59,7 +59,7 @@ func _run_probe(
 
 func _probe_url(probe_name: String, test_name: String) -> String:
 	return (
-		"res://web/?probe=%s&test=%s"
+		"res://src-web/dist/?probe=%s&test=%s"
 		% [
 			probe_name.uri_encode(),
 			test_name.uri_encode(),

@@ -1,7 +1,7 @@
 class_name KirieIntegrationProbe
 extends RefCounted
 
-const PROBE_INDEX_HTML_PATH := "res://web-src/index.html"
+const PROBE_INDEX_HTML_PATH := "res://src-web/dist/index.html"
 const DEFAULT_TEST_TIMEOUT_SECONDS := 12.0
 const IOS_TEST_TIMEOUT_SECONDS := 30.0
 
