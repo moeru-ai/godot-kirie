@@ -130,11 +130,13 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   const simulatorId = options.simulatorId ?? process.env.SIMULATOR_ID ?? "booted";
   const bundleId =
     options.bundleId ??
-    readExportPresetOption({
-      optionName: "application/bundle_identifier",
-      presetName: "iOS",
-      projectDir: config.godot.project,
-    });
+    (options.appPath
+      ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
+      : readExportPresetOption({
+          optionName: "application/bundle_identifier",
+          presetName: "iOS",
+          projectDir: config.godot.project,
+        }));
 
   if (options.terminateExisting) {
     await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
@@ -281,4 +283,14 @@ function iosLaunchOptionArgs(launchOptions: LaunchOptions | undefined): string[]
   return Object.entries(launchOptions).map(
     ([key, value]) => `--${key.replaceAll("_", "-")}=${value}`,
   );
+}
+
+async function readIosAppBundleId(appPath: string): Promise<string> {
+  const result = await execa("/usr/libexec/PlistBuddy", [
+    "-c",
+    "Print :CFBundleIdentifier",
+    path.join(appPath, "Info.plist"),
+  ]);
+
+  return result.stdout.trim();
 }
