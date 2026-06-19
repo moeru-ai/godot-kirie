@@ -135,11 +135,11 @@ enum KirieURLResolver {
             ),
         ]
 
-        if assetPath.hasPrefix("web/") {
+        if assetPath.hasPrefix("src-web/dist/") {
             candidates.append(
                 KirieBundleResourceCandidate(
-                    assetPath: String(assetPath.dropFirst("web/".count)),
-                    fileURL: bundleResourceURL.appendingPathComponent(String(assetPath.dropFirst("web/".count)), isDirectory: false)
+                    assetPath: String(assetPath.dropFirst("src-web/".count)),
+                    fileURL: bundleResourceURL.appendingPathComponent(String(assetPath.dropFirst("src-web/".count)), isDirectory: false)
                 )
             )
         }

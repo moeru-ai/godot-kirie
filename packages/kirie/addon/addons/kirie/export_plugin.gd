@@ -2,7 +2,7 @@
 extends EditorExportPlugin
 
 const PLUGIN_NAME := "Kirie"
-const DEFAULT_WEB_ROOT := "res://web"
+const DEFAULT_WEB_ROOT := "res://src-web/dist"
 const GodotCefConfig = preload("res://addons/kirie/godot_cef_config.gd")
 
 const OPTION_ENABLE_WEB_INSPECTOR := "kirie/debug/enable_web_inspector"

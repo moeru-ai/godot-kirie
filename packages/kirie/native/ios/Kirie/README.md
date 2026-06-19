@@ -14,9 +14,11 @@ This directory contains the native iOS implementation for `Kirie`, the first-pas
   them through Kirie's `WKURLSchemeHandler`.
 
 `res://` loading is intentionally limited to packaged application bundle
-resources. For example, `res://web/index.html` resolves to Kirie's resource
-origin and serves `web/index.html` from the app bundle. `res://web` resolves to
-`web/index.html`. Runtime-mounted Godot packs are not part of this path.
+resources. For example, `res://src-web/dist/index.html` resolves to Kirie's
+resource origin and serves the bundled `dist/index.html` generated from
+`src-web/dist`.
+`res://src-web/dist` resolves to `src-web/dist/index.html`. Runtime-mounted
+Godot packs are not part of this path.
 `http://`, `https://`, and `file://` URLs keep the default `WKWebView` loading
 behavior.
 
