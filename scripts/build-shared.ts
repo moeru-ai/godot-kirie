@@ -24,14 +24,14 @@ export async function buildWebPackage(filter: string): Promise<void> {
 }
 
 export async function runKirieCli(args: string[]): Promise<void> {
-  await execa("corepack", kirieCliArgs(args), {
-    cwd: scriptsDir,
+  await execa(process.execPath, kirieCliArgs(args), {
+    cwd: rootDir,
     stdio: "inherit",
   });
 }
 
 export function kirieCliArgs(args: string[]): string[] {
-  return ["pnpm", "exec", "kirie", ...args];
+  return [path.join(rootDir, "packages/cli/src/cli.ts"), ...args];
 }
 
 export async function exportAndroidDebug(options: AndroidDebugExportOptions): Promise<void> {

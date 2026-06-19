@@ -9,7 +9,6 @@ import {
   kirieCliArgs,
   rootDir,
   runKirieCli,
-  scriptsDir,
 } from "./build-shared.ts";
 
 interface MarkerResult {
@@ -183,7 +182,7 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
 
   const logStream = await openLogStream(logFile);
   const kirieRun = execa(
-    "corepack",
+    process.execPath,
     kirieCliArgs([
       "run",
       "android",
@@ -196,7 +195,7 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
       `kirie_test=${testName}`,
     ]),
     {
-      cwd: scriptsDir,
+      cwd: rootDir,
       reject: false,
       stderr: "inherit",
       stdout: "pipe",

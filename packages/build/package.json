@@ -19,7 +19,6 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test:run": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

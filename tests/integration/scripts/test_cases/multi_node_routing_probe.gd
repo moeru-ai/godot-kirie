@@ -21,7 +21,10 @@ func run(_kirie: Object, tree: SceneTree, test_name: String) -> String:
 		probes.append(probe)
 
 		probe.reset()
-		var url := "res://src-web/dist/?probe=%s&test=%s" % [probe_name.uri_encode(), test_name.uri_encode()]
+		var url := "res://src-web/dist/?probe=%s&test=%s" % [
+			probe_name.uri_encode(),
+			test_name.uri_encode(),
+		]
 		node.create_webview({"initial_url": url})
 
 		var failure_reason := await probe.wait_for_webview_ready(probe_name)
