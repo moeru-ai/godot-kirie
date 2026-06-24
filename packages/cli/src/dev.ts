@@ -107,6 +107,7 @@ async function runAndroidDev(
   });
   await runExport({
     build: false,
+    config,
     cwd: config.cwd,
     godotCommand: options.godotCommand,
     mode: options.mode,
@@ -114,6 +115,7 @@ async function runAndroidDev(
     userArgs: ["--kirie-android-aar=debug"],
   });
   await reverseAndroidTcp({
+    config,
     cwd: config.cwd,
     device: options.device,
     port: reverseWeb.port,
@@ -121,6 +123,7 @@ async function runAndroidDev(
   await runAndroid({
     clearData: options.clearData,
     clearLogcat: options.clearLogcat,
+    config,
     cwd: config.cwd,
     device: options.device,
     forceStop: options.forceStop ?? true,
@@ -142,12 +145,14 @@ async function runIosDev(
   await exportIosSimulatorApp({
     appPath,
     build: false,
+    config,
     cwd: config.cwd,
     godotCommand: options.godotCommand,
     mode: options.mode,
   });
   await runIosSimulator({
     appPath,
+    config,
     cwd: config.cwd,
     launchOptions: createKirieDevLaunchOptions(webUrl),
     simulatorId: options.device,

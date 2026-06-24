@@ -4,12 +4,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 
-import { loadKirieConfig } from "./config.ts";
+import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 import { runExport } from "./export.ts";
 
 export interface ExportIosSimulatorAppOptions {
   appPath: string;
   build?: boolean;
+  config?: ResolvedKirieConfig;
   cwd?: string;
   godotCommand?: string;
   mode?: string;
@@ -17,11 +18,13 @@ export interface ExportIosSimulatorAppOptions {
 }
 
 export async function exportIosSimulatorApp(options: ExportIosSimulatorAppOptions): Promise<void> {
-  const config = await loadKirieConfig({
-    command: "build",
-    cwd: options.cwd,
-    mode: options.mode,
-  });
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+      mode: options.mode,
+    }));
   const appPath = path.resolve(config.cwd, options.appPath);
   const xcodeProjectPath = path.resolve(
     config.cwd,
@@ -38,6 +41,7 @@ export async function exportIosSimulatorApp(options: ExportIosSimulatorAppOption
 
   await runExport({
     build: options.build,
+    config,
     cwd: config.cwd,
     godotCommand: options.godotCommand,
     mode: options.mode,

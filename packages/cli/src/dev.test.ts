@@ -130,7 +130,7 @@ describe("runDev", () => {
     const project = await projects.copy();
 
     await installProjectFixture(project, "fake-godot.js");
-    await installKirieConfigFixture(project, "dev-fake-godot.kirie.config.ts");
+    await installKirieConfigFixture(project, "dev-reject-build-config.kirie.config.ts");
     await installFakeAdb(project);
 
     const originalPath = process.env.PATH;

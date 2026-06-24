@@ -2,7 +2,7 @@ import path from "node:path";
 import { readExportPresetValue } from "@gd-kirie/build";
 import { execa } from "execa";
 
-import { loadKirieConfig } from "./config.ts";
+import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 import { resolveExportOutputPath } from "./export.ts";
 
 export interface KirieDevLaunchOptions {
@@ -23,6 +23,7 @@ export interface RunAndroidOptions {
   attachLogcat?: boolean;
   clearData?: boolean;
   clearLogcat?: boolean;
+  config?: ResolvedKirieConfig;
   cwd?: string;
   device?: string;
   forceStop?: boolean;
@@ -32,6 +33,7 @@ export interface RunAndroidOptions {
 }
 
 export interface ReverseAndroidTcpOptions {
+  config?: ResolvedKirieConfig;
   cwd?: string;
   device?: string;
   hostPort?: number;
@@ -41,6 +43,7 @@ export interface ReverseAndroidTcpOptions {
 export interface RunIosSimulatorOptions {
   appPath?: string;
   bundleId?: string;
+  config?: ResolvedKirieConfig;
   cwd?: string;
   launchOptions?: LaunchOptions;
   simulatorId?: string;
@@ -48,10 +51,12 @@ export interface RunIosSimulatorOptions {
 }
 
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
-  const config = await loadKirieConfig({
-    command: "build",
-    cwd: options.cwd,
-  });
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+    }));
   const adbArgs = options.device ? ["-s", options.device] : [];
   const packageName = options.packageName ?? readAndroidPackageName(config.godot.project, options);
 
@@ -134,10 +139,12 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
 }
 
 export async function reverseAndroidTcp(options: ReverseAndroidTcpOptions): Promise<void> {
-  const config = await loadKirieConfig({
-    command: "build",
-    cwd: options.cwd,
-  });
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+    }));
   const adbArgs = options.device ? ["-s", options.device] : [];
   const hostPort = options.hostPort ?? options.port;
 
@@ -151,10 +158,12 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   // TODO: Add a separate physical-device path. Capacitor's CLI uses the
   // selected iOS target for xcodebuild, then deploys the built app with
   // native-run instead of routing physical devices through simctl.
-  const config = await loadKirieConfig({
-    command: "build",
-    cwd: options.cwd,
-  });
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+    }));
   const simulatorId = options.simulatorId ?? process.env.SIMULATOR_ID ?? "booted";
   const bundleId =
     options.bundleId ??

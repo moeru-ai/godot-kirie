@@ -1,12 +1,13 @@
 import path from "node:path";
 import { type ExportMode, exportGodotPreset } from "@gd-kirie/build";
 import { runBuild } from "./build.ts";
-import { loadKirieConfig } from "./config.ts";
+import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 
 export type ExportPlatform = "android" | "ios";
 
 export interface ExportOptions {
   build?: boolean;
+  config?: ResolvedKirieConfig;
   cwd?: string;
   godotCommand?: string;
   mode?: string;
@@ -23,11 +24,13 @@ const DEFAULT_PLATFORM_PRESETS: Record<ExportPlatform, string> = {
 };
 
 export async function runExport(options: ExportOptions = {}): Promise<void> {
-  const config = await loadKirieConfig({
-    command: "build",
-    cwd: options.cwd,
-    mode: options.mode,
-  });
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+      mode: options.mode,
+    }));
   const preset = options.preset ?? resolvePlatformPreset(options.platform);
   const mode = resolveExportMode(options);
   const outputPath = resolveExportOutputPath({
