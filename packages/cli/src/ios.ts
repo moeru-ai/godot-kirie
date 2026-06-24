@@ -27,6 +27,14 @@ export async function exportIosSimulatorApp(options: ExportIosSimulatorAppOption
     config.cwd,
     options.xcodeProjectPath ?? defaultIosSimulatorXcodeProjectPath(config.godot.project, appPath),
   );
+  const rawBuildDir = defaultIosSimulatorRawBuildDir(appPath);
+
+  validateIosSimulatorAppOutputPath({
+    appPath,
+    projectDir: config.godot.project,
+    rawBuildDir,
+    xcodeProjectPath,
+  });
 
   await runExport({
     build: options.build,
@@ -40,6 +48,7 @@ export async function exportIosSimulatorApp(options: ExportIosSimulatorAppOption
     appPath,
     cwd: config.cwd,
     projectDir: config.godot.project,
+    rawBuildDir,
     xcodeProjectPath,
   });
 }
@@ -48,20 +57,23 @@ function defaultIosSimulatorXcodeProjectPath(projectDir: string, appPath: string
   return path.join(path.dirname(appPath), "ios_xcode", `${path.basename(projectDir)}.xcodeproj`);
 }
 
+function defaultIosSimulatorRawBuildDir(appPath: string): string {
+  return path.join(path.dirname(appPath), "ios_raw_build");
+}
+
 async function buildExportedIosSimulatorApp(options: {
   appPath: string;
   cwd: string;
   projectDir: string;
+  rawBuildDir: string;
   xcodeProjectPath: string;
 }): Promise<void> {
   const scheme = path.basename(options.projectDir);
-  const rawBuildDir = path.join(path.dirname(options.appPath), "ios_raw_build");
-  const rawAppPath = path.join(rawBuildDir, `${scheme}.app`);
+  const rawAppPath = path.join(options.rawBuildDir, `${scheme}.app`);
 
-  validateIosSimulatorAppOutputPath(options.appPath, rawBuildDir);
   fs.mkdirSync(path.dirname(options.appPath), { recursive: true });
   fs.mkdirSync(path.dirname(options.xcodeProjectPath), { recursive: true });
-  fs.mkdirSync(rawBuildDir, { recursive: true });
+  fs.mkdirSync(options.rawBuildDir, { recursive: true });
 
   const simulatorLibgodot = findSimulatorLibgodot(path.dirname(options.xcodeProjectPath));
   if (!simulatorLibgodot) {
@@ -86,7 +98,7 @@ async function buildExportedIosSimulatorApp(options: {
       "generic/platform=iOS Simulator",
       "-configuration",
       "Debug",
-      `CONFIGURATION_BUILD_DIR=${rawBuildDir}`,
+      `CONFIGURATION_BUILD_DIR=${options.rawBuildDir}`,
       "CODE_SIGNING_ALLOWED=NO",
       "CODE_SIGNING_REQUIRED=NO",
       "CODE_SIGN_IDENTITY=",
@@ -103,7 +115,7 @@ async function buildExportedIosSimulatorApp(options: {
 
   fs.rmSync(options.appPath, { force: true, recursive: true });
   fs.renameSync(rawAppPath, options.appPath);
-  fs.rmSync(rawBuildDir, { force: true, recursive: true });
+  fs.rmSync(options.rawBuildDir, { force: true, recursive: true });
 }
 
 function findSimulatorLibgodot(dirPath: string): string | undefined {
@@ -159,13 +171,55 @@ function resolveRepositoryGodotSourceRoot(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../godot");
 }
 
-function validateIosSimulatorAppOutputPath(appPath: string, rawBuildDir: string): void {
+function validateIosSimulatorAppOutputPath(options: {
+  appPath: string;
+  projectDir: string;
+  rawBuildDir: string;
+  xcodeProjectPath: string;
+}): void {
+  const appPath = path.resolve(options.appPath);
+  const projectDir = path.resolve(options.projectDir);
+  const rawBuildDir = path.resolve(options.rawBuildDir);
+  const xcodeProjectDir = path.dirname(path.resolve(options.xcodeProjectPath));
+
   if (path.extname(appPath) !== ".app") {
     throw new Error(`iOS simulator app output path must end with .app: ${appPath}`);
+  }
+
+  if (appPath === projectDir) {
+    throw new Error(`iOS simulator app output path must not be the Godot project root: ${appPath}`);
   }
 
   const rawRelative = path.relative(rawBuildDir, appPath);
   if (rawRelative === "" || (!rawRelative.startsWith("..") && !path.isAbsolute(rawRelative))) {
     throw new Error(`iOS simulator app output path must not be inside raw build dir: ${appPath}`);
+  }
+
+  const xcodeRelative = path.relative(xcodeProjectDir, appPath);
+  if (
+    xcodeRelative === "" ||
+    (!xcodeRelative.startsWith("..") && !path.isAbsolute(xcodeRelative))
+  ) {
+    throw new Error(
+      `iOS simulator app output path must not be inside Xcode export dir: ${appPath}`,
+    );
+  }
+
+  const rawParentRelative = path.relative(appPath, rawBuildDir);
+  if (
+    rawParentRelative === "" ||
+    (!rawParentRelative.startsWith("..") && !path.isAbsolute(rawParentRelative))
+  ) {
+    throw new Error(`iOS simulator raw build dir must not be inside app output path: ${appPath}`);
+  }
+
+  const xcodeParentRelative = path.relative(appPath, xcodeProjectDir);
+  if (
+    xcodeParentRelative === "" ||
+    (!xcodeParentRelative.startsWith("..") && !path.isAbsolute(xcodeParentRelative))
+  ) {
+    throw new Error(
+      `iOS simulator Xcode export dir must not be inside app output path: ${appPath}`,
+    );
   }
 }
