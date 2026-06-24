@@ -6,5 +6,7 @@ export type {
   ResolvedKirieConfig,
 } from "./config.ts";
 export { defineKirieConfig, loadKirieConfig, resolveKirieConfig } from "./config.ts";
-export type { DevOptions } from "./dev.ts";
+export type { DevOptions, DevTarget } from "./dev.ts";
 export { runDev } from "./dev.ts";
+export type { KirieDevLaunchOptions } from "./run.ts";
+export { createKirieDevLaunchOptions } from "./run.ts";

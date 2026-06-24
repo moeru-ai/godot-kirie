@@ -2,7 +2,7 @@ import { type CommandDef, defineCommand } from "citty";
 
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
-import { runDev } from "./dev.ts";
+import { type DevTarget, runDev } from "./dev.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
 import { runAndroid, runIosSimulator } from "./run.ts";
 
@@ -19,28 +19,78 @@ const exportArgs = {
   release: { description: "Use Godot release export mode.", type: "boolean" },
 } as const;
 
-const androidRunArgs = {
-  "clear-data": { description: "Clear Android app data before launch.", type: "boolean" },
-  "clear-logcat": { description: "Clear Android logcat before launch.", type: "boolean" },
-  device: { description: "Target device or simulator selector.", type: "string" },
-  "force-stop": { description: "Force-stop the Android app before launch.", type: "boolean" },
-  "launch-option": { description: "Launch option as key=value.", type: "string" },
-  "no-logcat": { description: "Do not attach Android logcat after launch.", type: "boolean" },
+const projectArgs = {
   project: { description: "Godot project directory.", type: "string" },
 } as const;
 
-const iosRunArgs = {
-  app: { description: "iOS .app path to install before launch.", type: "string" },
-  device: { description: "Target simulator selector.", type: "string" },
+const devServerArgs = {
+  "clear-screen": { description: "Allow Vite to clear the terminal.", type: "boolean" },
+  force: { description: "Force Vite dependency pre-bundling.", type: "boolean" },
+  host: { description: "Vite dev server host override.", type: "string" },
+  "log-level": { description: "Vite log level: info, warn, error, or silent.", type: "string" },
+  mode: { description: "Vite mode.", type: "string" },
+  "no-clear-screen": { description: "Prevent Vite from clearing the terminal.", type: "boolean" },
+  port: { description: "Vite dev server port override.", type: "string" },
+  "strict-port": {
+    description: "Fail if the requested Vite port is unavailable.",
+    type: "boolean",
+  },
+} as const;
+
+const mobileDeviceArgs = {
+  device: { description: "Target device or simulator selector.", type: "string" },
+} as const;
+
+const androidLaunchArgs = {
+  ...mobileDeviceArgs,
+  "clear-data": { description: "Clear Android app data before launch.", type: "boolean" },
+  "clear-logcat": { description: "Clear Android logcat before launch.", type: "boolean" },
+  "force-stop": { description: "Force-stop the Android app before launch.", type: "boolean" },
+} as const;
+
+const androidRunArgs = {
+  ...projectArgs,
+  ...androidLaunchArgs,
   "launch-option": { description: "Launch option as key=value.", type: "string" },
-  project: { description: "Godot project directory.", type: "string" },
+  "no-logcat": { description: "Do not attach Android logcat after launch.", type: "boolean" },
+} as const;
+
+const devArgs = {
+  ...projectArgs,
+  ...devServerArgs,
+  godot: { description: "Godot executable override.", type: "string" },
+} as const;
+
+const androidDevArgs = {
+  ...devArgs,
+  ...androidLaunchArgs,
+} as const;
+
+const iosSimulatorLaunchArgs = {
+  ...mobileDeviceArgs,
   "terminate-existing": {
     description: "Terminate the iOS simulator app before launch.",
     type: "boolean",
   },
 } as const;
 
+const iosRunArgs = {
+  ...projectArgs,
+  ...iosSimulatorLaunchArgs,
+  app: { description: "iOS .app path to install before launch.", type: "string" },
+  "launch-option": { description: "Launch option as key=value.", type: "string" },
+} as const;
+
+const iosDevArgs = {
+  ...devArgs,
+  ...iosSimulatorLaunchArgs,
+  app: { description: "iOS simulator .app output path.", type: "string" },
+} as const;
+
 type ExportCommandArgs = CommandArgs<typeof exportArgs>;
+type DevCommandArgs = CommandArgs<typeof devArgs> &
+  CommandArgs<typeof androidDevArgs> &
+  CommandArgs<typeof iosDevArgs>;
 type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
 
 function parseUserArgs(rawArgs: string[]): string[] {
@@ -65,6 +115,29 @@ function runExportCommand(platform: ExportPlatform) {
     });
 }
 
+function runDevCommand(target: DevTarget) {
+  return ({ args, rawArgs }: { args: DevCommandArgs; rawArgs: string[] }) =>
+    runDev({
+      appPath: args.app,
+      clearData: args["clear-data"],
+      clearLogcat: args["clear-logcat"],
+      clearScreen: resolveClearScreen(args),
+      cwd: args.project,
+      device: args.device,
+      force: args.force,
+      forceStop: args["force-stop"],
+      godotArgs: target === "desktop" ? parseUserArgs(rawArgs) : undefined,
+      godotCommand: args.godot,
+      host: args.host,
+      logLevel: parseLogLevel(args["log-level"]),
+      mode: args.mode,
+      port: parsePort(args.port),
+      strictPort: args["strict-port"],
+      target,
+      terminateExisting: args["terminate-existing"],
+    });
+}
+
 function parseLaunchOptions(rawOption: string | undefined): Record<string, string> {
   if (!rawOption) {
     return {};
@@ -78,6 +151,48 @@ function parseLaunchOptions(rawOption: string | undefined): Record<string, strin
   return {
     [rawOption.slice(0, separatorIndex)]: rawOption.slice(separatorIndex + 1),
   };
+}
+
+function parseLogLevel(
+  rawLogLevel: string | undefined,
+): "info" | "warn" | "error" | "silent" | undefined {
+  if (!rawLogLevel) {
+    return undefined;
+  }
+  if (
+    rawLogLevel === "info" ||
+    rawLogLevel === "warn" ||
+    rawLogLevel === "error" ||
+    rawLogLevel === "silent"
+  ) {
+    return rawLogLevel;
+  }
+
+  throw new Error("Vite log level must be info, warn, error, or silent.");
+}
+
+function parsePort(rawPort: string | undefined): number | undefined {
+  if (!rawPort) {
+    return undefined;
+  }
+
+  const port = Number(rawPort);
+  if (Number.isInteger(port) && port > 0 && port <= 65535) {
+    return port;
+  }
+
+  throw new Error("Vite port must be an integer from 1 to 65535.");
+}
+
+function resolveClearScreen(args: DevCommandArgs): boolean | undefined {
+  if (args["no-clear-screen"]) {
+    return false;
+  }
+  if (args["clear-screen"]) {
+    return true;
+  }
+
+  return undefined;
 }
 
 export const mainCommand: CommandDef = defineCommand({
@@ -106,8 +221,35 @@ export const mainCommand: CommandDef = defineCommand({
       },
     }),
     dev: defineCommand({
-      meta: { description: "Start Vite and launch Godot for desktop development.", name: "dev" },
-      run: () => runDev(),
+      args: devArgs,
+      default: "desktop",
+      meta: { description: "Start Vite and launch Godot for development.", name: "dev" },
+      subCommands: {
+        android: defineCommand({
+          args: androidDevArgs,
+          meta: {
+            description: "Export, install, and launch Android with Vite dev.",
+            name: "android",
+          },
+          run: runDevCommand("android"),
+        }),
+        desktop: defineCommand({
+          args: devArgs,
+          meta: {
+            description: "Start Vite and launch Godot for desktop development.",
+            name: "desktop",
+          },
+          run: runDevCommand("desktop"),
+        }),
+        ios: defineCommand({
+          args: iosDevArgs,
+          meta: {
+            description: "Export, install, and launch an iOS simulator with Vite dev.",
+            name: "ios",
+          },
+          run: runDevCommand("ios"),
+        }),
+      },
     }),
     export: defineCommand({
       meta: { description: "Export a Kirie project through Godot.", name: "export" },

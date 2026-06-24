@@ -1,6 +1,7 @@
 extends Control
 
 const PAGE_URL := "res://src-web/dist/index.html"
+const DEV_WEB_URL_OPTION := "kirie-web-url"
 
 var _kirie := GdKirie.new()
 var _log_lines: PackedStringArray = PackedStringArray()
@@ -29,8 +30,10 @@ func _ready() -> void:
 
 
 func _resolve_startup_url() -> String:
-	if OS.get_environment("KIRIE_DEV") != "1":
-		return PAGE_URL
+	var launch_web_url := _resolve_launch_option(DEV_WEB_URL_OPTION)
+	if launch_web_url != "":
+		_append_log("%s detected %s" % [DEV_WEB_URL_OPTION, launch_web_url])
+		return launch_web_url
 
 	var web_url := OS.get_environment("KIRIE_WEB_URL").strip_edges()
 	if web_url == "":
@@ -38,6 +41,19 @@ func _resolve_startup_url() -> String:
 
 	_append_log("KIRIE_WEB_URL detected %s" % web_url)
 	return web_url
+
+
+func _resolve_launch_option(key: String) -> String:
+	var native_value := _kirie.get_launch_option(key).strip_edges()
+	if native_value != "":
+		return native_value
+
+	var option_prefix := "--%s=" % key
+	for arg in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if arg.begins_with(option_prefix):
+			return arg.trim_prefix(option_prefix).strip_edges()
+
+	return ""
 
 
 func _create_app_webview() -> void:

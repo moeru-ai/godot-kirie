@@ -11,13 +11,17 @@ export async function prepareGodotProject(config: ResolvedKirieConfig): Promise<
   });
 }
 
-export function launchGodot(config: ResolvedKirieConfig, webUrl: string): ReturnType<typeof execa> {
-  return execa(config.godot.command, [...config.godot.args, "--path", config.godot.project], {
+export function launchGodot(
+  config: ResolvedKirieConfig,
+  userArgs: string[] = [],
+): ReturnType<typeof execa> {
+  const args = [...config.godot.args, "--path", config.godot.project];
+  if (userArgs.length > 0) {
+    args.push("--", ...userArgs);
+  }
+
+  return execa(config.godot.command, args, {
     cwd: config.godot.project,
-    env: {
-      KIRIE_DEV: "1",
-      KIRIE_WEB_URL: webUrl,
-    },
     forceKillAfterDelay: 5_000,
     stdio: "inherit",
   });

@@ -8,7 +8,6 @@ import {
   integrationProjectDir,
   kirieCliArgs,
   rootDir,
-  runKirieCli,
 } from "./build-shared.ts";
 
 interface MarkerResult {
@@ -276,10 +275,9 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   );
   await sleep(logStreamSettleSeconds * 1000);
 
-  let result: MarkerResult | undefined;
-
-  try {
-    await runKirieCli([
+  const kirieRun = execa(
+    process.execPath,
+    kirieCliArgs([
       "run",
       "ios",
       "--project",
@@ -291,9 +289,40 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       "--terminate-existing",
       "--launch-option",
       `kirie_test=${testName}`,
-    ]);
+    ]),
+    {
+      cwd: rootDir,
+      reject: false,
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
+  if (!kirieRun.stdout || !kirieRun.stderr) {
+    throw new Error("kirie run ios did not expose stdout and stderr");
+  }
+  kirieRun.stdout.on("data", (chunk: Buffer | string) => {
+    logStream.write(chunk);
+    process.stderr.write(chunk);
+  });
+  kirieRun.stderr.on("data", (chunk: Buffer | string) => {
+    logStream.write(chunk);
+    process.stderr.write(chunk);
+  });
+
+  const watchedKirieRun = kirieRun.then(
+    (): MarkerResult =>
+      findMarker({ logFile, testName }) || {
+        line: `kirie run ios exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
+        status: "stopped",
+      },
+  );
+
+  let result: MarkerResult | undefined;
+
+  try {
     result = await Promise.race([
       waitForMarker({ logFile, testName, timeoutSeconds }),
+      watchedKirieRun,
       logProcess.then(
         (logProcessResult): MarkerResult => ({
           line: logProcessResult.signal
@@ -304,7 +333,9 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       ),
     ]);
   } finally {
+    kirieRun.kill();
     logProcess.kill();
+    await watchedKirieRun;
     const logProcessResult = await logProcess;
     if (result?.status === "pass" && logProcessResult.failed) {
       if (logProcessResult.signal !== "SIGTERM" && logProcessResult.exitCode !== 143) {

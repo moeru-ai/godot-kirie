@@ -166,6 +166,9 @@ mobile install-and-launch flows:
 
 ```sh
 kirie dev
+kirie dev desktop
+kirie dev android
+kirie dev ios
 kirie build
 kirie build web
 kirie build dotnet
@@ -176,8 +179,8 @@ kirie run ios
 ```
 
 The broader application workflow should keep these command semantics. The
-`--mode <mode>` option is planned; the current implementation does not support
-it yet:
+`--mode <mode>` option is supported by `kirie dev`; public `--mode` support for
+`build`, `export`, and `run` is still planned:
 
 ```sh
 kirie build [--mode <mode>]
@@ -237,13 +240,27 @@ project when one is configured.
 Development sessions, mobile device selection, install, launch, launch-option
 injection, log streaming, and watch policy stay in `@gd-kirie/cli`.
 
-`kirie dev` starts a Vite development server, reads the actual resolved URL
-after Vite listens, launches Godot as a child process, and injects:
+`kirie dev` starts a Vite development server and reads the actual resolved URL
+after Vite listens. Desktop development launches Godot as a child process and
+passes the dev launch options as Godot user arguments:
 
 ```text
-KIRIE_DEV=1
-KIRIE_WEB_URL=http://127.0.0.1:<actual-port>/
+--kirie-dev=1
+--kirie-web-url=http://127.0.0.1:<actual-port>/
 ```
+
+Android development exports and installs the debug APK, runs
+`adb reverse tcp:<actual-port> tcp:<actual-port>`, then passes the same
+hyphenated keys as Android intent extras. The Android app receives
+`kirie-web-url` as a device-local loopback URL, such as
+`http://127.0.0.1:<actual-port>/`, so it does not depend on the phone or
+emulator reaching the host machine through the LAN. Because Android WebView
+still opens a network socket for the loopback HTTP connection, `kirie dev
+android` requires the Android export preset to enable
+`permissions/internet=true`; runtime commands must fail on a wrong preset rather
+than rewriting it. iOS development currently targets the simulator path: it
+exports the Xcode project, builds a simulator `.app`, installs and launches it
+through `simctl`, and passes the same keys as process arguments.
 
 Before launching the development session, `kirie dev` runs Godot in headless
 import mode for the project. Use Godot's `--import` command-line option for this
@@ -308,10 +325,9 @@ dependency optimization. It must not override Kirie-owned invariants such as
 for a single invocation.
 
 Kirie command-line flags are Kirie API, not an implicit promise to support the
-entire Vite CLI surface. The planned `kirie dev` flags are:
+entire Vite CLI surface. The current `kirie dev` flags are:
 
 ```text
---config <path>       Kirie config file path, not a Vite config path.
 --project <dir>       Godot project directory, defaulting to the current project.
 --godot <path>        Godot executable override.
 --host <host>         Vite dev server host override.
@@ -327,7 +343,7 @@ entire Vite CLI surface. The planned `kirie dev` flags are:
 Kirie must either parse and map Vite-shaped flags explicitly to Vite's public
 JavaScript API or proxy them to the real Vite CLI. Unknown flags must fail
 instead of being silently ignored. Arguments after `--` on `kirie dev` are
-reserved for Godot:
+reserved for desktop Godot user arguments:
 
 ```sh
 kirie dev --host 0.0.0.0 --port 5173 --mode staging -- --verbose
@@ -336,19 +352,21 @@ kirie dev --host 0.0.0.0 --port 5173 --mode staging -- --verbose
 `--open` is intentionally not part of `kirie dev` because Kirie launches Godot
 instead of opening a browser. `--base`, `--outDir`, and Vite's own `--config`
 are also not part of the `kirie dev` surface because Kirie owns those values
-through `kirie.config.ts` and the app layout.
+through `kirie.config.ts` and the app layout. A Kirie `--config <path>` override
+remains planned.
 
 The current CLI plan keeps these outside the application workflow:
 
 - `kirie create`
 - BrowserWindow APIs
 
-Mobile development targets should use one platform command with unified device
-selection, for example `kirie dev ios --device <selector>` and
-`kirie dev android --device <selector>`. The user-facing API should not split
-iOS simulator and iOS device into separate target names. Kirie may still use
-different launch backends internally for simulators, real devices, Android
-emulators, and Android devices.
+Mobile development targets use one platform command with unified device
+selection: `kirie dev ios --device <selector>` and
+`kirie dev android --device <selector>`. The current iOS backend is
+simulator-oriented, but the user-facing API should not split iOS simulator and
+iOS device into separate target names. Kirie may still use different launch
+backends internally for simulators, real devices, Android emulators, and Android
+devices.
 
 ## Packaged web resource loading
 

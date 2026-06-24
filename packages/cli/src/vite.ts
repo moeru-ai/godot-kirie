@@ -13,10 +13,23 @@ export interface StartedViteServer {
   url: string;
 }
 
-export async function startViteDevServer(config: ResolvedKirieConfig): Promise<StartedViteServer> {
+export interface StartViteDevServerOptions {
+  clearScreen?: boolean;
+  force?: boolean;
+  host?: string;
+  logLevel?: "info" | "warn" | "error" | "silent";
+  port?: number;
+  preferNetworkUrl?: boolean;
+  strictPort?: boolean;
+}
+
+export async function startViteDevServer(
+  config: ResolvedKirieConfig,
+  options: StartViteDevServerOptions = {},
+): Promise<StartedViteServer> {
   assertWebEntryExists(config.web.root, "Kirie dev");
 
-  const server = await createServer(createViteConfig(config));
+  const server = await createServer(createViteConfig(config, options));
 
   try {
     await server.listen();
@@ -25,7 +38,9 @@ export async function startViteDevServer(config: ResolvedKirieConfig): Promise<S
     throw error;
   }
 
-  const url = server.resolvedUrls?.local[0];
+  const localUrl = server.resolvedUrls?.local[0];
+  const networkUrl = server.resolvedUrls?.network[0];
+  const url = options.preferNetworkUrl ? (networkUrl ?? localUrl) : (localUrl ?? networkUrl);
 
   if (!url) {
     await server.close();
@@ -44,7 +59,10 @@ export async function buildViteWeb(config: ResolvedKirieConfig): Promise<void> {
   await build(createViteConfig(config));
 }
 
-export function createViteConfig(config: ResolvedKirieConfig): InlineConfig {
+export function createViteConfig(
+  config: ResolvedKirieConfig,
+  options: StartViteDevServerOptions = {},
+): InlineConfig {
   assertNoKirieOwnedViteOptions(config.web.vite as Record<string, unknown>);
 
   return mergeConfig(config.web.vite, {
@@ -52,13 +70,17 @@ export function createViteConfig(config: ResolvedKirieConfig): InlineConfig {
     build: {
       outDir: "dist",
     },
+    clearScreen: options.clearScreen,
     configFile: false,
+    force: options.force,
+    logLevel: options.logLevel,
+    mode: config.mode,
     root: config.web.root,
     server: {
-      host: "127.0.0.1",
+      host: options.host ?? "127.0.0.1",
       open: false,
-      port: 5173,
-      strictPort: false,
+      port: options.port ?? 5173,
+      strictPort: options.strictPort ?? false,
     },
   }) as InlineConfig;
 }

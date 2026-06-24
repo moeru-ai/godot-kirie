@@ -1,25 +1,209 @@
-import { loadKirieConfig } from "./config.ts";
-import { launchGodot, prepareGodotProject } from "./godot.ts";
-import { startViteDevServer } from "./vite.ts";
+import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
 
-export interface DevOptions {
+import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
+import { runExport } from "./export.ts";
+import { launchGodot, prepareGodotProject } from "./godot.ts";
+import { exportIosSimulatorApp } from "./ios.ts";
+import {
+  createKirieDevLaunchOptions,
+  reverseAndroidTcp,
+  runAndroid,
+  runIosSimulator,
+} from "./run.ts";
+import { type StartViteDevServerOptions, startViteDevServer } from "./vite.ts";
+
+export type DevTarget = "desktop" | "android" | "ios";
+
+export interface DevOptions extends StartViteDevServerOptions {
+  appPath?: string;
+  clearData?: boolean;
+  clearLogcat?: boolean;
   cwd?: string;
+  device?: string;
+  forceStop?: boolean;
+  godotArgs?: string[];
+  godotCommand?: string;
+  mode?: string;
+  target?: DevTarget;
+  terminateExisting?: boolean;
 }
 
 export async function runDev(options: DevOptions = {}): Promise<void> {
+  const target = options.target ?? "desktop";
   const config = await loadKirieConfig({
+    command: "serve",
     cwd: options.cwd,
+    mode: options.mode,
   });
-  const vite = await startViteDevServer(config);
-  let godot: ReturnType<typeof launchGodot> | undefined;
+
+  if (target === "android") {
+    assertAndroidDevInternetPermission(config);
+  }
+  if (target === "ios") {
+    assertIosDevExportProjectOnly(config);
+  }
+
+  const vite = await startViteDevServer(config, {
+    clearScreen: options.clearScreen,
+    force: options.force,
+    logLevel: options.logLevel,
+    port: options.port,
+    host: options.host,
+    strictPort: options.strictPort,
+  });
 
   try {
     console.log(`Kirie dev server: ${vite.url}`);
-    await prepareGodotProject(config);
-    godot = launchGodot(config, vite.url);
+
+    switch (target) {
+      case "desktop":
+        await runDesktopDev(config, vite.url, options);
+        return;
+      case "android":
+        await runAndroidDev(config, vite.url, options);
+        return;
+      case "ios":
+        await runIosDev(config, vite.url, options);
+        return;
+    }
+  } finally {
+    await vite.server.close();
+  }
+}
+
+async function runDesktopDev(
+  config: ResolvedKirieConfig,
+  webUrl: string,
+  options: DevOptions,
+): Promise<void> {
+  const godotConfig = {
+    ...config,
+    godot: {
+      ...config.godot,
+      command: options.godotCommand ?? config.godot.command,
+    },
+  };
+  let godot: ReturnType<typeof launchGodot> | undefined;
+
+  try {
+    await prepareGodotProject(godotConfig);
+    godot = launchGodot(godotConfig, [...devLaunchUserArgs(webUrl), ...(options.godotArgs ?? [])]);
     await godot;
   } finally {
     godot?.kill("SIGTERM");
-    await vite.server.close();
   }
+}
+
+async function runAndroidDev(
+  config: ResolvedKirieConfig,
+  webUrl: string,
+  options: DevOptions,
+): Promise<void> {
+  const reverseWeb = resolveAndroidReverseWebUrl(webUrl);
+
+  await buildDotnet({
+    projectDir: config.godot.project,
+    skipMissingProject: true,
+  });
+  await runExport({
+    build: false,
+    cwd: config.cwd,
+    godotCommand: options.godotCommand,
+    mode: options.mode,
+    platform: "android",
+    userArgs: ["--kirie-android-aar=debug"],
+  });
+  await reverseAndroidTcp({
+    cwd: config.cwd,
+    device: options.device,
+    port: reverseWeb.port,
+  });
+  await runAndroid({
+    clearData: options.clearData,
+    clearLogcat: options.clearLogcat,
+    cwd: config.cwd,
+    device: options.device,
+    forceStop: options.forceStop ?? true,
+    launchOptions: createKirieDevLaunchOptions(reverseWeb.url),
+  });
+}
+
+async function runIosDev(
+  config: ResolvedKirieConfig,
+  webUrl: string,
+  options: DevOptions,
+): Promise<void> {
+  const appPath = options.appPath ?? "dist/kirie/ios/debug.app";
+
+  await buildDotnet({
+    projectDir: config.godot.project,
+    skipMissingProject: true,
+  });
+  await exportIosSimulatorApp({
+    appPath,
+    build: false,
+    cwd: config.cwd,
+    godotCommand: options.godotCommand,
+    mode: options.mode,
+  });
+  await runIosSimulator({
+    appPath,
+    cwd: config.cwd,
+    launchOptions: createKirieDevLaunchOptions(webUrl),
+    simulatorId: options.device,
+    terminateExisting: options.terminateExisting ?? true,
+  });
+}
+
+function devLaunchUserArgs(webUrl: string): string[] {
+  const launchOptions = createKirieDevLaunchOptions(webUrl);
+  return Object.entries(launchOptions).map(([key, value]) => `--${key}=${value}`);
+}
+
+export function resolveAndroidReverseWebUrl(webUrl: string): { port: number; url: string } {
+  const url = new URL(webUrl);
+  const port = Number(url.port || (url.protocol === "https:" ? 443 : 80));
+
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(`Vite dev server URL does not include a valid TCP port: ${webUrl}`);
+  }
+
+  url.hostname = "127.0.0.1";
+
+  return {
+    port,
+    url: url.toString(),
+  };
+}
+
+function assertAndroidDevInternetPermission(config: ResolvedKirieConfig): void {
+  const internetPermission = readExportPresetValue({
+    optionName: "permissions/internet",
+    presetName: "Android",
+    projectDir: config.godot.project,
+  });
+
+  if (internetPermission === true) {
+    return;
+  }
+
+  throw new Error(
+    "kirie dev android requires the Android export preset option permissions/internet=true.",
+  );
+}
+
+function assertIosDevExportProjectOnly(config: ResolvedKirieConfig): void {
+  const exportProjectOnly = readExportPresetValue({
+    optionName: "application/export_project_only",
+    presetName: "iOS",
+    projectDir: config.godot.project,
+  });
+
+  if (exportProjectOnly === true) {
+    return;
+  }
+
+  throw new Error(
+    "kirie dev ios requires the iOS export preset option application/export_project_only=true.",
+  );
 }

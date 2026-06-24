@@ -40,8 +40,8 @@ Start the CLI-managed Vite server and Godot project:
 mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run dev
 ```
 
-The CLI passes the resolved Vite URL to Godot through `KIRIE_WEB_URL`. The
-example creates a WebView with that URL when the project starts.
+The CLI passes the resolved Vite URL to Godot through the `kirie-web-url` launch
+option. The example creates a WebView with that URL when the project starts.
 
 ## Running the packaged web build
 
@@ -91,8 +91,19 @@ pnpm kirie run android
 `kirie run android` is expected to install the default Android export output
 before launching the Godot activity.
 
-The mobile example runner builds `src-web/dist` through `kirie build` before
-running the existing Godot export, install, and launch steps.
+Development runs can also use the CLI-managed Vite server on mobile:
+
+```bash
+pnpm kirie dev android --device <selector>
+pnpm kirie dev ios --device <simulator>
+```
+
+Android development runs set up `adb reverse` for the Vite dev server port and
+pass a `127.0.0.1` `kirie-web-url` to the launched app. The mobile example
+keeps the Android export preset's `permissions/internet` option enabled because
+the WebView still opens a network socket for that loopback HTTP URL. The mobile
+example runner builds `src-web/dist` through `kirie build` before running the
+existing Godot export, install, and launch steps.
 
 Build, install, and launch the Android example:
 

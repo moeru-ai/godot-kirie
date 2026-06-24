@@ -62,6 +62,10 @@ framework build configuration.
 ## Notes
 
 - The WebView is visually transparent, but it still captures touches everywhere it covers.
+- Known issue: if iOS shows a system-level modal during early app startup, such
+  as an account sign-in prompt, WebView creation can fail before an active host
+  window is available. Future lifecycle work should queue creation until the
+  host scene or window is ready instead of relying only on bounded retries.
 - ATS widening is injected only when the TLS bypass export option is enabled.
 - Invalid TLS certificates are bypassed only when the TLS bypass export option is enabled.
 

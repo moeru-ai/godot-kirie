@@ -8,6 +8,7 @@ export type ExportPlatform = "android" | "ios";
 export interface ExportOptions {
   build?: boolean;
   cwd?: string;
+  godotCommand?: string;
   mode?: string;
   output?: string;
   platform?: ExportPlatform;
@@ -46,7 +47,7 @@ export async function runExport(options: ExportOptions = {}): Promise<void> {
 
   await exportGodotPreset({
     godotArgs: config.godot.args,
-    godotCommand: config.godot.command,
+    godotCommand: options.godotCommand ?? config.godot.command,
     installAndroidBuildTemplate: preset === DEFAULT_PLATFORM_PRESETS.android,
     mode,
     outputPath,

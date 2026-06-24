@@ -7,5 +7,8 @@ export {
   type PrepareGodotProjectOptions,
   prepareGodotProject,
 } from "./godot.ts";
-export { type ReadExportPresetOptionOptions, readExportPresetOption } from "./presets.ts";
+export {
+  type ReadExportPresetValueOptions,
+  readExportPresetValue,
+} from "./presets.ts";
 export { type BuildViteWebOptions, buildViteWeb, createViteBuildConfig } from "./vite.ts";
