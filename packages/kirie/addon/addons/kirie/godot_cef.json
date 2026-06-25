@@ -2,6 +2,6 @@
   "addon_path": "res://addons/godot_cef",
   "class_name": "CefTexture",
   "setup_command": "mise run install:godot-cef",
-  "sha256": "23e054c2bb07d7fee44b630f45cb9022f9acfec5ab94dcf3154b2f7dbc7e6d0d",
-  "version": "1.15.2"
+  "sha256": "37420fb0929987faf3d349194c68a9ba13a60fbf4075a5c5e4d5cf20ddcf1c8f",
+  "version": "1.15.3"
 }

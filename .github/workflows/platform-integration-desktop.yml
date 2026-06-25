@@ -97,5 +97,5 @@ jobs:
         timeout-minutes: 8
         run: |
           mise run test:integration-desktop ipc_round_trip_probe
-          # mise run test:integration-desktop webview_lifecycle_probe
+          mise run test:integration-desktop webview_lifecycle_probe
           mise run test:integration-desktop res_asset_loading_probe
