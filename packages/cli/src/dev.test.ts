@@ -206,6 +206,41 @@ describe("runDev", () => {
     expect(launchRun?.argv).toContain("--kirie-web-url=http://127.0.0.1:5173/");
   });
 
+  it("waits for iOS simulator app installation before launch", async () => {
+    const project = await projects.copy();
+
+    await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
+    await installFakeXcrun(project);
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${path.join(project, "fake-bin")}${path.delimiter}${originalPath ?? ""}`;
+    try {
+      await runIosSimulator({
+        appPath: "dist/kirie/ios/debug.app",
+        bundleId: "ai.moeru.kirie.integration",
+        cwd: project,
+        simulatorId: "booted",
+      });
+    } finally {
+      process.env.PATH = originalPath;
+    }
+
+    const invocations = await readFakeXcrunInvocations(project);
+
+    expect(invocations.map((invocation) => invocation.argv.slice(0, 2))).toEqual([
+      ["simctl", "install"],
+      ["simctl", "get_app_container"],
+      ["simctl", "launch"],
+    ]);
+    expect(invocations[1]?.argv).toEqual([
+      "simctl",
+      "get_app_container",
+      "booted",
+      "ai.moeru.kirie.integration",
+      "app",
+    ]);
+  });
+
   it("rejects Kirie-owned Vite options", async () => {
     const project = await projects.copy();
     await installKirieConfigFixture(project, "dev-owned-server-port.kirie.config.ts");

@@ -189,6 +189,11 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         stdio: "inherit",
       },
     );
+    await waitForIosSimulatorAppInstall({
+      bundleId,
+      cwd: config.cwd,
+      simulatorId,
+    });
   }
 
   await execa(
@@ -344,6 +349,37 @@ async function waitForAndroidPackagePid(options: {
   }
 
   throw new Error(`Timed out waiting for Android package PID: ${options.packageName}`);
+}
+
+// TODO: Replace command-specific polling loops with a shared helper that accepts
+// the command, success predicate, timeout, and polling interval.
+async function waitForIosSimulatorAppInstall(options: {
+  bundleId: string;
+  cwd: string;
+  simulatorId: string;
+  timeoutMs?: number;
+}): Promise<void> {
+  const deadline = Date.now() + (options.timeoutMs ?? 30_000);
+
+  while (Date.now() < deadline) {
+    const result = await execa(
+      "xcrun",
+      ["simctl", "get_app_container", options.simulatorId, options.bundleId, "app"],
+      {
+        cwd: options.cwd,
+        reject: false,
+        stderr: "ignore",
+        stdout: "ignore",
+      },
+    );
+    if (result.exitCode === 0) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  throw new Error(`Timed out waiting for iOS app install: ${options.bundleId}`);
 }
 
 function iosLaunchOptionArgs(launchOptions: LaunchOptions | undefined): string[] {
