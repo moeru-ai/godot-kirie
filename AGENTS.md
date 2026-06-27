@@ -16,9 +16,10 @@ The low-level plugin and IPC milestone covers:
 Application-framework behavior belongs above the low-level plugin and IPC core.
 The existing `@gd-kirie/ipc` package is a thin browser-side transport wrapper;
 do not expand it into an application event or invocation layer unless the user
-explicitly asks for that higher-level work. The planned Kirie CLI owns the app
-workflow described below: development sessions, local build inputs, export and
-run semantics, initialization, and diagnostics.
+explicitly asks for that higher-level work. The Kirie CLI owns app workflow
+above the addon core, including the implemented development sessions, local
+build inputs, export and run helpers, and the planned initialization and
+diagnostics commands.
 
 The mobile IPC v1 experiment keeps Kirie core byte-oriented and CBOR-based with
 text, binary, and data lanes. JSON belongs to callers or adapters, not to Kirie
@@ -125,17 +126,17 @@ label them as anecdotal when they influence a decision.
 - Keep `KirieClient` as a thin C# wrapper over the same platform singleton.
   Expose Kirie signals as C# events, and keep internal Godot `Callable` usage as
   bridge plumbing rather than public API.
-- Kirie supports packaged web content sourced from project resources. The
-  planned Kirie app layout standardizes production web content at
-  `res://src-web/dist/index.html`. When that migration is implemented, drop the
-  previous `res://web` behavior instead of preserving a compatibility layer.
-  Runtime-mounted Godot packs remain out of scope for that loading path.
+- Kirie supports packaged web content sourced from project resources. The Kirie
+  app layout standardizes production web content at
+  `res://src-web/dist/index.html`; do not reintroduce the previous `res://web`
+  behavior as a compatibility layer. Runtime-mounted Godot packs remain out of
+  scope for that loading path.
 - If an API is needed by both GDScript and C#, keep the behavior aligned and
   keep C# as a thin wrapper.
 
-## Planned Kirie CLI Direction
+## Kirie CLI Direction
 
-The planned Kirie app layout is:
+The Kirie app layout is:
 
 - `kirie.config.ts`
 - `package.json`
@@ -145,7 +146,7 @@ The planned Kirie app layout is:
 - `addons/kirie/`
 - optional `addons/godot_cef/`
 
-Kirie CLI should be installed through npm. The current foundation commands are:
+Kirie CLI should be installed through npm. The implemented foundation commands are:
 
 - `kirie dev`: start the Vite development server, launch Godot as a child
   process, and inject `KIRIE_DEV=1` and
@@ -153,12 +154,14 @@ Kirie CLI should be installed through npm. The current foundation commands are:
 - `kirie build`: build every configured local input needed by a runnable or
   exportable Godot project, without exporting platform packages.
 - `kirie build web`: build only the Vite web output for Godot resource loading.
-- `kirie build dotnet`: build only the Godot C#/.NET project when one is
-  configured or discovered.
-- `kirie init`: explicitly initialize a Kirie project and write required
-  project configuration.
-- `kirie doctor`: diagnose project configuration without writing files.
-- `kirie doctor --fix`: explicitly repair supported configuration problems.
+- `kirie build dotnet`: build only the Godot C#/.NET project and fail if none
+  is configured or discovered.
+- `kirie init`: planned command to explicitly initialize a Kirie project and
+  write required project configuration.
+- `kirie doctor`: planned command to diagnose project configuration without
+  writing files.
+- `kirie doctor --fix`: planned command to explicitly repair supported
+  configuration problems.
 
 The broader app workflow should keep these command semantics:
 
@@ -189,14 +192,14 @@ Kirie enforces Vite for user web source. Advanced Vite options belong in
 `kirie.config.ts` under `web.vite`, but Kirie owns `root`, `base`,
 `server.host`, `server.port`, `server.open`, and `build.outDir`. Explicit CLI
 flags may override runtime server values for a single command invocation.
-Planned `kirie dev` flags include `--config <path>` for the Kirie config,
-`--project <dir>` for the Godot project, `--godot <path>` for a Godot executable
-override, and Vite-shaped flags such as `--host <host>`, `--port <number>`,
-`--strict-port`, `--mode <mode>`, `--force`, `--log-level <level>`,
-`--clear-screen`, and `--no-clear-screen`. Kirie must either parse and map
-Vite-shaped flags explicitly to Vite's public JavaScript API or proxy them to
-the real Vite CLI; unknown flags must not be silently ignored. Arguments after
-`--` on `kirie dev` belong to Godot.
+Current `kirie dev` flags include `--project <dir>` for the Godot project,
+`--godot <path>` for a Godot executable override, and Vite-shaped flags such as
+`--host <host>`, `--port <number>`, `--strict-port`, `--mode <mode>`,
+`--force`, `--log-level <level>`, `--clear-screen`, and `--no-clear-screen`.
+A Kirie `--config <path>` override remains planned. Kirie must either parse and
+map Vite-shaped flags explicitly to Vite's public JavaScript API or proxy them
+to the real Vite CLI; unknown flags must not be silently ignored. Arguments
+after `--` on `kirie dev` belong to Godot.
 
 Only explicit setup and repair commands may write Godot configuration.
 `kirie init` and `kirie doctor --fix` may modify `project.godot` or

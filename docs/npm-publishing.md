@@ -22,9 +22,9 @@ depend on the CLI.
 
 ## npm Setup
 
-The npm organization and package scope is `gd-kirie`; browser packages include
-`@gd-kirie/ipc` and `@gd-kirie/ipc-eventa`. Future published packages include
-`@gd-kirie/build` and `@gd-kirie/cli`.
+The npm organization and package scope is `gd-kirie`; public JavaScript
+packages include `@gd-kirie/ipc`, `@gd-kirie/ipc-eventa`, `@gd-kirie/build`,
+and `@gd-kirie/cli`.
 
 Configure trusted publishing for each public browser package on npmjs.com. These
 fields identify the GitHub repository that is allowed to publish the package:

@@ -97,6 +97,10 @@ func _export_begin(
 		_assert_godot_cef_available()
 		return
 
+	if features.has("android"):
+		_add_android_web_asset_files(DEFAULT_WEB_ROOT)
+		return
+
 	if not features.has("ios"):
 		return
 
@@ -212,11 +216,50 @@ func _plist_bool(value: bool) -> String:
 	return "<false/>"
 
 
+func _add_android_web_asset_files(root_path: String) -> void:
+	if not _has_web_entry(root_path):
+		return
+
+	print("[Kirie][export] add Android web asset root: %s" % root_path)
+	if not _add_android_web_asset_directory(root_path):
+		return
+
+
+func _add_android_web_asset_directory(dir_path: String) -> bool:
+	# EditorExportPlugin only exposes add_file() for custom exported resources.
+	# There is no Android directory-level API for resource files, so recurse here.
+	for file_name in DirAccess.get_files_at(dir_path):
+		var file_path := dir_path.path_join(file_name)
+		var file := FileAccess.open(file_path, FileAccess.READ)
+		if file == null:
+			var message := "[Kirie][export] Android web asset file not readable: %s" % file_path
+			push_error(message)
+			assert(false, message)
+			return false
+
+		add_file(file_path, file.get_buffer(file.get_length()), false)
+
+	for directory_name in DirAccess.get_directories_at(dir_path):
+		var child_path := dir_path.path_join(directory_name)
+		if not _add_android_web_asset_directory(child_path):
+			return false
+
+	return true
+
+
+func _has_web_entry(root_path: String) -> bool:
+	var index_path := root_path.path_join("index.html")
+	if FileAccess.file_exists(index_path):
+		return true
+
+	var message := "[Kirie][export] web entry not found: %s" % index_path
+	push_error(message)
+	assert(false, message)
+	return false
+
+
 func _add_ios_web_bundle_files(root_path: String) -> void:
-	if not DirAccess.dir_exists_absolute(root_path):
-		var message := "[Kirie][export] iOS web root not found: %s" % root_path
-		push_error(message)
-		assert(false, message)
+	if not _has_web_entry(root_path):
 		return
 
 	print("[Kirie][export] add iOS bundle web root: %s" % root_path)

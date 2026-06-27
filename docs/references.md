@@ -171,7 +171,7 @@ packaging, or platform WebView bridge details.
   fixture.
 - [Vite JavaScript API](https://vite.dev/guide/api-javascript.html)
   Reference for `createServer()`, `build()`, `mergeConfig()`, and dev server
-  `resolvedUrls`, which underpin the planned `kirie dev` implementation.
+  `resolvedUrls`, which underpin current and planned `kirie dev` behavior.
 - [Vite CLI](https://vite.dev/guide/cli)
   Reference for Vite command-line flags when Kirie chooses to expose or proxy
   Vite-shaped arguments.
@@ -228,5 +228,5 @@ packaging, or platform WebView bridge details.
   support, mise task configuration, and Execa.
 - When changing the platform integration web fixture, start with the Vite build
   guide and `@gd-kirie/ipc`.
-- When changing planned Kirie CLI development-server behavior, start with the
-  Vite JavaScript API and Vite server options.
+- When changing Kirie CLI development-server behavior, start with the Vite
+  JavaScript API and Vite server options.

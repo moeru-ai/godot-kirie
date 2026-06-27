@@ -3,6 +3,12 @@
 This package contains the Kirie plugin sources and platform-specific native
 implementations.
 
+`@gd-kirie/kirie` is a private workspace container for the Godot addon and
+native plugin sources. It is not a public npm package and does not own a package
+build pipeline. Native artifacts and the downloadable addon zip are built by the
+repository-level mise tasks documented in
+[docs/addon-release.md](../../docs/addon-release.md).
+
 Current layout:
 
 - `addon/addons/kirie`: Godot-facing plugin files
@@ -10,8 +16,9 @@ Current layout:
 - `native/android`: Android implementation
 - `native/ios`: iOS implementation
 
-The goal of this package is to stay small until the WebView IPC surface is proven
-in a real example project.
+The goal of this package is to keep the Godot addon tree and native sources
+close together while package-published JavaScript lives in the sibling
+workspace packages.
 
 ## C# binding
 
@@ -32,7 +39,7 @@ public override void _Ready()
 
     if (_kirie.IsAvailable)
     {
-        _kirie.CreateWebView("res://web/dist/index.html");
+        _kirie.CreateWebView("res://src-web/dist/index.html");
     }
 }
 ```

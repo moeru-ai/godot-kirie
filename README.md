@@ -39,7 +39,7 @@ enabled for production builds.
 ```mermaid
 flowchart LR
     A["Godot Project"] --> B["addons/kirie"]
-    B --> C["Kirie / KirieView / KirieClient"]
+    B --> C["GdKirie / KirieNode / KirieClient"]
     C --> D["Android native implementation"]
     C --> E["iOS native implementation"]
     D <--> F["WebView"]
@@ -55,6 +55,8 @@ example, and regression-test areas:
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
 - `packages/build`: public build and export automation API for scripts
+- `packages/cli`: Kirie command-line tools for development sessions, export,
+  install, and launch workflows
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
 - `examples/basic-kirie-cli`: beginner-friendly demo project for the Kirie CLI workflow

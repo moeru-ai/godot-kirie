@@ -25,11 +25,17 @@ Text maps to `String`, binary maps to `ByteArray`, and data maps through
 Jackson `JsonNode` into Godot-compatible values.
 
 `res://` loading is intentionally limited to packaged application assets. The
-Android implementation rewrites `res://web/index.html` to Kirie's local asset
-origin and serves `web/index.html` from the APK/AAB assets through the WebView
-request handler. `res://web` resolves to `web/index.html`. Runtime-mounted Godot
-packs are not part of this path. `http://`, `https://`, and `file://` URLs keep
-the default Android WebView loading behavior.
+Android implementation rewrites `res://` URLs to Kirie's local asset origin and
+serves the matching APK/AAB asset through the WebView request handler. For
+example, `res://src-web/dist/index.html` resolves to `src-web/dist/index.html`,
+and `res://src-web/dist` resolves to `src-web/dist/index.html`. Runtime-mounted
+Godot packs are not part of this path. `http://`, `https://`, and `file://`
+URLs keep the default Android WebView loading behavior.
+
+The addon export plugin automatically adds `res://src-web/dist` files to
+Android exports and fails export when `res://src-web/dist/index.html` is
+missing. User projects do not need an export preset `include_filter` entry for
+that web build output.
 
 Runtime configuration is injected by the addon export plugin as Android
 application manifest metadata. WebView inspection and invalid TLS certificate

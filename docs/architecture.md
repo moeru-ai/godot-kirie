@@ -97,7 +97,7 @@ Android and iOS use private view IDs only to route callbacks back to the owning 
 
 Kirie supports loading packaged offline web content from Godot project
 resources. The current native resolvers can serve packaged `res://` paths. The
-planned Kirie CLI app layout standardizes production web content at
+Kirie CLI app layout standardizes production web content at
 `res://src-web/dist/index.html`, as described below.
 
 ## Runtime debug configuration
@@ -123,8 +123,8 @@ debugging can opt into `Kirie-debug.aar` for a single export by passing
 
 ## Kirie app layout and CLI direction
 
-The planned Kirie application shape is a Godot project with a Vite web frontend
-beside the Godot source:
+The Kirie application shape is a Godot project with a Vite web frontend beside
+the Godot source:
 
 ```text
 kirie.config.ts
@@ -160,9 +160,9 @@ Kirie does not own native platform project directories. Do not introduce
 Capacitor-style `ios/` or `android/` project trees into Kirie user projects.
 Native capabilities should be provided by Godot plugins.
 
-The planned Kirie CLI surface is intentionally small. The current implemented
-subset covers desktop development, local build inputs, platform export, and
-mobile install-and-launch flows:
+The Kirie CLI surface is intentionally small. The current implemented subset
+covers desktop development, local build inputs, platform export, and mobile
+install-and-launch flows:
 
 ```sh
 kirie dev
@@ -279,10 +279,11 @@ processes. It only supports development sessions that the CLI starts and owns.
 `kirie build` builds local intermediate artifacts needed by a runnable or
 exportable Godot project, but it does not produce platform application packages.
 It should build every configured or clearly discovered input. `kirie build web`
-builds only the Vite web output, and `kirie build dotnet` builds only the
-Godot C#/.NET project when one is configured or discovered. If no C# project is
-configured or discovered, the aggregate `kirie build` command may skip the
-`.NET` step; if a C# project is present, C# build failure must fail the command.
+builds only the Vite web output. `kirie build dotnet` builds only the Godot
+C#/.NET project and fails when no project or solution is present. If no C#
+project is configured or discovered, the aggregate `kirie build` command may
+skip the `.NET` step; if a C# project is present, C# build failure must fail the
+command.
 
 `kirie export` means a complete platform export workflow: build local inputs
 first, then call Godot's export flow for the selected platform or preset.
@@ -382,15 +383,14 @@ When loading `http://`, `https://`, or `file://` URLs, Kirie should keep using
 the platform WebView's default loading behavior instead of intercepting or
 rewriting those URLs.
 
-The planned Kirie CLI app layout uses `res://src-web/dist/index.html` as the
-default production entry. When that migration is implemented, the addon export
-plugin should package `res://src-web/dist` for Android and iOS exports, fail
-export when `res://src-web/dist/index.html` is missing, and drop the previous
-`res://web` behavior instead of preserving a compatibility layer. Users should
-continue to use Godot's official export preset flow by default. Kirie may
-diagnose export preset issues, and explicit setup or repair commands may write
-supported preset changes through Godot, but normal run, build, and export
-commands must not silently mutate export presets.
+The Kirie CLI app layout uses `res://src-web/dist/index.html` as the default
+production entry. The addon export plugin packages `res://src-web/dist` for
+Android and iOS exports and fails export when `res://src-web/dist/index.html` is
+missing. The previous `res://web` behavior is not preserved as a compatibility
+layer. Users should continue to use Godot's official export preset flow by
+default. Kirie may diagnose export preset issues, and explicit setup or repair
+commands may write supported preset changes through Godot, but normal run,
+build, and export commands must not silently mutate export presets.
 
 ## Desktop Godot CEF direction
 
