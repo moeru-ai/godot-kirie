@@ -8,6 +8,7 @@
     "build": "pnpm -r run build",
     "build:packages": "pnpm -rF './packages/*' run build",
     "format:biome": "biome check --write .",
+    "lint:alint": "alint",
     "lint:biome": "biome check .",
     "release": "bumpp",
     "test:ios-ipc-serialization": "./scripts/run-build-task.js testIosIpcSerialization",
@@ -15,7 +16,9 @@
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },
   "devDependencies": {
+    "@alint-js/cli": "catalog:",
     "@biomejs/biome": "catalog:",
+    "@gd-kirie/alint-config": "workspace:*",
     "bumpp": "catalog:",
     "execa": "catalog:"
   }
