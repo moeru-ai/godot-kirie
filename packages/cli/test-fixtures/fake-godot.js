@@ -1,5 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
+if (process.argv.includes("--version")) {
+  console.log("4.5.stable.official.876b29033");
+  process.exit(0);
+}
+
 const file = "godot-invocations.json";
 const invocations = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
 

@@ -15,6 +15,9 @@ packaging, or platform WebView bridge details.
   `Window`, but Kirie core does not own window organization.
 - [Godot Android plugins (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
   Main reference for Godot Android plugin v2 packaging and export flow.
+- [Exporting projects (stable)](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html)
+  Reference for export templates, export presets, and platform SDK
+  prerequisites used by `kirie doctor` and export diagnostics.
 - [Command line tutorial (stable)](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html)
   Reference for `--import`, `--path`, `--remote-debug`, `--script`,
   `--build-solutions`, command-line running, and export behavior.
@@ -84,6 +87,8 @@ packaging, or platform WebView bridge details.
   ArrayBuffer IPC channels and document-start runtime injection.
 - [AndroidX WebKit WebMessageCompat](https://developer.android.com/reference/androidx/webkit/WebMessageCompat)
   Reference for WebView message payload types, including ArrayBuffer support.
+- [Android environment variables](https://developer.android.com/tools/variables)
+  Reference for Android SDK environment variables such as `ANDROID_HOME`.
 - [Upload your Android library](https://developer.android.com/studio/publish-library/upload-library)
   Publishing reference for Maven delivery of Android libraries and metadata.
 - [Gradle dependency management basics](https://docs.gradle.org/current/userguide/declaring_dependencies_basics.html)

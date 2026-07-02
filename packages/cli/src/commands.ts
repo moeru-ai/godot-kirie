@@ -3,6 +3,7 @@ import { type CommandDef, defineCommand } from "citty";
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
+import { runDoctor } from "./doctor.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
 import { runAndroid, runIosSimulator } from "./run.ts";
 
@@ -21,6 +22,11 @@ const exportArgs = {
 
 const projectArgs = {
   project: { description: "Godot project directory.", type: "string" },
+} as const;
+
+const doctorArgs = {
+  ...projectArgs,
+  fix: { description: "Apply supported repairs.", type: "boolean" },
 } as const;
 
 const devServerArgs = {
@@ -91,6 +97,7 @@ type ExportCommandArgs = CommandArgs<typeof exportArgs>;
 type DevCommandArgs = CommandArgs<typeof devArgs> &
   CommandArgs<typeof androidDevArgs> &
   CommandArgs<typeof iosDevArgs>;
+type DoctorCommandArgs = CommandArgs<typeof doctorArgs>;
 type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
 
 function parseUserArgs(rawArgs: string[]): string[] {
@@ -250,6 +257,15 @@ export const mainCommand: CommandDef = defineCommand({
           run: runDevCommand("ios"),
         }),
       },
+    }),
+    doctor: defineCommand({
+      args: doctorArgs,
+      meta: { description: "Diagnose Kirie project prerequisites.", name: "doctor" },
+      run: ({ args }: { args: DoctorCommandArgs }) =>
+        runDoctor({
+          cwd: args.project,
+          fix: args.fix,
+        }),
     }),
     export: defineCommand({
       meta: { description: "Export a Kirie project through Godot.", name: "export" },
