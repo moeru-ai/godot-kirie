@@ -1,9 +1,3 @@
 {
-    "cSpell.words": [
-        "gdextension",
-        "xcarchive",
-        "Xcframework",
-        "xcodegen",
-        "xcodeproj"
-    ]
+  "cSpell.words": ["gdextension", "xcarchive", "Xcframework", "xcodegen", "xcodeproj"]
 }
