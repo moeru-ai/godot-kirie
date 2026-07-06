@@ -174,6 +174,7 @@ kirie build web
 kirie build dotnet
 kirie export android
 kirie export ios
+kirie doctor
 kirie run android
 kirie run ios
 ```
@@ -302,6 +303,30 @@ configuration files, including `project.godot` and `export_presets.cfg`, must
 go through Godot itself, for example a headless helper script using
 `ProjectSettings` or `ConfigFile`. JavaScript code must not patch
 Godot configuration text directly.
+
+`kirie doctor` is the read-only environment and project prerequisite check. It
+does not build local inputs, run exports, install SDK packages, download export
+templates, or mutate project files. It should report one diagnostic row per
+check, include the detected value when one exists, include a concise fix hint
+when a required check fails, and exit non-zero when any required check fails.
+The check implementation should preserve enough failure detail for diagnostics;
+avoid generic boolean helpers that collapse missing paths, wrong file types,
+permission failures, and command failures into the same result.
+
+The initial `kirie doctor` check matrix is:
+
+| Check | Purpose | Required behavior |
+| --- | --- | --- |
+| Godot command | Confirm the configured Godot executable can be launched and identify its version. | Run the configured command with a version probe and report the detected version or command failure. |
+| Godot export templates | Confirm export templates exist for the detected Godot version. | Check the template location matching Godot's version string and report missing or empty template directories without installing templates. |
+| Android SDK | Confirm Android export prerequisites can find an SDK. | Prefer `ANDROID_HOME`, accept compatible existing environments, and report whether the SDK directory exists. |
+| Android Java path | Confirm Godot's Android editor settings point at a usable Java/JDK. | Read Godot `EditorSettings`, check the Android Java SDK path, and report missing, invalid, or non-executable Java configuration. |
+| Android export preset | Confirm the project export preset contains required Android options for Kirie workflows. | Inspect `export_presets.cfg` through a structured parser and report missing presets or required option mismatches without rewriting the file. |
+
+Later doctor checks may cover the iOS toolchain, Godot C#/.NET setup, and the
+desktop Godot CEF backend. Add those checks only when the corresponding Kirie
+workflow is implemented enough that a failed prerequisite can be explained with
+a concrete fix path.
 
 Kirie enforces Vite as the web toolchain. Users should not hand-write a fixed
 development URL. The CLI should let Vite handle port conflicts, then pass the
