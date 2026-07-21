@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { unzipSync } from "fflate";
+import { downloadTemplate } from "giget";
 
 import packageJson from "../package.json" with { type: "json" };
 
@@ -45,14 +46,16 @@ export async function runInit(options: InitOptions): Promise<void> {
   try {
     await fs.mkdir(stagedProject);
 
-    const templateUrl = `https://github.com/${KIRIE_TEMPLATES_REPOSITORY}/archive/${templatesCommit}.zip`;
+    const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
     const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${packageJson.version}/kirie-addon.zip`;
-    const [templateArchive, addonArchive] = await Promise.all([
-      downloadArchive(templateUrl, `Kirie template commit ${templatesCommit}`),
+    const [, addonArchive] = await Promise.all([
+      downloadTemplate(templateSource, {
+        dir: stagedProject,
+        registry: false,
+      }),
       downloadArchive(addonUrl, `Kirie addon v${packageJson.version}`),
     ]);
 
-    await installTemplateArchive(templateArchive, options.template, stagedProject);
     await installAddonArchive(addonArchive, stagedProject);
     await applyProjectName(stagedProject, path.basename(target));
     await installStagedProject(stagedProject, target, temporaryRoot, existingTarget);
@@ -65,43 +68,6 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
   console.log("  pnpm kirie doctor");
-}
-
-export async function installTemplateArchive(
-  archive: Uint8Array,
-  template: string,
-  destination: string,
-): Promise<void> {
-  assertTemplateName(template);
-
-  const files = readArchiveFiles(archive);
-  const selectedFiles: ArchiveFile[] = [];
-  let archiveRoot: string | undefined;
-
-  for (const file of files) {
-    if (file.pathSegments.length < 4) {
-      continue;
-    }
-    if (file.pathSegments[1] !== "templates" || file.pathSegments[2] !== template) {
-      continue;
-    }
-
-    archiveRoot ??= file.pathSegments[0];
-    if (archiveRoot !== file.pathSegments[0]) {
-      throw new Error(`Template archive contains multiple roots for template "${template}".`);
-    }
-
-    selectedFiles.push({
-      data: file.data,
-      pathSegments: file.pathSegments.slice(3),
-    });
-  }
-
-  if (selectedFiles.length === 0) {
-    throw new Error(`Template "${template}" was not found in the template archive.`);
-  }
-
-  await writeArchiveFiles(selectedFiles, destination);
 }
 
 export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {

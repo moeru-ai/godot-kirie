@@ -30,6 +30,7 @@
     "citty": "catalog:",
     "execa": "catalog:",
     "fflate": "0.8.3",
+    "giget": "3.3.0",
     "vite": "catalog:"
   },
   "devDependencies": {

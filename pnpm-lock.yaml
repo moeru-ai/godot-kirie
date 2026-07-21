@@ -184,6 +184,9 @@ importers:
       fflate:
         specifier: 0.8.3
         version: 0.8.3
+      giget:
+        specifier: 3.3.0
+        version: 3.3.0
       vite:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)

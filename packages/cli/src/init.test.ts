@@ -3,13 +3,27 @@ import os from "node:os";
 import path from "node:path";
 
 import { strToU8, zipSync } from "fflate";
-import { afterEach, describe, expect, it } from "vitest";
+import type { DownloadTemplateOptions } from "giget";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyProjectName, installAddonArchive, installTemplateArchive, runInit } from "./init.ts";
+import { installAddonArchive, KIRIE_TEMPLATES_COMMIT, runInit } from "./init.ts";
+
+const { downloadTemplateMock } = vi.hoisted(() => ({
+  downloadTemplateMock: vi.fn(),
+}));
+
+vi.mock("giget", () => ({
+  downloadTemplate: downloadTemplateMock,
+}));
 
 const temporaryDirectories: string[] = [];
 
+beforeEach(() => {
+  downloadTemplateMock.mockReset();
+});
+
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await Promise.all(
     temporaryDirectories.splice(0).map((directory) =>
       fs.rm(directory, {
@@ -36,35 +50,65 @@ describe("init command", () => {
       }),
     ).rejects.toThrow("Target directory already exists");
     await expect(fs.readFile(marker, "utf8")).resolves.toBe("keep");
+    expect(downloadTemplateMock).not.toHaveBeenCalled();
   });
 
-  it("installs one template and the addon before applying targeted project names", async () => {
+  it("downloads one pinned template and installs the addon before applying project names", async () => {
     const root = await createTemporaryDirectory();
-    const project = path.join(root, "project");
-    await fs.mkdir(path.join(project, "addons", "kirie"), { recursive: true });
-    await fs.writeFile(path.join(project, "addons", "kirie", "stale.txt"), "stale");
+    downloadTemplateMock.mockImplementation(
+      async (_source: string, options: DownloadTemplateOptions) => {
+        if (!options.dir) {
+          throw new Error("Missing template destination.");
+        }
 
-    const templateArchive = zipSync({
-      "kirie-templates-commit/templates/basic/package.json": strToU8(
-        `${JSON.stringify({ name: "template-name", private: true }, null, 2)}\n`,
-      ),
-      "kirie-templates-commit/templates/basic/project.godot": strToU8(
-        '[application]\nconfig/name="Template Name"\n',
-      ),
-      "kirie-templates-commit/templates/basic/src-web/index.html": strToU8(
-        "<!doctype html><html><head><title>Template Name</title></head></html>\n",
-      ),
-      "kirie-templates-commit/templates/other/ignored.txt": strToU8("ignored"),
-    });
+        await fs.mkdir(path.join(options.dir, "src-web"), { recursive: true });
+        await fs.mkdir(path.join(options.dir, "addons", "kirie"), { recursive: true });
+        await fs.writeFile(
+          path.join(options.dir, "package.json"),
+          `${JSON.stringify({ name: "template-name", private: true }, null, 2)}\n`,
+        );
+        await fs.writeFile(
+          path.join(options.dir, "project.godot"),
+          '[application]\nconfig/name="Template Name"\n',
+        );
+        await fs.writeFile(
+          path.join(options.dir, "src-web", "index.html"),
+          "<!doctype html><html><head><title>Template Name</title></head></html>\n",
+        );
+        await fs.writeFile(path.join(options.dir, "addons", "kirie", "stale.txt"), "stale");
+      },
+    );
+
     const addonArchive = zipSync({
       "addons/kirie/gd_kirie.gd": strToU8("extends RefCounted\n"),
       "addons/kirie/plugin.cfg": strToU8('[plugin]\nname="Kirie"\n'),
     });
+    const fetchMock = vi.fn(async () => ({
+      arrayBuffer: async () => addonArchive.buffer,
+      ok: true,
+      status: 200,
+      statusText: "OK",
+    }));
+    vi.stubGlobal("fetch", fetchMock);
 
-    await installTemplateArchive(templateArchive, "basic", project);
-    await installAddonArchive(addonArchive, project);
-    await applyProjectName(project, "My Kirie App");
+    await runInit({
+      cwd: root,
+      target: "My Kirie App",
+      template: "basic",
+    });
 
+    expect(downloadTemplateMock).toHaveBeenCalledWith(
+      `github:moeru-ai/kirie-templates/templates/basic#${KIRIE_TEMPLATES_COMMIT}`,
+      {
+        dir: expect.stringContaining(".kirie-init-"),
+        registry: false,
+      },
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://github.com/moeru-ai/godot-kirie/releases/download/v0.1.2/kirie-addon.zip",
+    );
+
+    const project = path.join(root, "My Kirie App");
     const packageJson = JSON.parse(await fs.readFile(path.join(project, "package.json"), "utf8"));
     expect(packageJson.name).toBe("my-kirie-app");
     await expect(
@@ -77,18 +121,19 @@ describe("init command", () => {
       fs.readFile(path.join(project, "addons", "kirie", "plugin.cfg"), "utf8"),
     ).resolves.toContain('name="Kirie"');
     await expect(fs.access(path.join(project, "addons", "kirie", "stale.txt"))).rejects.toThrow();
-    await expect(fs.access(path.join(project, "ignored.txt"))).rejects.toThrow();
   });
 
-  it("rejects template folder traversal", async () => {
+  it("rejects template folder traversal before downloading", async () => {
     const root = await createTemporaryDirectory();
-    const archive = zipSync({
-      "kirie-templates-commit/templates/basic/package.json": strToU8("{}\n"),
-    });
 
-    await expect(installTemplateArchive(archive, "../basic", root)).rejects.toThrow(
-      "Template must be a single folder name.",
-    );
+    await expect(
+      runInit({
+        cwd: root,
+        target: "project",
+        template: "../basic",
+      }),
+    ).rejects.toThrow("Template must be a single folder name.");
+    expect(downloadTemplateMock).not.toHaveBeenCalled();
   });
 
   it("rejects archive path traversal", async () => {
