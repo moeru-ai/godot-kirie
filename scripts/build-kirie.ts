@@ -329,7 +329,7 @@ export async function testIosIpcSerialization(): Promise<void> {
       "-scheme",
       "KirieIpcSerializationTests",
       "-destination",
-      process.env.IOS_TEST_DESTINATION || "platform=iOS Simulator,name=iPhone 16",
+      process.env.IOS_TEST_DESTINATION || "platform=iOS Simulator,name=iPhone 16e",
       "CODE_SIGNING_ALLOWED=NO",
       "CODE_SIGNING_REQUIRED=NO",
     ],
