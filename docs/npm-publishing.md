@@ -54,9 +54,12 @@ pnpm rewrites them to published version ranges when packing or publishing.
    `pnpm publish -r --dry-run`, then creates a local release commit and
    `v<version>` tag.
 
-2. Push the release commit and tag.
+2. Make the release commit reachable from `origin/main`, normally by merging
+   the release pull request without pushing the generated tag. If the merge
+   changes the commit SHA, recreate the tag on the merged `main` commit.
 
-3. The `Publish npm Packages` workflow runs for pushed `v*` tags, builds
+3. Push the `v*` tag. Release workflows reject tags whose commits are not
+   reachable from `origin/main`. The `Publish npm Packages` workflow then builds
    packages, runs `pnpm publish -r --dry-run`, and publishes public workspace
    packages with `pnpm publish -r`.
 

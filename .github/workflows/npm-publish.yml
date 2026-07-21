@@ -25,6 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify release tag is on main
+        if: github.event_name == 'push'
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+            echo "::error::Release tag ${GITHUB_REF_NAME} must point to a commit on main."
+            exit 1
+          fi
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
         with:
