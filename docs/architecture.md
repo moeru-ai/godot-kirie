@@ -239,7 +239,7 @@ project when one is configured.
 
 `@gd-kirie/build` owns explicit-input programmatic build and export primitives.
 Development sessions, mobile device selection, install, launch, launch-option
-injection, log streaming, and watch policy stay in `@gd-kirie/cli`.
+injection, log streaming, and watch policy stay in `kirie`.
 
 `kirie dev` starts a Vite development server and reads the actual resolved URL
 after Vite listens. Desktop development launches Godot as a child process and
@@ -295,13 +295,19 @@ activity. It should only run an export workflow when the user passes
 `--export`. Neither command should silently create or repair project
 configuration.
 
-`kirie init` and `kirie doctor --fix` are the explicit commands allowed to
-write configuration. `kirie init` initializes Kirie-owned files and may register
-required Godot project settings. `kirie doctor` is read-only diagnostics.
-`kirie doctor --fix` may apply supported repairs. Any writes to Godot-owned
-configuration files, including `project.godot` and `export_presets.cfg`, must
-go through Godot itself, for example a headless helper script using
-`ProjectSettings` or `ConfigFile`. JavaScript code must not patch
+`kirie init <target> <template> [--overwrite]` initializes a new project from
+the named folder under `templates/` in the pinned `moeru-ai/kirie-templates`
+commit. It then downloads `kirie-addon.zip` from the `moeru-ai/godot-kirie`
+release matching the CLI version. The command is non-interactive and does not
+migrate or repair existing projects. It only sets the generated
+`package.json.name` and `src-web/index.html` title; template-owned Godot
+configuration is copied unchanged. The initial `basic` template is pinned at
+commit `27c823fd57bffae65175058779663bce45476863`. `kirie doctor` is read-only
+diagnostics and `kirie doctor --fix` may apply supported repairs. Repair writes
+to Godot-owned configuration files, including `project.godot` and
+`export_presets.cfg`, must go through Godot itself, for example a headless
+helper script using
+`ProjectSettings` or `ConfigFile`. JavaScript code must not patch existing
 Godot configuration text directly.
 
 `kirie doctor` is the read-only environment and project prerequisite check. It

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@gd-kirie/cli": "workspace:*",
+    "kirie": "workspace:*",
     "execa": "catalog:"
   }
 }

@@ -94,12 +94,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ipc
     devDependencies:
-      '@gd-kirie/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0
+      kirie:
+        specifier: workspace:*
+        version: link:../../packages/cli
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -181,6 +181,9 @@ importers:
       execa:
         specifier: 'catalog:'
         version: 9.6.1
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
       vite:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
@@ -234,12 +237,12 @@ importers:
 
   scripts:
     dependencies:
-      '@gd-kirie/cli':
-        specifier: workspace:*
-        version: link:../packages/cli
       execa:
         specifier: 'catalog:'
         version: 9.6.1
+      kirie:
+        specifier: workspace:*
+        version: link:../packages/cli
 
   tests/integration/src-web:
     dependencies:
@@ -998,6 +1001,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   figures@6.1.0:
     resolution: {integrity: sha512-d+l3qxjSesT4V7v2fh+QnmFnUWv9lSpjarhShNTgBOfA0ttejbQUAlHLitbjkoRiDulW0OPoQPYIGhIC8ohejg==}
@@ -2130,6 +2136,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  fflate@0.8.3: {}
 
   figures@6.1.0:
     dependencies:

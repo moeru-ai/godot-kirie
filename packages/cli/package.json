@@ -1,6 +1,6 @@
 {
-  "name": "@gd-kirie/cli",
-  "version": "0.1.1",
+  "name": "kirie",
+  "version": "0.1.2",
   "type": "module",
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
     "@gd-kirie/build": "workspace:*",
     "citty": "catalog:",
     "execa": "catalog:",
+    "fflate": "0.8.3",
     "vite": "catalog:"
   },
   "devDependencies": {
