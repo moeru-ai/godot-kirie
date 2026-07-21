@@ -5,9 +5,10 @@ import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
 import { runDoctor } from "./doctor.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
+import { runInit } from "./init.ts";
 import { runAndroid, runIosSimulator } from "./run.ts";
 
-type CommandArgSchema = Record<string, { readonly type: "boolean" | "string" }>;
+type CommandArgSchema = Record<string, { readonly type: "boolean" | "positional" | "string" }>;
 type CommandArgs<T extends CommandArgSchema> = {
   [K in keyof T]?: T[K]["type"] extends "boolean" ? boolean : string;
 };
@@ -27,6 +28,12 @@ const projectArgs = {
 const doctorArgs = {
   ...projectArgs,
   fix: { description: "Apply supported repairs.", type: "boolean" },
+} as const;
+
+const initArgs = {
+  target: { description: "Target project directory.", type: "positional" },
+  template: { description: "Template folder name.", type: "positional" },
+  overwrite: { description: "Replace an existing target directory.", type: "boolean" },
 } as const;
 
 const devServerArgs = {
@@ -98,6 +105,7 @@ type DevCommandArgs = CommandArgs<typeof devArgs> &
   CommandArgs<typeof androidDevArgs> &
   CommandArgs<typeof iosDevArgs>;
 type DoctorCommandArgs = CommandArgs<typeof doctorArgs>;
+type InitCommandArgs = CommandArgs<typeof initArgs>;
 type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
 
 function parseUserArgs(rawArgs: string[]): string[] {
@@ -266,6 +274,21 @@ export const mainCommand: CommandDef = defineCommand({
           cwd: args.project,
           fix: args.fix,
         }),
+    }),
+    init: defineCommand({
+      args: initArgs,
+      meta: { description: "Initialize a Kirie project from an official template.", name: "init" },
+      run: ({ args }: { args: InitCommandArgs }) => {
+        if (!args.target || !args.template) {
+          throw new Error("Kirie init requires a target directory and template folder name.");
+        }
+
+        return runInit({
+          overwrite: args.overwrite,
+          target: args.target,
+          template: args.template,
+        });
+      },
     }),
     export: defineCommand({
       meta: { description: "Export a Kirie project through Godot.", name: "export" },

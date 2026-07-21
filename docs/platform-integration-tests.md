@@ -219,7 +219,7 @@ mise run test:ios-ipc-serialization
 This is unit-style XCTest coverage for the Swift codec, not an exported-app
 platform integration test.
 
-By default this uses the `iPhone 16` simulator destination. Override the
+By default this uses the `iPhone 17` simulator destination. Override the
 destination when a local machine has a different simulator:
 
 ```bash

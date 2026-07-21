@@ -72,6 +72,17 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.release.outputs.upload == 'true' && steps.release.outputs.tag || github.ref }}
 
+      - name: Verify release tag is on main
+        if: steps.release.outputs.upload == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+            echo "::error::Release tag ${RELEASE_TAG} must point to a commit on main."
+            exit 1
+          fi
+
       - name: Install Node and Java
         uses: jdx/mise-action@v3
         with:

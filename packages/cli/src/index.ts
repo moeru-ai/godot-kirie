@@ -10,5 +10,7 @@ export type { DevOptions, DevTarget } from "./dev.ts";
 export { runDev } from "./dev.ts";
 export type { DoctorCheckResult, DoctorCheckStatus, DoctorOptions } from "./doctor.ts";
 export { runDoctor } from "./doctor.ts";
+export type { InitOptions } from "./init.ts";
+export { runInit } from "./init.ts";
 export type { KirieDevLaunchOptions } from "./run.ts";
 export { createKirieDevLaunchOptions } from "./run.ts";

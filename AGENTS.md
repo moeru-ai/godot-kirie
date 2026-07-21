@@ -156,8 +156,12 @@ Kirie CLI should be installed through npm. The implemented foundation commands a
 - `kirie build web`: build only the Vite web output for Godot resource loading.
 - `kirie build dotnet`: build only the Godot C#/.NET project and fail if none
   is configured or discovered.
-- `kirie init`: planned command to explicitly initialize a Kirie project and
-  write required project configuration.
+- `kirie init <target> <template> [--overwrite]`: initialize a new project from
+  the named folder under `templates/` in the pinned
+  `moeru-ai/kirie-templates` commit, then install `kirie-addon.zip` from the
+  `moeru-ai/godot-kirie` release matching the CLI version. The command is
+  non-interactive. The initial `basic` template is pinned at commit
+  `27c823fd57bffae65175058779663bce45476863`.
 - `kirie doctor`: planned command to diagnose project configuration without
   writing files.
 - `kirie doctor --fix`: planned command to explicitly repair supported
@@ -179,7 +183,7 @@ The broader app workflow should keep these command semantics:
 
 `@gd-kirie/build` is a public explicit-input build and export API. Keep dev
 sessions, device selection, install, launch, log streaming, and watch policy in
-`@gd-kirie/cli`. Repository integration and example tasks should exercise CLI
+`kirie`. Repository integration and example tasks should exercise CLI
 workflows where practical.
 
 Keep `kirie create` outside the current CLI scope. Mobile dev targets should
@@ -201,10 +205,12 @@ map Vite-shaped flags explicitly to Vite's public JavaScript API or proxy them
 to the real Vite CLI; unknown flags must not be silently ignored. Arguments
 after `--` on `kirie dev` belong to Godot.
 
-Only explicit setup and repair commands may write Godot configuration.
-`kirie init` and `kirie doctor --fix` may modify `project.godot` or
-`export_presets.cfg`, but those writes must go through Godot itself, for
-example a headless Godot helper using `ProjectSettings` or `ConfigFile`. Runtime
+`kirie init` creates a new project by copying a downloaded template; it does not
+migrate or repair an existing project. It only sets the generated
+`package.json.name` and `src-web/index.html` title. Only explicit repair
+commands such as `kirie doctor --fix` may modify existing `project.godot` or
+`export_presets.cfg`, and those writes must go through Godot itself, for example
+a headless Godot helper using `ProjectSettings` or `ConfigFile`. Runtime
 commands such as `kirie dev`, `kirie build`, and future `kirie export` should
 fail on wrong configuration and point users to `kirie doctor`.
 

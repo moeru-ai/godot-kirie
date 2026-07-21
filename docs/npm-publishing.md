@@ -13,18 +13,19 @@ for .NET adapter packages.
 - `@gd-kirie/ipc-eventa` is published from `packages/ipc-eventa`.
 - `@gd-kirie/build` is published from `packages/build` as a public
   programmatic build and export API package.
-- `@gd-kirie/cli` is the command-line owner for development sessions.
+- `kirie` is the command-line owner for project initialization and development
+  sessions.
 
 `@gd-kirie/ipc-eventa` uses the same npm publishing lane while keeping Eventa
 protocol behavior above the low-level `@gd-kirie/ipc` transport package.
-`@gd-kirie/cli` may depend on `@gd-kirie/build`, but `@gd-kirie/build` must not
+`kirie` may depend on `@gd-kirie/build`, but `@gd-kirie/build` must not
 depend on the CLI.
 
 ## npm Setup
 
 The npm organization and package scope is `gd-kirie`; public JavaScript
-packages include `@gd-kirie/ipc`, `@gd-kirie/ipc-eventa`, `@gd-kirie/build`,
-and `@gd-kirie/cli`.
+packages include `@gd-kirie/ipc`, `@gd-kirie/ipc-eventa`, and
+`@gd-kirie/build`. The unscoped `kirie` package publishes the CLI.
 
 Configure trusted publishing for each public browser package on npmjs.com. These
 fields identify the GitHub repository that is allowed to publish the package:
@@ -53,9 +54,12 @@ pnpm rewrites them to published version ranges when packing or publishing.
    `pnpm publish -r --dry-run`, then creates a local release commit and
    `v<version>` tag.
 
-2. Push the release commit and tag.
+2. Make the release commit reachable from `origin/main`, normally by merging
+   the release pull request without pushing the generated tag. If the merge
+   changes the commit SHA, recreate the tag on the merged `main` commit.
 
-3. The `Publish npm Packages` workflow runs for pushed `v*` tags, builds
+3. Push the `v*` tag. Release workflows reject tags whose commits are not
+   reachable from `origin/main`. The `Publish npm Packages` workflow then builds
    packages, runs `pnpm publish -r --dry-run`, and publishes public workspace
    packages with `pnpm publish -r`.
 

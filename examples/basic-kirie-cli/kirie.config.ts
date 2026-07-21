@@ -1,4 +1,4 @@
-import { defineKirieConfig } from "@gd-kirie/cli";
+import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({
   web: {
