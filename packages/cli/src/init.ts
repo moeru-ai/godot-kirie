@@ -2,8 +2,8 @@ import type { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { unzipSync } from "fflate";
 import { downloadTemplate } from "giget";
+import JSZip from "jszip";
 
 import packageJson from "../package.json" with { type: "json" };
 
@@ -16,11 +16,6 @@ export interface InitOptions {
   overwrite?: boolean;
   target: string;
   template: string;
-}
-
-interface ArchiveFile {
-  data: Uint8Array;
-  pathSegments: string[];
 }
 
 export async function runInit(options: InitOptions): Promise<void> {
@@ -71,17 +66,24 @@ export async function runInit(options: InitOptions): Promise<void> {
 }
 
 export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {
-  const files = readArchiveFiles(archive);
-  const addonFiles = files.filter(
-    (file) => file.pathSegments[0] === "addons" && file.pathSegments[1] === "kirie",
+  const zip = await JSZip.loadAsync(archive);
+  const addonPrefix = "addons/kirie/";
+  const addonFiles = Object.values(zip.files).filter(
+    (file) => !file.dir && file.name.startsWith(addonPrefix),
   );
 
-  if (!addonFiles.some((file) => file.pathSegments.join("/") === "addons/kirie/plugin.cfg")) {
+  if (!addonFiles.some((file) => file.name === `${addonPrefix}plugin.cfg`)) {
     throw new Error("Kirie addon archive does not contain addons/kirie/plugin.cfg.");
   }
 
-  await fs.rm(path.join(destination, "addons", "kirie"), { force: true, recursive: true });
-  await writeArchiveFiles(addonFiles, destination);
+  const addonDestination = path.join(destination, "addons", "kirie");
+  await fs.rm(addonDestination, { force: true, recursive: true });
+
+  for (const file of addonFiles) {
+    const outputPath = path.join(addonDestination, file.name.slice(addonPrefix.length));
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
+    await fs.writeFile(outputPath, await file.async("uint8array"));
+  }
 }
 
 export async function applyProjectName(project: string, projectName: string): Promise<void> {
@@ -168,51 +170,6 @@ async function downloadArchive(url: string, description: string): Promise<Uint8A
   }
 
   return new Uint8Array(await response.arrayBuffer());
-}
-
-function readArchiveFiles(archive: Uint8Array): ArchiveFile[] {
-  const entries = unzipSync(archive);
-  const files: ArchiveFile[] = [];
-
-  for (const [archivePath, data] of Object.entries(entries)) {
-    if (archivePath.endsWith("/")) {
-      continue;
-    }
-
-    files.push({ data, pathSegments: parseArchivePath(archivePath) });
-  }
-
-  return files;
-}
-
-function parseArchivePath(archivePath: string): string[] {
-  if (archivePath.startsWith("/") || archivePath.includes("\\")) {
-    throw new Error(`Archive contains an unsafe path: ${archivePath}`);
-  }
-
-  const pathSegments = archivePath.split("/");
-  if (
-    pathSegments.some(
-      (segment) => segment === "" || segment === "." || segment === ".." || segment.includes(":"),
-    )
-  ) {
-    throw new Error(`Archive contains an unsafe path: ${archivePath}`);
-  }
-
-  return pathSegments;
-}
-
-async function writeArchiveFiles(files: ArchiveFile[], destination: string): Promise<void> {
-  for (const file of files) {
-    const outputPath = path.join(destination, ...file.pathSegments);
-    const relativeOutput = path.relative(destination, outputPath);
-    if (relativeOutput.startsWith("..") || path.isAbsolute(relativeOutput)) {
-      throw new Error(`Archive file escapes its destination: ${file.pathSegments.join("/")}`);
-    }
-
-    await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, file.data);
-  }
 }
 
 async function installStagedProject(
