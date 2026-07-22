@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -5,9 +6,17 @@ import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { checkAndroidSdk, checkGodotCommand, checkGodotExportTemplates } from "./doctor.ts";
+import {
+  checkAndroidSdk,
+  checkGodotCefPrerequisite,
+  checkGodotCommand,
+  checkGodotExportTemplates,
+  DoctorCheckStatus,
+} from "./doctor.ts";
+import { formatDownloadProgress, installGodotCef } from "./godot-cef.ts";
 import {
   createBasicKirieCliProjectTracker,
+  installGodotCefFixture,
   installKirieConfigFixture,
   installProjectFixture,
 } from "./test-project.ts";
@@ -45,6 +54,197 @@ describe("doctor command", () => {
     expect(result.stdout).toContain("OK Godot command: 4.5.stable");
     expect(result.stdout).toContain("OK Godot export templates:");
     expect(result.stdout).toContain(`OK Android SDK: ANDROID_HOME=${sdk}`);
+    expect(result.stdout).toContain("WARN Godot CEF: not installed");
+  });
+
+  it("checks only a selected doctor target", async () => {
+    const project = await projects.copy();
+
+    const result = await execa(
+      process.execPath,
+      [cliPath, "doctor", "--project", project, "godot-cef"],
+      { cwd: path.dirname(project) },
+    );
+
+    expect(result.stdout).toContain("WARN Godot CEF: not installed");
+    expect(result.stdout).not.toContain("Godot command");
+    expect(result.stdout).not.toContain("Android SDK");
+  });
+
+  it("rejects unknown doctor targets", async () => {
+    const project = await projects.copy();
+
+    await expect(
+      execa(process.execPath, [cliPath, "doctor", "--project", project, "unknown"]),
+    ).rejects.toThrow("Unknown doctor target: unknown");
+  });
+
+  it("rejects extra doctor targets", async () => {
+    const project = await projects.copy();
+
+    await expect(
+      execa(process.execPath, [cliPath, "doctor", "godot-cef", "extra", "--project", project]),
+    ).rejects.toThrow("Unexpected doctor argument: extra");
+  });
+
+  it("accepts the fix target before or after the fix flag", async () => {
+    const project = await projects.copy();
+    await installGodotCefFixture(project);
+
+    const fixThenTarget = await execa(
+      process.execPath,
+      [cliPath, "doctor", "--fix", "godot-cef", "--project", project],
+      { cwd: path.dirname(project) },
+    );
+    const targetThenFix = await execa(
+      process.execPath,
+      [cliPath, "doctor", "godot-cef", "--fix", "--project", project],
+      { cwd: path.dirname(project) },
+    );
+
+    expect(fixThenTarget.stdout).toContain("Godot CEF is already installed");
+    expect(targetThenFix.stdout).toContain("OK Godot CEF:");
+  });
+
+  it("applies every supported fixer when the fix target is omitted", async () => {
+    const project = await projects.copy();
+    const homeDir = await createTempDir("kirie-doctor-home-");
+    const sdk = await createTempDir("kirie-doctor-sdk-");
+    await fs.mkdir(resolveTemplatesDir(homeDir, "4.5.stable"), { recursive: true });
+    await fs.writeFile(path.join(resolveTemplatesDir(homeDir, "4.5.stable"), "web_debug.zip"), "");
+    await installProjectFixture(project, "fake-godot.js");
+    await installKirieConfigFixture(project, "dev-fake-godot.kirie.config.ts");
+    await installGodotCefFixture(project);
+
+    const result = await execa(
+      process.execPath,
+      [cliPath, "doctor", "--fix", "--project", project],
+      {
+        cwd: path.dirname(project),
+        env: {
+          ANDROID_HOME: sdk,
+          HOME: homeDir,
+          USERPROFILE: homeDir,
+        },
+      },
+    );
+
+    expect(result.stdout).toContain("Godot CEF is already installed");
+    expect(result.stdout).toContain("OK Godot CEF:");
+  });
+});
+
+describe("Godot CEF doctor support", () => {
+  it("reports a missing optional addon as a warning", async () => {
+    const project = await projects.copy();
+
+    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({
+      name: "Godot CEF",
+      status: DoctorCheckStatus.Warn,
+    });
+  });
+
+  it("reports an installed addon as available", async () => {
+    const project = await projects.copy();
+    const addonDir = path.join(project, "addons", "godot_cef");
+    await fs.mkdir(addonDir, { recursive: true });
+    await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
+
+    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({
+      name: "Godot CEF",
+      status: DoctorCheckStatus.Ok,
+    });
+  });
+
+  it("rejects an incomplete addon instead of replacing it", async () => {
+    const project = await projects.copy();
+    const addonDir = path.join(project, "addons", "godot_cef");
+    await fs.mkdir(addonDir, { recursive: true });
+
+    await expect(installGodotCef({ projectDir: project })).rejects.toThrow(
+      "Refusing to replace an unrecognized Godot CEF installation",
+    );
+  });
+
+  it("streams, verifies, and stages a valid addon download", async () => {
+    const project = await projects.copy();
+    const archive = Buffer.from("tiny Godot CEF archive fixture");
+    await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
+
+    const progress: string[] = [];
+    let currentTime = 0;
+    await installGodotCef({
+      extractArchive: async (_archivePath, outputDir) => {
+        const extractedAddon = path.join(outputDir, "dist", "addons", "godot_cef");
+        await fs.mkdir(extractedAddon, { recursive: true });
+        await fs.writeFile(path.join(extractedAddon, "godot_cef.gdextension"), "[configuration]\n");
+      },
+      fetch: async () =>
+        new Response(archive, { headers: { "content-length": String(archive.byteLength) } }),
+      now: () => {
+        currentTime += 100;
+        return currentTime;
+      },
+      output: {
+        columns: 120,
+        isTTY: true,
+        write: (text) => progress.push(text),
+      },
+      projectDir: project,
+    });
+
+    await expect(
+      fs.stat(path.join(project, "addons", "godot_cef", "godot_cef.gdextension")),
+    ).resolves.toBeDefined();
+    expect(progress.join("")).toContain("100.0%");
+    expect(progress.join("")).toContain("MiB/s");
+    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("leaves no addon or staging directory after a checksum failure", async () => {
+    const project = await projects.copy();
+    await installGodotCefConfig(project, "0".repeat(64));
+
+    await expect(
+      installGodotCef({
+        fetch: async () => new Response("unexpected bytes"),
+        output: { isTTY: false, write: () => true },
+        projectDir: project,
+      }),
+    ).rejects.toThrow("Godot CEF checksum mismatch");
+
+    await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("does not install an archive with the wrong layout", async () => {
+    const project = await projects.copy();
+    const archive = Buffer.from("valid checksum, invalid layout");
+    await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
+
+    await expect(
+      installGodotCef({
+        extractArchive: async (_archivePath, outputDir) => {
+          await fs.mkdir(path.join(outputDir, "unexpected"), { recursive: true });
+        },
+        fetch: async () => new Response(archive),
+        output: { isTTY: false, write: () => true },
+        projectDir: project,
+      }),
+    ).rejects.toThrow("Godot CEF archive does not contain dist/addons/godot_cef");
+
+    await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("formats progress with percentage, transferred size, and speed", () => {
+    expect(formatDownloadProgress(5 * 1024 * 1024, 10 * 1024 * 1024, 1_000)).toBe(
+      "[============            ]  50.0% 5.0 MiB/s 5.0 MiB/10.0 MiB",
+    );
   });
 });
 
@@ -187,6 +387,26 @@ async function createTempDir(prefix: string): Promise<string> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
   tempDirs.push(dir);
   return dir;
+}
+
+async function installGodotCefConfig(project: string, sha256: string): Promise<void> {
+  const kirieAddon = path.join(project, "addons", "kirie");
+  await fs.rm(kirieAddon, { force: true, recursive: true });
+  await fs.mkdir(kirieAddon, { recursive: true });
+  await fs.writeFile(
+    path.join(kirieAddon, "godot_cef.json"),
+    `${JSON.stringify({
+      addon_path: "res://addons/godot_cef",
+      class_name: "CefTexture",
+      sha256,
+      version: "test",
+    })}\n`,
+  );
+}
+
+async function listGodotCefStagingDirs(project: string): Promise<string[]> {
+  const projectParent = await fs.readdir(path.dirname(project));
+  return projectParent.filter((entry) => entry.startsWith(".kirie-godot-cef-stage-"));
 }
 
 function resolveTemplatesDir(homeDir: string, version: string): string {

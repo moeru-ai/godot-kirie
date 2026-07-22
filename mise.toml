@@ -57,10 +57,11 @@ run = "./scripts/run-build-task.js buildIosDebugXcframework"
 
 [tasks."install:godot-cef"]
 description = "Install pinned Godot CEF desktop addon into a Godot project"
+depends = ["build:packages"]
 usage = '''
 arg "<godot_project_dir>" help="Godot project directory to install the addon into"
 '''
-run = './scripts/run-build-task.js installGodotCef "${usage_godot_project_dir?}"'
+run = 'node packages/cli/dist/cli.js doctor --fix godot-cef --project "${usage_godot_project_dir?}"'
 
 [tasks."build:native-artifacts"]
 description = "Build all native artifacts"

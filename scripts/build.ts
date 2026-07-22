@@ -10,7 +10,6 @@ export {
   buildIosDebugXcframework,
   buildIosXcframework,
   checkAddonPack,
-  installGodotCef,
   packAddon,
   testSwift,
 } from "./build-kirie.ts";

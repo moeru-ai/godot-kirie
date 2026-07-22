@@ -52,6 +52,12 @@ export async function installKirieConfigFixture(
   await installProjectFixture(project, fixtureName, "kirie.config.ts");
 }
 
+export async function installGodotCefFixture(project: string): Promise<void> {
+  const addonDir = path.join(project, "addons", "godot_cef");
+  await fs.mkdir(addonDir, { recursive: true });
+  await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
+}
+
 export async function installProjectFixture(
   project: string,
   fixtureName: string,

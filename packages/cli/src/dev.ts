@@ -3,6 +3,7 @@ import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 import { runExport } from "./export.ts";
 import { launchGodot, prepareGodotProject } from "./godot.ts";
+import { assertGodotCefInstalled } from "./godot-cef.ts";
 import { exportIosSimulatorApp } from "./ios.ts";
 import {
   createKirieDevLaunchOptions,
@@ -41,6 +42,9 @@ export async function runDev(options: DevOptions = {}): Promise<void> {
   }
   if (target === "ios") {
     assertIosDevExportProjectOnly(config);
+  }
+  if (target === "desktop") {
+    await assertGodotCefInstalled(config.godot.project, "kirie dev desktop");
   }
 
   const vite = await startViteDevServer(config, {

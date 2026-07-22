@@ -307,12 +307,11 @@ func _assert_godot_cef_available() -> void:
 		return
 
 	var message := (
-		"[Kirie][export] desktop export requires Godot CEF %s at %s. Install it with: %s %s"
+		"[Kirie][export] desktop export requires Godot CEF %s at %s. Install it with: %s"
 		% [
 			config["version"],
 			config["addon_path"],
 			config["setup_command"],
-			ProjectSettings.globalize_path("res://"),
 		]
 	)
 	assert(false, message)

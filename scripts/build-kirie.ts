@@ -1,11 +1,6 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { execa } from "execa";
-import godotCefConfig from "../packages/kirie/addon/addons/kirie/godot_cef.json" with {
-  type: "json",
-};
 import { distDir, godotSourceRoot, rootDir } from "./build-shared.ts";
 
 const addonSourceDir = "packages/kirie/addon/addons/kirie";
@@ -26,10 +21,6 @@ const iosLegacyOutputXcframework = `${iosOutputDir}/Kirie.xcframework`;
 const iosStagedDebugXcframework = `${addonStageDir}/ios/Kirie.debug.xcframework`;
 const iosStagedReleaseXcframework = `${addonStageDir}/ios/Kirie.release.xcframework`;
 const iosDerivedDataPath = `${iosBuildDir}/DerivedData`;
-
-const godotCefAssetName = `godot_cef-v${godotCefConfig.version}.zip`;
-const godotCefDownloadUrl = `https://github.com/dsh0416/godot-cef/releases/download/v${godotCefConfig.version}/${godotCefAssetName}`;
-const godotCefAddonProjectPath = godotCefConfig.addon_path.replace(/^res:\/\//, "");
 
 function assertPathExists(pathToCheck: string): void {
   if (!fs.existsSync(pathToCheck)) {
@@ -55,51 +46,6 @@ function findSymlink(dirPath: string): string | undefined {
   }
 
   return undefined;
-}
-
-async function downloadFile(url: string, outputPath: string): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
-  }
-
-  const bytes = Buffer.from(await response.arrayBuffer());
-  fs.writeFileSync(outputPath, bytes);
-}
-
-async function extractZip(archivePath: string, outputDir: string): Promise<void> {
-  if (process.platform === "win32") {
-    await execa(
-      "powershell",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        "Expand-Archive -LiteralPath $env:KIRIE_GODOT_CEF_ARCHIVE -DestinationPath $env:KIRIE_GODOT_CEF_EXTRACT_DIR -Force",
-      ],
-      {
-        cwd: rootDir,
-        env: {
-          ...process.env,
-          KIRIE_GODOT_CEF_ARCHIVE: archivePath,
-          KIRIE_GODOT_CEF_EXTRACT_DIR: outputDir,
-        },
-        stdio: "inherit",
-      },
-    );
-    return;
-  }
-
-  await execa("unzip", ["-q", archivePath, "-d", outputDir], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
-}
-
-function sha256File(filePath: string): string {
-  const hash = crypto.createHash("sha256");
-  hash.update(fs.readFileSync(filePath));
-  return hash.digest("hex");
 }
 
 async function generateIosProject(): Promise<void> {
@@ -212,56 +158,6 @@ export function checkAddonPack(): void {
   if (symlink) {
     throw new Error(`Release addon staging must not contain symlinks: ${symlink}`);
   }
-}
-
-// mise task entrypoint.
-export async function installGodotCef(projectDirArg?: string): Promise<void> {
-  if (!projectDirArg) {
-    throw new Error(
-      "Missing Godot project directory: mise run install:godot-cef <godot-project-dir>",
-    );
-  }
-
-  const projectDir = path.resolve(rootDir, projectDirArg);
-  if (!fs.existsSync(path.join(projectDir, "project.godot"))) {
-    throw new Error(`Godot project not found: ${projectDir}`);
-  }
-
-  const installDir = path.join(projectDir, godotCefAddonProjectPath);
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "godot-cef-"));
-  const archivePath = path.join(tempDir, godotCefAssetName);
-  const extractDir = path.join(tempDir, "extract");
-
-  console.log(`Downloading Godot CEF ${godotCefConfig.version}...`);
-  await downloadFile(godotCefDownloadUrl, archivePath);
-
-  const actualSha256 = sha256File(archivePath);
-  if (actualSha256 !== godotCefConfig.sha256) {
-    throw new Error(
-      `Godot CEF checksum mismatch: expected ${godotCefConfig.sha256}, got ${actualSha256}`,
-    );
-  }
-
-  fs.mkdirSync(extractDir, { recursive: true });
-  await extractZip(archivePath, extractDir);
-
-  const extractedAddon = path.join(extractDir, "dist", godotCefAddonProjectPath);
-  if (
-    !fs.existsSync(
-      path.join(extractedAddon, `${path.basename(godotCefAddonProjectPath)}.gdextension`),
-    )
-  ) {
-    throw new Error(`Downloaded Godot CEF archive does not contain ${godotCefAddonProjectPath}`);
-  }
-
-  fs.mkdirSync(path.dirname(installDir), { recursive: true });
-  fs.rmSync(installDir, { force: true, recursive: true });
-  fs.cpSync(extractedAddon, installDir, { recursive: true });
-  fs.rmSync(tempDir, { force: true, recursive: true });
-
-  console.log(
-    `Installed Godot CEF ${godotCefConfig.version} to ${path.relative(rootDir, installDir)}`,
-  );
 }
 
 // mise task entrypoint.
