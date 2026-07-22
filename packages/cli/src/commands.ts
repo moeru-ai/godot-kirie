@@ -109,8 +109,6 @@ type ExportCommandArgs = CommandArgs<typeof exportArgs>;
 type DevCommandArgs = CommandArgs<typeof devArgs> &
   CommandArgs<typeof androidDevArgs> &
   CommandArgs<typeof iosDevArgs>;
-type DoctorCommandArgs = CommandArgs<typeof doctorArgs>;
-type DoctorCommandContextArgs = DoctorCommandArgs & { _: string[] };
 type InitCommandArgs = CommandArgs<typeof initArgs>;
 type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
 
@@ -291,7 +289,7 @@ export const mainCommand: CommandDef = defineCommand({
     doctor: defineCommand({
       args: doctorArgs,
       meta: { description: "Diagnose Kirie project prerequisites.", name: "doctor" },
-      run: ({ args }: { args: DoctorCommandContextArgs }) =>
+      run: ({ args }) =>
         runDoctor({
           cwd: args.project,
           fix: args.fix,
