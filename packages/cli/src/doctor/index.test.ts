@@ -7,21 +7,21 @@ import { execa } from "execa";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  createBasicKirieCliProjectTracker,
+  installGodotCefFixture,
+  installKirieConfigFixture,
+  installProjectFixture,
+} from "../test-project.ts";
+import { formatDownloadProgress, installGodotCef } from "./godot-cef.ts";
+import {
   checkAndroidSdk,
   checkGodotCefPrerequisite,
   checkGodotCommand,
   checkGodotExportTemplates,
   DoctorCheckStatus,
-} from "./doctor.ts";
-import { formatDownloadProgress, installGodotCef } from "./godot-cef.ts";
-import {
-  createBasicKirieCliProjectTracker,
-  installGodotCefFixture,
-  installKirieConfigFixture,
-  installProjectFixture,
-} from "./test-project.ts";
+} from "./index.ts";
 
-const cliPath = fileURLToPath(import.meta.resolve("./cli.ts"));
+const cliPath = fileURLToPath(import.meta.resolve("../cli.ts"));
 const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
 
@@ -51,10 +51,10 @@ describe("doctor command", () => {
       },
     });
 
-    expect(result.stdout).toContain("OK Godot command: 4.5.stable");
-    expect(result.stdout).toContain("OK Godot export templates:");
-    expect(result.stdout).toContain(`OK Android SDK: ANDROID_HOME=${sdk}`);
-    expect(result.stdout).toContain("WARN Godot CEF: not installed");
+    expect(result.stdout).toContain("ok Godot command: 4.5.stable");
+    expect(result.stdout).toContain("ok Godot export templates:");
+    expect(result.stdout).toContain(`ok Android SDK: ANDROID_HOME=${sdk}`);
+    expect(result.stdout).toContain("warn Godot CEF: not installed");
   });
 
   it("checks only a selected doctor target", async () => {
@@ -66,7 +66,7 @@ describe("doctor command", () => {
       { cwd: path.dirname(project) },
     );
 
-    expect(result.stdout).toContain("WARN Godot CEF: not installed");
+    expect(result.stdout).toContain("warn Godot CEF: not installed");
     expect(result.stdout).not.toContain("Godot command");
     expect(result.stdout).not.toContain("Android SDK");
   });
@@ -103,7 +103,7 @@ describe("doctor command", () => {
     );
 
     expect(fixThenTarget.stdout).toContain("Godot CEF is already installed");
-    expect(targetThenFix.stdout).toContain("OK Godot CEF:");
+    expect(targetThenFix.stdout).toContain("ok Godot CEF:");
   });
 
   it("applies every supported fixer when the fix target is omitted", async () => {
@@ -130,7 +130,7 @@ describe("doctor command", () => {
     );
 
     expect(result.stdout).toContain("Godot CEF is already installed");
-    expect(result.stdout).toContain("OK Godot CEF:");
+    expect(result.stdout).toContain("ok Godot CEF:");
   });
 });
 

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { execa } from "execa";
 
-import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
+import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
 import { checkGodotCef, installGodotCef } from "./godot-cef.ts";
 
 export const DoctorCheckStatus = {
@@ -19,6 +19,7 @@ export const DoctorTarget = {
 export type DoctorTarget = (typeof DoctorTarget)[keyof typeof DoctorTarget];
 
 export interface DoctorCheckResult {
+  error?: Error;
   message: string;
   name: string;
   status: DoctorCheckStatus;
@@ -90,12 +91,15 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
       });
 
   for (const check of checks) {
-    console.log(`${doctorStatusLabel(check.status)} ${check.name}: ${check.message}`);
+    console.log(`${check.status} ${check.name}: ${check.message}`);
   }
 
   const failures = checks.filter((check) => check.status === DoctorCheckStatus.Fail);
   if (failures.length > 0) {
-    throw new Error(`kirie doctor found ${failures.length} problem(s).`);
+    const errors = failures.map(
+      (failure) => failure.error ?? new Error(`${failure.name}: ${failure.message}`),
+    );
+    throw new AggregateError(errors, `kirie doctor found ${failures.length} problem(s).`);
   }
 }
 
@@ -152,8 +156,10 @@ export async function checkGodotCefPrerequisite(projectDir: string): Promise<Doc
       status: result.installed ? DoctorCheckStatus.Ok : DoctorCheckStatus.Warn,
     };
   } catch (error) {
+    const failure = error instanceof Error ? error : new Error(String(error), { cause: error });
     return {
-      message: error instanceof Error ? error.message : String(error),
+      error: failure,
+      message: failure.message,
       name: "Godot CEF",
       status: DoctorCheckStatus.Fail,
     };
@@ -181,11 +187,16 @@ export async function checkGodotCommand(
       version,
     };
   } catch (error) {
+    const failure = new Error(
+      `could not run ${options.godotCommand} --version: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      { cause: error },
+    );
     return {
       check: {
-        message: `could not run ${options.godotCommand} --version: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        error: failure,
+        message: failure.message,
         name: "Godot command",
         status: DoctorCheckStatus.Fail,
       },
@@ -205,9 +216,11 @@ export async function checkGodotExportTemplates(
   let templates: string[];
   try {
     templates = await fs.readdir(templatesDir);
-  } catch {
+  } catch (error) {
+    const message = `missing templates for Godot ${options.version} at ${templatesDir}`;
     return {
-      message: `missing templates for Godot ${options.version} at ${templatesDir}`,
+      error: new Error(message, { cause: error }),
+      message,
       name: "Godot export templates",
       status: DoctorCheckStatus.Fail,
     };
@@ -244,9 +257,11 @@ export async function checkAndroidSdk(
   let sdkStat: Awaited<ReturnType<typeof fs.stat>>;
   try {
     sdkStat = await fs.stat(sdk);
-  } catch {
+  } catch (error) {
+    const message = `${sdk} does not exist or is not a directory`;
     return {
-      message: `${sdk} does not exist or is not a directory`,
+      error: new Error(message, { cause: error }),
+      message,
       name: "Android SDK",
       status: DoctorCheckStatus.Fail,
     };
@@ -332,16 +347,5 @@ async function runTargetedDoctorCheck(
   switch (target) {
     case DoctorTarget.GodotCef:
       return checkGodotCefPrerequisite(config.godot.project);
-  }
-}
-
-function doctorStatusLabel(status: DoctorCheckStatus): string {
-  switch (status) {
-    case DoctorCheckStatus.Fail:
-      return "FAIL";
-    case DoctorCheckStatus.Ok:
-      return "OK";
-    case DoctorCheckStatus.Warn:
-      return "WARN";
   }
 }

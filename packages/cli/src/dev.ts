@@ -1,9 +1,9 @@
 import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
+import { assertGodotCefInstalled } from "./doctor/godot-cef.ts";
 import { runExport } from "./export.ts";
 import { launchGodot, prepareGodotProject } from "./godot.ts";
-import { assertGodotCefInstalled } from "./godot-cef.ts";
 import { exportIosSimulatorApp } from "./ios.ts";
 import {
   createKirieDevLaunchOptions,

@@ -3,7 +3,7 @@ import { type CommandDef, defineCommand } from "citty";
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
-import { DoctorTarget, runDoctor } from "./doctor.ts";
+import { DoctorTarget, runDoctor } from "./doctor/index.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
 import { runInit } from "./init.ts";
 import { runAndroid, runIosSimulator } from "./run.ts";
