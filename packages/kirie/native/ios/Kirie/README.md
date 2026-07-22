@@ -30,6 +30,16 @@ behavior.
 
 The project definition lives in [project.yml](./project.yml). The generated `.xcodeproj` is intentionally not committed.
 
+## Test
+
+Run the Swift unit tests from the repository root:
+
+```sh
+mise run test:swift
+```
+
+The XCTest target runs on the macOS host and does not require an iOS Simulator.
+
 ## Build
 
 Run the repository-level task:

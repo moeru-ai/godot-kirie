@@ -11,7 +11,7 @@
     "lint:alint": "alint",
     "lint:biome": "biome check .",
     "release": "bumpp",
-    "test:ios-ipc-serialization": "./scripts/run-build-task.js testIosIpcSerialization",
+    "test:swift": "./scripts/run-build-task.js testSwift",
     "test:unit": "pnpm -rF './packages/*' run test:run",
     "typecheck": "pnpm -rF './packages/*' run typecheck"
   },

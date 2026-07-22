@@ -78,16 +78,16 @@ targets:
       - sdk: UIKit.framework
       - sdk: WebKit.framework
       - package: SwiftCBOR
-  KirieIpcSerializationTests:
+  KirieTests:
     type: bundle.unit-test
-    platform: iOS
+    platform: macOS
     deploymentTarget: "14.0"
     sources:
       - path: Sources/Kirie/KirieIpcPacketCodec.swift
-      - path: Tests/KirieIpcSerializationTests
+      - path: Tests/KirieTests
     settings:
-      PRODUCT_NAME: KirieIpcSerializationTests
-      PRODUCT_BUNDLE_IDENTIFIER: ai.moeru.godot.kirie.ios.ipcSerializationTests
+      PRODUCT_NAME: KirieTests
+      PRODUCT_BUNDLE_IDENTIFIER: ai.moeru.godot.kirie.macos.tests
       GENERATE_INFOPLIST_FILE: YES
       SWIFT_VERSION: 6.0
       CODE_SIGNING_ALLOWED: NO
@@ -97,10 +97,10 @@ targets:
       - package: SwiftCBOR
 
 schemes:
-  KirieIpcSerializationTests:
+  KirieTests:
     build:
       targets:
-        KirieIpcSerializationTests: all
+        KirieTests: all
     test:
       targets:
-        - KirieIpcSerializationTests
+        - KirieTests

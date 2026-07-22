@@ -12,7 +12,7 @@ export {
   checkAddonPack,
   installGodotCef,
   packAddon,
-  testIosIpcSerialization,
+  testSwift,
 } from "./build-kirie.ts";
 
 // mise task entrypoints re-exported from the integration host runner.

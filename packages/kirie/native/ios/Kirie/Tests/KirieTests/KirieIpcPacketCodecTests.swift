@@ -3,10 +3,10 @@ import XCTest
 
 final class KirieIpcPacketCodecTests: XCTestCase {
     func testTextLaneUsesCborTextString() throws {
-        let packet = KirieIpcPacketCodec.encodeText("ios:cbor")
+        let packet = KirieIpcPacketCodec.encodeText("kirie:cbor")
 
-        XCTAssertEqual(packet.kirieHexString, "68696f733a63626f72")
-        XCTAssertEqual(try KirieIpcPacketCodec.decodeText(packet), "ios:cbor")
+        XCTAssertEqual(packet.kirieHexString, "6a6b697269653a63626f72")
+        XCTAssertEqual(try KirieIpcPacketCodec.decodeText(packet), "kirie:cbor")
     }
 
     func testBinaryLaneUsesCborByteString() throws {
@@ -19,7 +19,7 @@ final class KirieIpcPacketCodecTests: XCTestCase {
 
     func testDataLaneUsesCborDataItemSubset() throws {
         let value = KirieIpcValue.array([
-            .string("ios-cbor"),
+            .string("kirie-cbor"),
             .int(42),
             .null,
             .map(["lane": .string("data")]),
@@ -33,7 +33,7 @@ final class KirieIpcPacketCodecTests: XCTestCase {
 
         XCTAssertEqual(
             packet.kirieHexString,
-            "8868696f732d63626f72182af6a1646c616e656464617461fb3ff8000000000000f5f420"
+            "886a6b697269652d63626f72182af6a1646c616e656464617461fb3ff8000000000000f5f420"
         )
         XCTAssertEqual(try KirieIpcPacketCodec.decodeData(packet), value)
     }
