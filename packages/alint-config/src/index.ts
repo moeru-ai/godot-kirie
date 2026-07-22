@@ -1,13 +1,8 @@
-export { gdKirieAlintConfig, gdKirieAlintConfig as default } from "./config";
-export { gdKirieAlintPlugin } from "./plugin";
-export type { ErrorWrappingReviewFinding } from "./rules/no-stringified-rethrow";
-export { noStringifiedRethrowRule } from "./rules/no-stringified-rethrow";
 export type {
   AlintConfig,
   Awaitable,
   DiagnosticDescriptor,
   DiagnosticLocation,
-  InferenceUsageRecord,
   ModelRequirement,
   PluginDefinition,
   ResolvedModel,
@@ -15,7 +10,12 @@ export type {
   RuleContext,
   RuleDefinition,
   RuleHandlers,
+  RuleInferenceUsageRecord as InferenceUsageRecord,
   RuleSeverity,
   SourceFile,
   SourcePosition,
-} from "./types";
+} from "@alint-js/core";
+export { gdKirieAlintConfig, gdKirieAlintConfig as default } from "./config";
+export { gdKirieAlintPlugin } from "./plugin";
+export type { ErrorWrappingReviewFinding } from "./rules/no-stringified-rethrow";
+export { noStringifiedRethrowRule } from "./rules/no-stringified-rethrow";

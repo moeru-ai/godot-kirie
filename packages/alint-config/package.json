@@ -23,6 +23,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@alint-js/core": "catalog:",
     "xsai": "catalog:"
   },
   "devDependencies": {
