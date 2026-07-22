@@ -313,7 +313,7 @@ export async function buildIosDebugXcframework(): Promise<void> {
 }
 
 // mise task entrypoint.
-export async function testIosIpcSerialization(): Promise<void> {
+export async function testSwift(): Promise<void> {
   if (!fs.existsSync(`${iosPluginDir}/project.yml`)) {
     throw new Error("This task must be run from the repository root.");
   }
@@ -327,9 +327,9 @@ export async function testIosIpcSerialization(): Promise<void> {
       "-project",
       iosProjectPath,
       "-scheme",
-      "KirieIpcSerializationTests",
+      "KirieTests",
       "-destination",
-      process.env.IOS_TEST_DESTINATION || "platform=iOS Simulator,name=iPhone 17",
+      `platform=macOS,arch=${process.arch === "arm64" ? "arm64" : "x86_64"}`,
       "CODE_SIGNING_ALLOWED=NO",
       "CODE_SIGNING_REQUIRED=NO",
     ],

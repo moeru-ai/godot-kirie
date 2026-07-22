@@ -146,9 +146,9 @@ run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_exam
 description = "Run .NET tests"
 run = "dotnet test --solution GdKirie.slnx --configuration Release"
 
-[tasks."test:ios-ipc-serialization"]
-description = "Run iOS IPC serialization tests"
-run = "corepack pnpm run test:ios-ipc-serialization"
+[tasks."test:swift"]
+description = "Run Swift unit tests"
+run = "corepack pnpm run test:swift"
 
 [tasks."test:integration-android"]
 description = "Run one Android platform integration test"
