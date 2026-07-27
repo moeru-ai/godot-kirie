@@ -7,7 +7,8 @@ packages:
   - "tests/integration/src-web"
 
 catalog:
-  "@alint-js/cli": ^0.0.1
+  "@alint-js/cli": ^0.0.38
+  "@alint-js/core": ^0.0.38
   "@biomejs/biome": 2.2.4
   "@moeru/eventa": ^1.0.0-beta.3
   "@types/ini": ^4.1.1

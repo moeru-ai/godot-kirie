@@ -1,6 +1,7 @@
+import type { ResolvedModel, RuleContext, RuleDefinition, SourceFile } from "@alint-js/core";
+import { defineRule } from "@alint-js/core";
 import type { GenerateTextResult } from "xsai";
 import { generateText } from "xsai";
-import type { ResolvedModel, RuleContext, RuleDefinition, SourceFile } from "../types";
 
 export interface ErrorWrappingReviewFinding {
   evidence?: unknown;
@@ -12,9 +13,9 @@ interface ReviewResponse {
   findings?: ErrorWrappingReviewFinding[];
 }
 
-export const noStringifiedRethrowRule: RuleDefinition = {
+export const noStringifiedRethrowRule: RuleDefinition = defineRule({
   create: (ctx) => ({
-    async onFile(file) {
+    async onTargetFile({ file }) {
       const model = await ctx.model();
       const findings = await reviewStringifiedRethrows(file, model, ctx.metering);
 
@@ -35,7 +36,7 @@ export const noStringifiedRethrowRule: RuleDefinition = {
       }
     },
   }),
-};
+});
 
 async function reviewStringifiedRethrows(
   file: SourceFile,
@@ -121,10 +122,6 @@ function recordUsage(
   model: ResolvedModel,
   response: GenerateTextResult,
 ): void {
-  if (!metering) {
-    return;
-  }
-
   metering.recordUsage({
     inputTokens: response.usage.inputTokens,
     modelId: model.id,

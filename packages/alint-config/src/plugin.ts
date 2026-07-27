@@ -1,9 +1,9 @@
+import type { PluginDefinition } from "@alint-js/core";
+import { definePlugin } from "@alint-js/core";
 import { noStringifiedRethrowRule } from "./rules/no-stringified-rethrow";
-import type { PluginDefinition } from "./types";
 
-export const gdKirieAlintPlugin: PluginDefinition = {
+export const gdKirieAlintPlugin: PluginDefinition = definePlugin({
   rules: {
     "no-stringified-rethrow": noStringifiedRethrowRule,
   },
-  scope: "@gd-kirie",
-};
+});
