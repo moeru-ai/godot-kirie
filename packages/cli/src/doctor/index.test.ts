@@ -2,9 +2,11 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
+import axios, { type AxiosResponse } from "axios";
 import { execa } from "execa";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createBasicKirieCliProjectTracker,
@@ -12,7 +14,7 @@ import {
   installKirieConfigFixture,
   installProjectFixture,
 } from "../test-project.ts";
-import { formatDownloadProgress, installGodotCef } from "./godot-cef.ts";
+import { installGodotCef } from "./godot-cef.ts";
 import {
   checkAndroidSdk,
   checkGodotCefPrerequisite,
@@ -26,6 +28,7 @@ const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all([
     projects.cleanup(),
     ...tempDirs.splice(0).map((dir) => fs.rm(dir, { force: true, recursive: true })),
@@ -166,24 +169,33 @@ describe("Godot CEF doctor support", () => {
     );
   });
 
-  it("streams, verifies, and stages a valid addon download", async () => {
+  it("streams, checksums, and stages a valid addon download", async () => {
     const project = await projects.copy();
     const archive = Buffer.from("tiny Godot CEF archive fixture");
     await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
 
     const progress: string[] = [];
-    let currentTime = 0;
+    vi.spyOn(axios, "get").mockImplementation(async (_url, config) => {
+      config?.onDownloadProgress?.({
+        bytes: archive.byteLength,
+        download: true,
+        estimated: 0,
+        lengthComputable: true,
+        loaded: archive.byteLength,
+        progress: 1,
+        rate: archive.byteLength,
+        total: archive.byteLength,
+      });
+      return {
+        data: Readable.from([archive.subarray(0, 7), archive.subarray(7)]),
+      } as AxiosResponse<Readable>;
+    });
     await installGodotCef({
-      extractArchive: async (_archivePath, outputDir) => {
+      extractArchive: async (archivePath, outputDir) => {
+        await expect(fs.readFile(archivePath)).resolves.toEqual(archive);
         const extractedAddon = path.join(outputDir, "dist", "addons", "godot_cef");
         await fs.mkdir(extractedAddon, { recursive: true });
         await fs.writeFile(path.join(extractedAddon, "godot_cef.gdextension"), "[configuration]\n");
-      },
-      fetch: async () =>
-        new Response(archive, { headers: { "content-length": String(archive.byteLength) } }),
-      now: () => {
-        currentTime += 100;
-        return currentTime;
       },
       output: {
         columns: 120,
@@ -204,10 +216,12 @@ describe("Godot CEF doctor support", () => {
   it("leaves no addon or staging directory after a checksum failure", async () => {
     const project = await projects.copy();
     await installGodotCefConfig(project, "0".repeat(64));
+    vi.spyOn(axios, "get").mockResolvedValue({
+      data: Readable.from("unexpected bytes"),
+    } as AxiosResponse<Readable>);
 
     await expect(
       installGodotCef({
-        fetch: async () => new Response("unexpected bytes"),
         output: { isTTY: false, write: () => true },
         projectDir: project,
       }),
@@ -223,13 +237,15 @@ describe("Godot CEF doctor support", () => {
     const project = await projects.copy();
     const archive = Buffer.from("valid checksum, invalid layout");
     await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
+    vi.spyOn(axios, "get").mockResolvedValue({
+      data: Readable.from(archive),
+    } as AxiosResponse<Readable>);
 
     await expect(
       installGodotCef({
         extractArchive: async (_archivePath, outputDir) => {
           await fs.mkdir(path.join(outputDir, "unexpected"), { recursive: true });
         },
-        fetch: async () => new Response(archive),
         output: { isTTY: false, write: () => true },
         projectDir: project,
       }),
@@ -239,12 +255,6 @@ describe("Godot CEF doctor support", () => {
       code: "ENOENT",
     });
     await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
-  });
-
-  it("formats progress with percentage, transferred size, and speed", () => {
-    expect(formatDownloadProgress(5 * 1024 * 1024, 10 * 1024 * 1024, 1_000)).toBe(
-      "[============            ]  50.0% 5.0 MiB/s 5.0 MiB/10.0 MiB",
-    );
   });
 });
 

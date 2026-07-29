@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@gd-kirie/build": "workspace:*",
+    "axios": "1.18.1",
     "citty": "catalog:",
     "execa": "catalog:",
     "giget": "3.3.0",

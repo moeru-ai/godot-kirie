@@ -1,15 +1,17 @@
 import crypto from "node:crypto";
+import { createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { performance } from "node:perf_hooks";
+import { type Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
+import axios from "axios";
 import { execa } from "execa";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
 const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
 const PROGRESS_BAR_WIDTH = 24;
-const PROGRESS_UPDATE_INTERVAL_MS = 100;
 
 export interface GodotCefConfig {
   addonPath: string;
@@ -32,8 +34,6 @@ export interface DownloadProgressOutput {
 
 export interface InstallGodotCefOptions {
   extractArchive?: (archivePath: string, outputDir: string) => Promise<void>;
-  fetch?: typeof fetch;
-  now?: () => number;
   output?: DownloadProgressOutput;
   projectDir: string;
 }
@@ -47,8 +47,6 @@ interface GodotCefConfigFile {
 
 interface DownloadFileOptions {
   expectedSha256: string;
-  fetch: typeof fetch;
-  now: () => number;
   output: DownloadProgressOutput;
   outputPath: string;
   url: string;
@@ -173,8 +171,6 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
     console.log(`Downloading Godot CEF ${config.version} from ${downloadUrl}`);
     await downloadFile({
       expectedSha256: config.sha256,
-      fetch: options.fetch ?? fetch,
-      now: options.now ?? performance.now.bind(performance),
       output: options.output ?? process.stderr,
       outputPath: archivePath,
       url: downloadUrl,
@@ -209,12 +205,11 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
   console.log(`Installed Godot CEF ${config.version} at ${installDir}`);
 }
 
-export function formatDownloadProgress(
+function formatDownloadProgress(
   downloadedBytes: number,
   totalBytes: number | undefined,
-  elapsedMs: number,
+  speed: number,
 ): string {
-  const speed = elapsedMs > 0 ? downloadedBytes / (elapsedMs / 1_000) : 0;
   const downloaded = formatBytes(downloadedBytes);
   const speedText = `${formatBytes(speed)}/s`;
   if (!totalBytes || totalBytes <= 0) {
@@ -228,58 +223,53 @@ export function formatDownloadProgress(
   return `[${bar}] ${percent} ${speedText} ${downloaded}/${formatBytes(totalBytes)}`;
 }
 
+// TODO: Replace Axios with takanawa-node after its cross-platform Node package is published.
 async function downloadFile(options: DownloadFileOptions): Promise<void> {
-  const response = await options.fetch(options.url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download Godot CEF: ${response.status} ${response.statusText}`.trimEnd(),
-    );
-  }
-  if (!response.body) {
-    throw new Error("Failed to download Godot CEF: response body is empty");
-  }
-
-  const totalBytes = parseContentLength(response.headers.get("content-length"));
-  const startedAt = options.now();
-  const hash = crypto.createHash("sha256");
-  const archive = await fs.open(options.outputPath, "wx");
   let downloadedBytes = 0;
-  let lastProgressAt = Number.NEGATIVE_INFINITY;
+  let totalBytes: number | undefined;
+  let speed = 0;
   let lastProgressLength = 0;
-
-  try {
-    for await (const chunk of response.body) {
-      hash.update(chunk);
-      await archive.writeFile(chunk);
-      downloadedBytes += chunk.byteLength;
-
-      const currentTime = options.now();
-      if (currentTime - lastProgressAt < PROGRESS_UPDATE_INTERVAL_MS) {
-        continue;
-      }
+  const response = await axios.get<Readable>(options.url, {
+    onDownloadProgress: (progress) => {
+      totalBytes = progress.total;
+      speed = progress.rate ?? 0;
       lastProgressLength = writeDownloadProgress(
         options.output,
-        downloadedBytes,
+        progress.loaded,
         totalBytes,
-        currentTime - startedAt,
+        speed,
         lastProgressLength,
       );
-      lastProgressAt = currentTime;
-    }
+    },
+    responseType: "stream",
+  });
+  const hash = crypto.createHash("sha256");
+  const hashingStream = new Transform({
+    transform(chunk, _encoding, callback) {
+      hash.update(chunk);
+      downloadedBytes += chunk.byteLength;
+      callback(null, chunk);
+    },
+  });
+
+  try {
+    await pipeline(
+      response.data,
+      hashingStream,
+      createWriteStream(options.outputPath, { flags: "wx" }),
+    );
   } catch (error) {
     if (options.output.isTTY && lastProgressLength > 0) {
       options.output.write("\n");
     }
     throw error;
-  } finally {
-    await archive.close();
   }
 
   writeDownloadProgress(
     options.output,
     downloadedBytes,
     totalBytes,
-    options.now() - startedAt,
+    speed,
     lastProgressLength,
     true,
   );
@@ -296,11 +286,11 @@ function writeDownloadProgress(
   output: DownloadProgressOutput,
   downloadedBytes: number,
   totalBytes: number | undefined,
-  elapsedMs: number,
+  speed: number,
   previousLength: number,
   complete: boolean = false,
 ): number {
-  const progress = formatDownloadProgress(downloadedBytes, totalBytes, elapsedMs);
+  const progress = formatDownloadProgress(downloadedBytes, totalBytes, speed);
   if (!output.isTTY) {
     if (complete) {
       output.write(`Downloaded ${progress}\n`);
@@ -370,14 +360,6 @@ function resolveResourcePath(projectDir: string, resourcePath: string): string {
     throw new Error(`Godot CEF path must stay inside the Godot project: ${resourcePath}`);
   }
   return resolved;
-}
-
-function parseContentLength(value: string | null): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 function formatBytes(bytes: number): string {
