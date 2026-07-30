@@ -15,7 +15,7 @@ the Mac loopback interface:
 
 ```sh
 mise x -- corepack pnpm \
-  --dir examples/swiftui-embedded/src-web \
+  --dir examples/basic-host-app-embedded/src-web \
   exec vite \
   --host 127.0.0.1 \
   --port 5173 \
