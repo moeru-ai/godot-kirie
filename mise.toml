@@ -55,6 +55,14 @@ run = "./scripts/run-build-task.js buildIosXcframework"
 description = "Build iOS debug xcframework artifact"
 run = "./scripts/run-build-task.js buildIosDebugXcframework"
 
+[tasks."build:swiftui-embedded-ios"]
+description = "Export the native SwiftUI host example as an Xcode project"
+run = "./scripts/run-build-task.js buildSwiftuiEmbeddedIos"
+
+[tasks."build:swiftui-embedded-android"]
+description = "Export the Kotlin-hosted embedded Godot example as an Android application"
+run = "./scripts/run-build-task.js buildSwiftuiEmbeddedAndroid"
+
 [tasks."install:godot-cef"]
 description = "Install pinned Godot CEF desktop addon into a Godot project"
 usage = '''
@@ -141,6 +149,18 @@ arg "<platform>" help="Target platform" {
 arg "<example_name>" help="Example project name"
 '''
 run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_example_name?}"'
+
+[tasks."run:swiftui-embedded-ios-simulator"]
+description = "Build, install, launch, and verify the SwiftUI embedded example on an iOS Simulator"
+run = "./scripts/run-build-task.js runSwiftuiEmbeddedIosSimulator"
+
+[tasks."run:swiftui-embedded-android-emulator"]
+description = "Build, install, launch, and verify the Kotlin-hosted embedded example on an Android Emulator"
+run = "./scripts/run-build-task.js runSwiftuiEmbeddedAndroidEmulator"
+
+[tasks."run:swiftui-embedded-ios-device"]
+description = "Build, install, and launch the SwiftUI embedded example on a connected iOS device"
+run = "./scripts/run-build-task.js runSwiftuiEmbeddedIosDevice"
 
 [tasks."test:dotnet"]
 description = "Run .NET tests"
