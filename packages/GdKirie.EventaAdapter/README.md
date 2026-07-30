@@ -15,6 +15,16 @@ context with a Kirie text transport.
 The package includes a NuGet `contentFiles` source bridge for addon-shipped
 `KirieClient.cs`, exposing `KirieClient.CreateEventaContext(...)`.
 
+Repository projects using `ProjectReference` instead of the packed NuGet must
+include the source bridge explicitly because project references do not import
+NuGet `contentFiles`:
+
+```xml
+<Compile
+  Include="../../packages/GdKirie.EventaAdapter/contentFiles/cs/any/GdKirie.EventaAdapter/KirieClientEventaBridge.cs"
+  Link="GdKirie.EventaAdapter/KirieClientEventaBridge.cs" />
+```
+
 Eventa messages are serialized as JSON text over Kirie's text IPC lane. Kirie
 core remains a low-level WebView and IPC bridge and does not learn Eventa
 semantics.
