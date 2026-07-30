@@ -47,7 +47,6 @@ public partial class KirieClient : GodotObject
     private KirieClient(GodotObject sceneNode)
     {
         ArgumentNullException.ThrowIfNull(sceneNode);
-        ValidateSceneNode(sceneNode);
 
         _sceneNode = sceneNode;
         _webViewReadyCallable = Callable.From(OnSceneWebViewReady);
@@ -322,46 +321,6 @@ public partial class KirieClient : GodotObject
         if (GodotObject.IsInstanceValid(source) && source.IsConnected(signalName, callback))
         {
             source.Disconnect(signalName, callback);
-        }
-    }
-
-    private static void ValidateSceneNode(GodotObject sceneNode)
-    {
-        string[] methods =
-        [
-            "is_available",
-            "create_webview",
-            "destroy_webview",
-            "load_url",
-            "load_html_string",
-            "send_text",
-            "send_binary",
-            "send_data",
-            "get_launch_option",
-        ];
-        string[] signals =
-        [
-            "webview_ready",
-            "text_received",
-            "binary_received",
-            "data_received",
-            "ipc_error",
-        ];
-
-        foreach (var method in methods)
-        {
-            if (!sceneNode.HasMethod(method))
-            {
-                throw new ArgumentException($"Kirie scene node must provide {method}().", nameof(sceneNode));
-            }
-        }
-
-        foreach (var signal in signals)
-        {
-            if (!sceneNode.HasSignal(signal))
-            {
-                throw new ArgumentException($"Kirie scene node must provide {signal}.", nameof(sceneNode));
-            }
         }
     }
 
