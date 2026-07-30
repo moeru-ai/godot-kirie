@@ -2,6 +2,16 @@ body,
 html,
 .card {
   background: transparent;
+  box-sizing: border-box;
+  max-height: 11rem;
+  max-width: 32rem;
+  overflow: auto;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
 }
 
 .row {
