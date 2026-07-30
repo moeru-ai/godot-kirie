@@ -14,7 +14,9 @@ public partial class KirieClient : GodotObject
     private readonly Callable _ipcErrorCallable;
 
     private readonly GodotObject? _pluginSingleton;
+    private readonly GodotObject? _sceneNode;
     private readonly long _viewId;
+    private bool _signalsDisconnected;
 
     public event Action? WebViewReady;
     public event Action<string>? TextReceived;
@@ -42,10 +44,51 @@ public partial class KirieClient : GodotObject
         ConnectPluginSignals();
     }
 
-    public bool IsAvailable => _pluginSingleton is not null;
+    private KirieClient(GodotObject sceneNode)
+    {
+        ArgumentNullException.ThrowIfNull(sceneNode);
+
+        _sceneNode = sceneNode;
+        _webViewReadyCallable = Callable.From(OnSceneWebViewReady);
+        _textReceivedCallable = Callable.From<string>(OnSceneTextReceived);
+        _binaryReceivedCallable = Callable.From<byte[]>(OnSceneBinaryReceived);
+        _dataReceivedCallable = Callable.From<Variant>(OnSceneDataReceived);
+        _ipcErrorCallable = Callable.From<string>(OnSceneIpcError);
+        ConnectSceneSignals();
+    }
+
+    /// <summary>
+    /// Creates a typed client that borrows an existing scene KirieNode.
+    /// The node remains responsible for its WebView lifecycle and must outlive this client.
+    /// </summary>
+    public static KirieClient FromNode(GodotObject kirieNode)
+    {
+        return new KirieClient(kirieNode);
+    }
+
+    public bool IsAvailable => _sceneNode is not null
+        ? (bool)_sceneNode.Call("is_available")
+        : _pluginSingleton is not null;
 
     public void CreateWebView(string initialUrl = "")
     {
+        if (_sceneNode is not null)
+        {
+            if (initialUrl.Length == 0)
+            {
+                _sceneNode.Call("create_webview");
+                return;
+            }
+
+            _sceneNode.Call(
+                "create_webview",
+                new Godot.Collections.Dictionary
+                {
+                    ["initial_url"] = initialUrl,
+                });
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(CreateWebView)))
         {
             return;
@@ -57,6 +100,12 @@ public partial class KirieClient : GodotObject
 
     public void DestroyWebView()
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("destroy_webview");
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(DestroyWebView)))
         {
             return;
@@ -68,6 +117,12 @@ public partial class KirieClient : GodotObject
 
     public void LoadUrl(string url)
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("load_url", url);
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(LoadUrl)))
         {
             return;
@@ -79,6 +134,12 @@ public partial class KirieClient : GodotObject
 
     public void LoadHtmlString(string html, string baseUrl = "")
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("load_html_string", html, baseUrl);
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(LoadHtmlString)))
         {
             return;
@@ -90,6 +151,12 @@ public partial class KirieClient : GodotObject
 
     public void SendText(string message)
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("send_text", message);
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(SendText)))
         {
             return;
@@ -101,6 +168,12 @@ public partial class KirieClient : GodotObject
 
     public void SendBinary(byte[] bytes)
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("send_binary", bytes);
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(SendBinary)))
         {
             return;
@@ -112,6 +185,12 @@ public partial class KirieClient : GodotObject
 
     public void SendData(Variant value)
     {
+        if (_sceneNode is not null)
+        {
+            _sceneNode.Call("send_data", value);
+            return;
+        }
+
         if (!EnsurePluginSingleton(nameof(SendData)))
         {
             return;
@@ -149,6 +228,11 @@ public partial class KirieClient : GodotObject
 
     public string GetLaunchOption(string key)
     {
+        if (_sceneNode is not null)
+        {
+            return _sceneNode.Call("get_launch_option", key).AsString();
+        }
+
         if (!EnsurePluginSingleton(nameof(GetLaunchOption)))
         {
             return string.Empty;
@@ -157,6 +241,16 @@ public partial class KirieClient : GodotObject
         var value = _pluginSingleton!.Call("getLaunchOption", key).AsString();
         GD.Print($"[Kirie][cs] get_launch_option key={key} value={value}");
         return value;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisconnectSignals();
+        }
+
+        base.Dispose(disposing);
     }
 
     private void ConnectPluginSignals()
@@ -181,6 +275,53 @@ public partial class KirieClient : GodotObject
         }
 
         _pluginSingleton.Connect(signalName, callback);
+    }
+
+    private void ConnectSceneSignals()
+    {
+        _sceneNode!.Connect("webview_ready", _webViewReadyCallable);
+        _sceneNode.Connect("text_received", _textReceivedCallable);
+        _sceneNode.Connect("binary_received", _binaryReceivedCallable);
+        _sceneNode.Connect("data_received", _dataReceivedCallable);
+        _sceneNode.Connect("ipc_error", _ipcErrorCallable);
+    }
+
+    private void DisconnectSignals()
+    {
+        if (_signalsDisconnected)
+        {
+            return;
+        }
+
+        _signalsDisconnected = true;
+        if (_sceneNode is not null)
+        {
+            DisconnectSignal(_sceneNode, "webview_ready", _webViewReadyCallable);
+            DisconnectSignal(_sceneNode, "text_received", _textReceivedCallable);
+            DisconnectSignal(_sceneNode, "binary_received", _binaryReceivedCallable);
+            DisconnectSignal(_sceneNode, "data_received", _dataReceivedCallable);
+            DisconnectSignal(_sceneNode, "ipc_error", _ipcErrorCallable);
+            return;
+        }
+
+        if (_pluginSingleton is null)
+        {
+            return;
+        }
+
+        DisconnectSignal(_pluginSingleton, "webview_ready", _webViewReadyCallable);
+        DisconnectSignal(_pluginSingleton, "text_received", _textReceivedCallable);
+        DisconnectSignal(_pluginSingleton, "binary_received", _binaryReceivedCallable);
+        DisconnectSignal(_pluginSingleton, "data_received", _dataReceivedCallable);
+        DisconnectSignal(_pluginSingleton, "ipc_error", _ipcErrorCallable);
+    }
+
+    private static void DisconnectSignal(GodotObject source, string signalName, Callable callback)
+    {
+        if (GodotObject.IsInstanceValid(source) && source.IsConnected(signalName, callback))
+        {
+            source.Disconnect(signalName, callback);
+        }
     }
 
     private bool EnsurePluginSingleton(string methodName)
@@ -238,6 +379,31 @@ public partial class KirieClient : GodotObject
             return;
 
         GD.Print($"[Kirie][cs] signal ipc_error {error}");
+        IpcError?.Invoke(error);
+    }
+
+    private void OnSceneWebViewReady()
+    {
+        WebViewReady?.Invoke();
+    }
+
+    private void OnSceneTextReceived(string message)
+    {
+        TextReceived?.Invoke(message);
+    }
+
+    private void OnSceneBinaryReceived(byte[] bytes)
+    {
+        BinaryReceived?.Invoke(bytes);
+    }
+
+    private void OnSceneDataReceived(Variant value)
+    {
+        DataReceived?.Invoke(value);
+    }
+
+    private void OnSceneIpcError(string error)
+    {
         IpcError?.Invoke(error);
     }
 }

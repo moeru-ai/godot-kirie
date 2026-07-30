@@ -22,9 +22,9 @@ workspace packages.
 
 ## C# binding
 
-`addon/addons/kirie/csharp/KirieClient.cs` is a thin C# wrapper over the same
-platform singleton used by `GdKirie`. It exposes Kirie signals as idiomatic C#
-events while keeping Godot `Callable` usage internal to the bridge.
+`addon/addons/kirie/csharp/KirieClient.cs` exposes Kirie signals as idiomatic
+C# events while keeping Godot `Callable` usage internal. Its default constructor
+talks directly to the platform singleton:
 
 ```csharp
 private readonly KirieClient _kirie = new();
@@ -43,3 +43,29 @@ public override void _Ready()
     }
 }
 ```
+
+When a scene `KirieNode` owns the WebView, C# can borrow that existing node
+without creating another owner or duplicating dynamic signal plumbing. This
+example configures the scene node with `auto_create = false`, then lets C# start
+the borrowed node's WebView after subscribing to its signals:
+
+```csharp
+private KirieClient? _kirie;
+
+public override void _Ready()
+{
+    _kirie = KirieClient.FromNode(GetNode<Node>("Kirie"));
+    _kirie.TextReceived += OnTextReceived;
+    _kirie.CreateWebView();
+}
+
+public override void _ExitTree()
+{
+    _kirie?.Dispose();
+    _kirie = null;
+}
+```
+
+The borrowed node must outlive the client. Disposing the client disconnects its
+C# callbacks but does not free the node or destroy its WebView; `KirieNode`
+remains the scene-tree lifecycle owner.
