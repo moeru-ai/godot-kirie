@@ -504,7 +504,8 @@ archive layout, and only then installs it. The public installer command is:
 pnpm kirie doctor --fix godot-cef
 ```
 
-The repository keeps this mise wrapper for examples and integration fixtures:
+The repository root declares `kirie` for examples and integration fixtures. Its
+mise wrapper runs that root-local binary against the selected Godot project:
 
 ```sh
 mise run install:godot-cef <godot-project-dir>

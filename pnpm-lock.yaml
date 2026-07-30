@@ -74,6 +74,9 @@ importers:
       execa:
         specifier: 'catalog:'
         version: 9.6.1
+      kirie:
+        specifier: workspace:*
+        version: link:packages/cli
 
   examples/basic-ipc/src-web:
     dependencies:

@@ -20,6 +20,7 @@
     "@biomejs/biome": "catalog:",
     "@gd-kirie/alint-config": "workspace:*",
     "bumpp": "catalog:",
-    "execa": "catalog:"
+    "execa": "catalog:",
+    "kirie": "workspace:*"
   }
 }

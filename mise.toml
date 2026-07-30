@@ -61,7 +61,7 @@ depends = ["build:packages"]
 usage = '''
 arg "<godot_project_dir>" help="Godot project directory to install the addon into"
 '''
-run = 'node packages/cli/dist/cli.js doctor --fix godot-cef --project "${usage_godot_project_dir?}"'
+run = 'corepack pnpm exec kirie doctor --fix godot-cef --project "${usage_godot_project_dir?}"'
 
 [tasks."build:native-artifacts"]
 description = "Build all native artifacts"
