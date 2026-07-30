@@ -13,6 +13,13 @@ export {
   packAddon,
   testSwift,
 } from "./build-kirie.ts";
+export {
+  buildSwiftuiEmbeddedAndroid,
+  buildSwiftuiEmbeddedIos,
+  runSwiftuiEmbeddedAndroidEmulator,
+  runSwiftuiEmbeddedIosDevice,
+  runSwiftuiEmbeddedIosSimulator,
+} from "./build-swiftui-embedded.ts";
 
 // mise task entrypoints re-exported from the integration host runner.
 export {

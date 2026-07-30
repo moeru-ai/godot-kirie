@@ -1,0 +1,19 @@
+{
+  "name": "@gd-kirie/swiftui-embedded-web",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@gd-kirie/ipc-eventa": "workspace:*",
+    "@moeru/eventa": "catalog:"
+  },
+  "devDependencies": {
+    "@unocss/reset": "^66.7.5",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

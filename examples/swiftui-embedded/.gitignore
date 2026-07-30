@@ -1,0 +1,6 @@
+/.godot/
+/.mono/
+/export_presets.cfg
+/NuGet.Config
+/src-web/dist/
+/src-web/node_modules/
