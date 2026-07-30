@@ -173,7 +173,7 @@ public sealed partial class EmbeddedWebBridge(KirieClient kirie) : IDisposable
 
     private void Report(string status)
     {
-        GD.Print($"[SwiftUIEmbedded] {status}");
+        GD.Print($"[BasicHostAppEmbedded] {status}");
     }
 
     private void RunOnGodotThread(Action action)

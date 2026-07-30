@@ -55,13 +55,13 @@ run = "./scripts/run-build-task.js buildIosXcframework"
 description = "Build iOS debug xcframework artifact"
 run = "./scripts/run-build-task.js buildIosDebugXcframework"
 
-[tasks."build:swiftui-embedded-ios"]
+[tasks."build:basic-host-app-embedded-ios"]
 description = "Export the native SwiftUI host example as an Xcode project"
-run = "./scripts/run-build-task.js buildSwiftuiEmbeddedIos"
+run = "./scripts/run-build-task.js buildBasicHostAppEmbeddedIos"
 
-[tasks."build:swiftui-embedded-android"]
+[tasks."build:basic-host-app-embedded-android"]
 description = "Export the Kotlin-hosted embedded Godot example as an Android application"
-run = "./scripts/run-build-task.js buildSwiftuiEmbeddedAndroid"
+run = "./scripts/run-build-task.js buildBasicHostAppEmbeddedAndroid"
 
 [tasks."install:godot-cef"]
 description = "Install pinned Godot CEF desktop addon into a Godot project"
@@ -150,17 +150,17 @@ arg "<example_name>" help="Example project name"
 '''
 run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_example_name?}"'
 
-[tasks."run:swiftui-embedded-ios-simulator"]
+[tasks."run:basic-host-app-embedded-ios-simulator"]
 description = "Build, install, launch, and verify the SwiftUI embedded example on an iOS Simulator"
-run = "./scripts/run-build-task.js runSwiftuiEmbeddedIosSimulator"
+run = "./scripts/run-build-task.js runBasicHostAppEmbeddedIosSimulator"
 
-[tasks."run:swiftui-embedded-android-emulator"]
+[tasks."run:basic-host-app-embedded-android-emulator"]
 description = "Build, install, launch, and verify the Kotlin-hosted embedded example on an Android Emulator"
-run = "./scripts/run-build-task.js runSwiftuiEmbeddedAndroidEmulator"
+run = "./scripts/run-build-task.js runBasicHostAppEmbeddedAndroidEmulator"
 
-[tasks."run:swiftui-embedded-ios-device"]
+[tasks."run:basic-host-app-embedded-ios-device"]
 description = "Build, install, and launch the SwiftUI embedded example on a connected iOS device"
-run = "./scripts/run-build-task.js runSwiftuiEmbeddedIosDevice"
+run = "./scripts/run-build-task.js runBasicHostAppEmbeddedIosDevice"
 
 [tasks."test:dotnet"]
 description = "Run .NET tests"

@@ -1,10 +1,9 @@
 # Native-hosted Godot and Kirie prototype
 
-The directory is still named `swiftui-embedded`, but the example now proves the
-same native-hosted model on iOS and Android. SwiftUI or Kotlin owns the
-application entry point and embeds one Godot surface. The Godot C# scene then
-creates the platform Kirie WebView inside that surface and uses Eventa.NET over
-Kirie text IPC.
+This example proves the same native-hosted model on iOS and Android. SwiftUI or
+Kotlin owns the application entry point and embeds one Godot surface. The Godot
+C# scene then creates the platform Kirie WebView inside that surface and uses
+Eventa.NET over Kirie text IPC.
 
 It visibly exercises four layers in one process:
 
@@ -54,7 +53,7 @@ template, and local Godot NuGet packages prepared as described by that branch:
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
-mise run run:swiftui-embedded-ios-simulator
+mise run run:basic-host-app-embedded-ios-simulator
 ```
 
 The task builds the web page, stages a read-only copy of the project and addon
@@ -62,7 +61,7 @@ under `dist/`, rebuilds only that staged Kirie framework against the checkout's
 Godot 4.7 headers, restores and builds the C# project, and performs a
 project-only Godot iOS export. It then installs the native Swift host sources,
 builds with Xcode, deploys with `simctl`, waits for the Eventa marker, and saves
-a screenshot under `dist/examples/swiftui-embedded/`. The source project's
+a screenshot under `dist/examples/basic-host-app-embedded/`. The source project's
 Godot configuration and the repository's normal addon artifacts are not
 rewritten.
 
@@ -81,7 +80,7 @@ IOS_TEAM_ID=YOUR_TEAM_ID \
 IOS_BUNDLE_ID=your.owned.bundle.identifier \
 IOS_XCODE_DEVICE_ID=HARDWARE_UDID \
 IOS_CORE_DEVICE_ID=COREDEVICE_IDENTIFIER \
-mise run run:swiftui-embedded-ios-device
+mise run run:basic-host-app-embedded-ios-device
 ```
 
 The iPhone must be connected, paired, trusted, unlocked, and in Developer Mode.
@@ -127,7 +126,7 @@ With an AVD installed, run:
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 ANDROID_HOME="$HOME/Library/Android/sdk" \
-mise run run:swiftui-embedded-android-emulator
+mise run run:basic-host-app-embedded-android-emulator
 ```
 
 The task prefers an already booted emulator. Otherwise it starts the first
@@ -135,7 +134,7 @@ available AVD and waits for Android to finish booting. Set `ANDROID_DEVICE_ID`
 to target a particular connected emulator. It builds the web UI and Kirie AAR,
 exports the arm64 Mono APK with the custom Gradle source template, installs and
 launches it, waits for the Eventa marker, and writes the APK, logs, and screenshot
-under `dist/examples/swiftui-embedded/android/`.
+under `dist/examples/basic-host-app-embedded/android/`.
 
 ## Upstream references
 

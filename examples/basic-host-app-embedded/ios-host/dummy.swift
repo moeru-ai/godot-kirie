@@ -1,4 +1,4 @@
-// NOTICE: This is application source maintained by the swiftui-embedded example.
+// NOTICE: This is application source maintained by the basic-host-app-embedded example.
 // Its name intentionally matches Godot's Apple Embedded Xcode export-template
 // placeholder because the build copies this file over the exported dummy.swift.
 // Template: https://github.com/godotengine/godot/blob/master/misc/dist/apple_embedded_xcode/godot_apple_embedded/dummy.swift
@@ -128,7 +128,7 @@ private struct NativeSurfaceOverlay: View {
 }
 
 @main
-struct SwiftUIEmbeddedApp: App {
+struct BasicHostAppEmbeddedApp: App {
     @UIApplicationDelegateAdaptor(GDTApplicationDelegate.self) private var appDelegate
     @State private var nativeOverlayOnTop = true
 

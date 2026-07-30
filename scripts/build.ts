@@ -1,5 +1,11 @@
+export {
+  buildBasicHostAppEmbeddedAndroid,
+  buildBasicHostAppEmbeddedIos,
+  runBasicHostAppEmbeddedAndroidEmulator,
+  runBasicHostAppEmbeddedIosDevice,
+  runBasicHostAppEmbeddedIosSimulator,
+} from "./build-basic-host-app-embedded.ts";
 export { runExample } from "./build-examples.ts";
-
 export {
   buildIntegrationAndroid,
   buildIntegrationIos,
@@ -14,13 +20,6 @@ export {
   packAddon,
   testSwift,
 } from "./build-kirie.ts";
-export {
-  buildSwiftuiEmbeddedAndroid,
-  buildSwiftuiEmbeddedIos,
-  runSwiftuiEmbeddedAndroidEmulator,
-  runSwiftuiEmbeddedIosDevice,
-  runSwiftuiEmbeddedIosSimulator,
-} from "./build-swiftui-embedded.ts";
 
 // mise task entrypoints re-exported from the integration host runner.
 export {

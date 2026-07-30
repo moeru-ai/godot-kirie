@@ -6,8 +6,8 @@ import { execa } from "execa";
 import { buildAndroidAar, buildIosDebugXcframework } from "./build-kirie.ts";
 import { buildWebPackage, distDir, rootDir } from "./build-shared.ts";
 
-const exampleName = "swiftui-embedded";
-const appName = "SwiftUIEmbedded";
+const exampleName = "basic-host-app-embedded";
+const appName = "BasicHostAppEmbedded";
 const presetName = "iOS Embed Debug";
 const androidPresetName = "Android Embed Debug";
 const marker = "KIRIE_VIEW_EMBED_EVENTA_PASS";
@@ -271,7 +271,7 @@ async function prepareIosExport(): Promise<void> {
     }
   }
 
-  await buildWebPackage("@gd-kirie/swiftui-embedded-web");
+  await buildWebPackage("@gd-kirie/basic-host-app-embedded-web");
   stageExampleProject();
   await buildIosDebugXcframework(
     path.join(stagedProjectDir, "addons/kirie/ios/Kirie.debug.xcframework"),
@@ -280,17 +280,17 @@ async function prepareIosExport(): Promise<void> {
   renderBuildConfiguration({
     androidPackage: process.env.ANDROID_PACKAGE || "ai.moeru.kirie.examples.viewembedded",
     androidSourceTemplate: path.join(godotSourceRoot, "bin/android_source.zip"),
-    bundleId: process.env.IOS_BUNDLE_ID || "ai.moeru.kirie.examples.swiftui-embedded",
+    bundleId: process.env.IOS_BUNDLE_ID || "ai.moeru.kirie.examples.basic-host-app-embedded",
     godotNugetDir,
     teamId: process.env.IOS_TEAM_ID || "AAAAAAAAAA",
     template: godotTemplate,
   });
 
-  await execa(dotnet, ["restore", "SwiftUIEmbedded.csproj", "--configfile", "NuGet.Config"], {
+  await execa(dotnet, ["restore", "BasicHostAppEmbedded.csproj", "--configfile", "NuGet.Config"], {
     cwd: stagedProjectDir,
     stdio: "inherit",
   });
-  await execa(dotnet, ["build", "SwiftUIEmbedded.csproj", "--no-restore"], {
+  await execa(dotnet, ["build", "BasicHostAppEmbedded.csproj", "--no-restore"], {
     cwd: stagedProjectDir,
     stdio: "inherit",
   });
@@ -342,24 +342,24 @@ async function prepareAndroidExport(): Promise<void> {
     }
   }
 
-  await buildWebPackage("@gd-kirie/swiftui-embedded-web");
+  await buildWebPackage("@gd-kirie/basic-host-app-embedded-web");
   stageExampleProject();
   await buildAndroidAar(path.join(stagedProjectDir, "addons/kirie/libraries/android"));
   renderBuildConfiguration({
     androidPackage: process.env.ANDROID_PACKAGE || "ai.moeru.kirie.examples.viewembedded",
     androidSourceTemplate,
-    bundleId: process.env.IOS_BUNDLE_ID || "ai.moeru.kirie.examples.swiftui-embedded",
+    bundleId: process.env.IOS_BUNDLE_ID || "ai.moeru.kirie.examples.basic-host-app-embedded",
     godotNugetDir,
     teamId: process.env.IOS_TEAM_ID || "AAAAAAAAAA",
     template: process.env.GODOT_IOS_TEMPLATE || path.join(godotSourceRoot, "bin/godot_ios.zip"),
   });
   await installAndroidHost(androidSourceTemplate);
 
-  await execa(dotnet, ["restore", "SwiftUIEmbedded.csproj", "--configfile", "NuGet.Config"], {
+  await execa(dotnet, ["restore", "BasicHostAppEmbedded.csproj", "--configfile", "NuGet.Config"], {
     cwd: stagedProjectDir,
     stdio: "inherit",
   });
-  await execa(dotnet, ["build", "SwiftUIEmbedded.csproj", "--no-restore"], {
+  await execa(dotnet, ["build", "BasicHostAppEmbedded.csproj", "--no-restore"], {
     cwd: stagedProjectDir,
     stdio: "inherit",
   });
@@ -607,19 +607,19 @@ async function waitForSimulatorMarker(simulatorId: string, processId: string): P
 }
 
 // mise task entrypoint.
-export async function buildSwiftuiEmbeddedIos(): Promise<void> {
+export async function buildBasicHostAppEmbeddedIos(): Promise<void> {
   await prepareIosExport();
   console.log(`Prepared native SwiftUI host Xcode project: ${exportRoot}`);
 }
 
 // mise task entrypoint.
-export async function buildSwiftuiEmbeddedAndroid(): Promise<void> {
+export async function buildBasicHostAppEmbeddedAndroid(): Promise<void> {
   await prepareAndroidExport();
   console.log(`Prepared Kotlin-hosted Android application: ${androidApk}`);
 }
 
 // mise task entrypoint.
-export async function runSwiftuiEmbeddedAndroidEmulator(): Promise<void> {
+export async function runBasicHostAppEmbeddedAndroidEmulator(): Promise<void> {
   await prepareAndroidExport();
   const androidSdk = resolveAndroidSdk();
   const adb = path.join(androidSdk, "platform-tools/adb");
@@ -651,7 +651,7 @@ export async function runSwiftuiEmbeddedAndroidEmulator(): Promise<void> {
 }
 
 // mise task entrypoint.
-export async function runSwiftuiEmbeddedIosSimulator(): Promise<void> {
+export async function runBasicHostAppEmbeddedIosSimulator(): Promise<void> {
   await prepareIosExport();
   const simulator = await selectSimulator();
   await execa("xcrun", ["simctl", "boot", simulator.udid], { reject: false });
@@ -691,7 +691,7 @@ export async function runSwiftuiEmbeddedIosSimulator(): Promise<void> {
 }
 
 // mise task entrypoint.
-export async function runSwiftuiEmbeddedIosDevice(): Promise<void> {
+export async function runBasicHostAppEmbeddedIosDevice(): Promise<void> {
   const xcodeDeviceId = requiredEnvironment("IOS_XCODE_DEVICE_ID");
   const coreDeviceId = requiredEnvironment("IOS_CORE_DEVICE_ID");
   const teamId = requiredEnvironment("IOS_TEAM_ID");
