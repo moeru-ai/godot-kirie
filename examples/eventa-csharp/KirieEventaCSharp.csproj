@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj" />
+    <Compile
+      Include="../../packages/GdKirie.EventaAdapter/contentFiles/cs/any/GdKirie.EventaAdapter/KirieClientEventaBridge.cs"
+      Link="GdKirie.EventaAdapter/KirieClientEventaBridge.cs" />
   </ItemGroup>
 
 </Project>
