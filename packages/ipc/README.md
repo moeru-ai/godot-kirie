@@ -36,3 +36,30 @@ message:
 The structured data subset is limited to `null`, booleans, numbers, strings,
 arrays, and objects with string keys. JSON message shapes are a caller or
 adapter convention and should be sent with `sendText()` when needed.
+
+## Pointer input forwarding
+
+Kirie can opt in to forwarding browser pointer events back through Godot's
+input pipeline. Enable it on the Godot owner and install the browser listener:
+
+```gdscript
+$KirieNode.pointer_input_forwarding_enabled = true
+```
+
+```ts
+import { installPointerEventForwarding } from "@gd-kirie/ipc";
+
+const removePointerForwarding = installPointerEventForwarding();
+```
+
+The listener uses the normal DOM bubbling phase. A web-owned interactive region
+can keep its pointer sequence in the WebView with `event.stopPropagation()`;
+the `pointerdown` event decides whether the complete sequence is converted into
+synthetic Godot input events.
+
+Forwarding is disabled by default. It replays pointer input into Godot; it does
+not make the native WebView itself hit-test transparent. The implementation uses
+Godot's
+[`Input.parse_input_event()`](https://docs.godotengine.org/en/stable/classes/class_input.html#class-input-method-parse-input-event)
+API; forwarded mouse and touch events retain their destination
+[`window_id`](https://docs.godotengine.org/en/stable/classes/class_inputeventfromwindow.html#class-inputeventfromwindow-property-window-id).
