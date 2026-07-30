@@ -17,10 +17,11 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentActivity
 import org.godotengine.godot.Godot
 import org.godotengine.godot.GodotFragment
@@ -31,9 +32,6 @@ class GodotApp :
     GodotHost {
     private var godotFragment: GodotFragment? = null
     private lateinit var godotContainer: FrameLayout
-    private lateinit var layerButton: Button
-    private lateinit var nativeOverlayButton: Button
-    private var nativeOverlayOnTop = true
     private var headerTapCount = 0
     private var overlayTapCount = 0
 
@@ -43,7 +41,6 @@ class GodotApp :
         super.onCreate(savedInstanceState)
         setContentView(createContentView())
         attachGodotFragment()
-        applyLayerOrder()
     }
 
     override fun onResume() {
@@ -66,32 +63,19 @@ class GodotApp :
         godot.setSystemBarsAppearance()
     }
 
-    private fun createContentView(): LinearLayout {
+    private fun createContentView(): FrameLayout {
         val root =
-            LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setBackgroundColor(Color.rgb(0, 0, 0))
-            }
-        root.addView(createHeader())
-
-        val surface =
             FrameLayout(this).apply {
-                setBackgroundColor(Color.rgb(3, 8, 20))
+                clipChildren = false
+                clipToPadding = false
+                setBackgroundColor(Color.TRANSPARENT)
             }
-        root.addView(
-            surface,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f,
-            ),
-        )
 
         godotContainer =
             FrameLayout(this).apply {
                 id = GODOT_CONTAINER_ID
             }
-        surface.addView(
+        root.addView(
             godotContainer,
             FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -99,94 +83,79 @@ class GodotApp :
             ),
         )
 
-        nativeOverlayButton =
+        val badge = createBadge()
+        root.addView(
+            badge,
+            FrameLayout
+                .LayoutParams(200.dp, 36.dp, Gravity.TOP or Gravity.START)
+                .apply { marginStart = 18.dp },
+        )
+
+        val nativeButton =
+            styledButton("Native button", Color.rgb(20, 110, 158)).apply {
+                setOnClickListener {
+                    headerTapCount += 1
+                    badge.text = "Android TextView • tap $headerTapCount"
+                }
+            }
+        root.addView(
+            nativeButton,
+            FrameLayout
+                .LayoutParams(
+                    128.dp,
+                    48.dp,
+                    Gravity.TOP or Gravity.END,
+                ).apply {
+                    marginEnd = 18.dp
+                },
+        )
+
+        val overlayButton =
             styledButton("Kotlin overlay • tap 0", Color.rgb(125, 72, 189)).apply {
                 setOnClickListener {
                     overlayTapCount += 1
                     text = "Kotlin overlay • tap $overlayTapCount"
                 }
             }
-        surface.addView(
-            nativeOverlayButton,
+        root.addView(
+            overlayButton,
             FrameLayout
                 .LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     48.dp,
                     Gravity.BOTTOM or Gravity.START,
-                ).apply {
-                    marginStart = 24.dp
-                    bottomMargin = 24.dp
-                },
+                ).apply { marginStart = 18.dp },
         )
+
+        for (control in listOf(badge, nativeButton, overlayButton)) {
+            control.elevation = 12.dp.toFloat()
+            control.bringToFront()
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            (badge.layoutParams as FrameLayout.LayoutParams).topMargin = systemBars.top + 18.dp
+            (nativeButton.layoutParams as FrameLayout.LayoutParams).topMargin =
+                systemBars.top + 12.dp
+            (overlayButton.layoutParams as FrameLayout.LayoutParams).bottomMargin =
+                systemBars.bottom + 18.dp
+            root.requestLayout()
+            insets
+        }
+
         return root
     }
 
-    private fun createHeader(): LinearLayout {
-        val header =
-            LinearLayout(this).apply {
-                gravity = Gravity.CENTER_VERTICAL
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(18.dp, 8.dp, 18.dp, 8.dp)
-                setBackgroundColor(Color.rgb(9, 14, 28))
-            }
-
-        val labels = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        labels.addView(
-            TextView(this).apply {
-                text = "Kotlin host"
-                textSize = 18f
-                setTextColor(Color.WHITE)
-                setTypeface(typeface, Typeface.BOLD)
-            },
-        )
-        val badge =
-            TextView(this).apply {
-                gravity = Gravity.CENTER
-                text = "Android TextView • tap 0"
-                textSize = 12f
-                typeface = Typeface.MONOSPACE
-                setPadding(0, 0, 0, 0)
-                setTextColor(Color.rgb(148, 222, 255))
-                backgroundTintList = ColorStateList.valueOf(Color.rgb(31, 46, 79))
-                setBackgroundResource(android.R.drawable.dialog_holo_light_frame)
-            }
-        labels.addView(
-            badge,
-            LinearLayout.LayoutParams(200.dp, 30.dp).apply { topMargin = 6.dp },
-        )
-        header.addView(labels, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-
-        val actions = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        actions.addView(
-            styledButton("Native button", Color.rgb(20, 110, 158)).apply {
-                setOnClickListener {
-                    headerTapCount += 1
-                    badge.text = "Android TextView • tap $headerTapCount"
-                }
-            },
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 38.dp),
-        )
-        layerButton =
-            Button(this).apply {
-                isAllCaps = false
-                minHeight = 0
-                minimumHeight = 0
-                textSize = 12f
-                typeface = Typeface.MONOSPACE
-                setTextColor(Color.rgb(148, 222, 255))
-                backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-                setOnClickListener {
-                    nativeOverlayOnTop = !nativeOverlayOnTop
-                    applyLayerOrder()
-                }
-            }
-        actions.addView(layerButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 28.dp))
-        header.addView(
-            actions,
-            LinearLayout.LayoutParams(128.dp, ViewGroup.LayoutParams.WRAP_CONTENT),
-        )
-        return header
-    }
+    private fun createBadge() =
+        TextView(this).apply {
+            gravity = Gravity.CENTER
+            text = "Android TextView • tap 0"
+            textSize = 12f
+            typeface = Typeface.MONOSPACE
+            setTextColor(Color.rgb(148, 222, 255))
+            backgroundTintList = ColorStateList.valueOf(Color.rgb(31, 46, 79))
+            setBackgroundResource(android.R.drawable.dialog_holo_light_frame)
+        }
 
     private fun styledButton(
         label: String,
@@ -216,20 +185,6 @@ class GodotApp :
                         .commitNowAllowingStateLoss()
                 }
             }
-    }
-
-    private fun applyLayerOrder() {
-        if (nativeOverlayOnTop) {
-            godotContainer.elevation = 0f
-            nativeOverlayButton.elevation = 12.dp.toFloat()
-            nativeOverlayButton.bringToFront()
-            layerButton.text = "Web layer ↑"
-        } else {
-            nativeOverlayButton.elevation = 0f
-            godotContainer.elevation = 12.dp.toFloat()
-            godotContainer.bringToFront()
-            layerButton.text = "Native layer ↑"
-        }
     }
 
     private val Int.dp: Int

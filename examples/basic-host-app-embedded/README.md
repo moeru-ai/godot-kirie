@@ -7,27 +7,26 @@ Eventa.NET over Kirie text IPC.
 
 It visibly exercises four layers in one process:
 
-1. SwiftUI or Kotlin owns the application scene and native header.
-2. UIKit `GDTViewController` or Android `GodotFragment` embeds one Godot engine.
-3. Godot renders and animates the background surface.
+1. SwiftUI or Kotlin owns the application scene and transparent native overlay.
+2. UIKit `GDTViewController` or Android `GodotFragment` fills the window with one Godot engine.
+3. Godot renders and animates the full-screen background surface.
 4. Kirie renders the transparent web card and carries Eventa.NET traffic.
 
-The header's layer button switches the embedded SwiftUI/Kotlin overlay and
-Kirie host stacking order. Hit testing follows the selected top layer where
-they overlap. The header stays outside the Kirie host, so it remains interactive
-in either order.
+Small SwiftUI/UIKit or Kotlin/Android controls float above the Godot and Kirie
+surfaces. Only those controls claim native hits; transparent space remains
+available to the WebView and to pointer input forwarded into Godot.
 
 The web and C# sides each emit and acknowledge a normal Eventa event and handle
 a unary invoke. After both invoke directions and the event acknowledgement
 complete, the Godot process prints
 `KIRIE_VIEW_EMBED_EVENTA_PASS`.
 
-The example owns its package scripts, dependency lockfile, native build
-orchestration, export, deployment, and verification commands. Install its
-dependencies once from the repository root:
+The example owns the native-host preparation that is specific to this prototype.
+Dependencies and versions come from the repository workspace and catalog. Install
+them once from the repository root:
 
 ```sh
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded install --frozen-lockfile
+mise x -- corepack pnpm install --frozen-lockfile
 ```
 
 No example-specific tasks are registered in the repository's root `mise.toml`.
@@ -35,9 +34,21 @@ The example still intentionally consumes the Kirie addon and C# Eventa adapter
 from this checkout, so it is self-contained as a repository example rather than
 a directory that can be copied out of the monorepo unchanged.
 
-Build without installing or launching the result with `build:ios` or
-`build:android`. The platform sections below use the corresponding `run:*`
-commands for end-to-end verification.
+Run `prepare:ios` or `prepare:android` once after changing Godot, C#, native host,
+plugin, or export inputs. These commands stage the project and produce the native
+project or APK, but do not select devices, install, launch, wait for logs, or take
+screenshots. Use the platform tools directly for the shorter iteration loops
+below.
+
+For web-only iteration, keep Vite running in a separate terminal:
+
+```sh
+mise x -- corepack pnpm -F @gd-kirie/basic-host-app-embedded-web exec vite --host 0.0.0.0
+```
+
+iOS Simulator can use `http://127.0.0.1:5173/`. Android Emulator uses
+`http://10.0.2.2:5173/`. A physical iOS device must use the Mac's reachable LAN
+address.
 
 ## Why this uses a custom Godot build
 
@@ -61,7 +72,7 @@ not import NuGet `contentFiles`. The scene still owns one `KirieNode`, while
 The same client creates the Eventa context, so the example needs neither a
 second WebView nor a local `IKirieTextTransport` implementation.
 
-## Simulator
+## Prepare iOS
 
 Point the task at a checkout of
 `nekomeowww/godot:dev/ios-swift-and-csharp-dotnet` with the editor, iOS debug
@@ -70,54 +81,90 @@ template, and local Godot NuGet packages prepared as described by that branch:
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:ios-simulator
+IOS_BUNDLE_ID=your.owned.bundle.identifier \
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded prepare:ios
 ```
 
-The task builds the web page, stages a read-only copy of the project and addon
-under `dist/`, rebuilds only that staged Kirie framework against the checkout's
-Godot 4.7 headers, restores and builds the C# project, and performs a
-project-only Godot iOS export. It then installs the native Swift host sources,
-builds with Xcode, deploys with `simctl`, waits for the Eventa marker, and saves
-a screenshot under `dist/examples/basic-host-app-embedded/`. The source project's
-Godot configuration and the repository's normal addon artifacts are not
-rewritten.
+This builds the web page, stages a read-only copy of the project and addon under
+`dist/`, rebuilds the staged Kirie framework against the checkout's Godot 4.7
+headers, restores and builds C#, performs the Godot iOS export, and installs the
+Swift host sources. It leaves the reusable Xcode project at
+`dist/examples/basic-host-app-embedded/ios_xcode/`.
 
-Set `SIMULATOR_ID` to select a specific available iPhone simulator. Otherwise a
-booted iPhone is preferred, followed by the newest available runtime.
+The source project's Godot configuration and the repository's normal addon
+artifacts are not rewritten.
 
-## Device
+### iOS Simulator loop
 
-The device task needs both identifiers because Xcode uses the hardware UDID
-while CoreDevice commands use the `devicectl` identifier:
+Choose a simulator with `xcrun simctl list devices available`, then incrementally
+build with a stable DerivedData path:
 
 ```sh
-GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
-DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
-IOS_TEAM_ID=YOUR_TEAM_ID \
-IOS_BUNDLE_ID=your.owned.bundle.identifier \
-IOS_XCODE_DEVICE_ID=HARDWARE_UDID \
-IOS_CORE_DEVICE_ID=COREDEVICE_IDENTIFIER \
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:ios-device
+xcodebuild \
+  -project dist/examples/basic-host-app-embedded/ios_xcode/BasicHostAppEmbedded.xcodeproj \
+  -scheme BasicHostAppEmbedded \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination id=SIMULATOR_UDID \
+  -derivedDataPath dist/examples/basic-host-app-embedded/DerivedData-simulator \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
+Install and launch the result:
+
+```sh
+xcrun simctl install SIMULATOR_UDID \
+  dist/examples/basic-host-app-embedded/DerivedData-simulator/Build/Products/Debug-iphonesimulator/BasicHostAppEmbedded.app
+
+xcrun simctl launch --terminate-running-process SIMULATOR_UDID \
+  your.owned.bundle.identifier \
+  --kirie-web-url=http://127.0.0.1:5173/
+```
+
+### iOS device loop
+
 The iPhone must be connected, paired, trusted, unlocked, and in Developer Mode.
-The task signs, installs, and launches the app through `devicectl`. Godot logs
-on a real device should be verified through Apple Unified Logging or an Xcode
-Logging trace; `devicectl --console` does not reliably capture `GD.Print`.
+Xcode uses the hardware UDID while `devicectl` uses its CoreDevice identifier.
+
+```sh
+xcodebuild \
+  -project dist/examples/basic-host-app-embedded/ios_xcode/BasicHostAppEmbedded.xcodeproj \
+  -scheme BasicHostAppEmbedded \
+  -configuration Debug \
+  -sdk iphoneos \
+  -destination id=HARDWARE_UDID \
+  -derivedDataPath dist/examples/basic-host-app-embedded/DerivedData-device \
+  DEVELOPMENT_TEAM=YOUR_TEAM_ID \
+  build
+
+xcrun devicectl device install app --device COREDEVICE_IDENTIFIER \
+  dist/examples/basic-host-app-embedded/DerivedData-device/Build/Products/Debug-iphoneos/BasicHostAppEmbedded.app
+
+xcrun devicectl device process launch \
+  --device COREDEVICE_IDENTIFIER \
+  --terminate-existing \
+  --console \
+  your.owned.bundle.identifier \
+  --kirie-web-url=http://YOUR_MAC_LAN_IP:5173/
+```
+
+Godot logs on a real device should be verified through Apple Unified Logging or
+an Xcode Logging trace; `devicectl --console` does not reliably capture
+`GD.Print`.
 
 ## Android Emulator
 
-The Android host is maintained in
-`android-host/GodotApp.kt`. During export the build copies it over
+The Android host is maintained in `android-host/GodotApp.kt`. During export the build copies it over
 the generated `com.godot.game.GodotApp` source, while preserving the launcher
-alias expected by Godot's Gradle template. The Kotlin Activity owns a native
-header, embeds one `GodotFragment`, and can move a native overlay above or below
-the Godot/Kirie region.
+alias expected by Godot's Gradle template. The Kotlin Activity fills a transparent
+`FrameLayout` with one `GodotFragment`, then places only its small native controls
+above the Godot/Kirie region.
 
 Kirie implements `GodotPlugin.onMainCreate()` and returns a plugin-owned
 `FrameLayout`. Existing and newly created WebViews are attached to that layout,
-so an embedded app does not accidentally cover the native header. Changing the
-two sibling views' elevation switches both drawing and touch ownership.
+while the Activity's floating controls remain later, elevated siblings and keep
+their own touch ownership.
 
 The replacement Activity must retain initialization normally supplied by
 Godot's generated `GodotApp.java`: it installs the AndroidX splash screen,
@@ -138,20 +185,50 @@ scons platform=android target=template_debug arch=arm64 \
   module_mono_enabled=yes swappy=yes generate_android_binaries=yes
 ```
 
-With an AVD installed, run:
+## Prepare Android
+
+With the matching Godot Android Mono template built, prepare the APK once:
 
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 ANDROID_HOME="$HOME/Library/Android/sdk" \
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:android-emulator
+DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded prepare:android
 ```
 
-The task prefers an already booted emulator. Otherwise it starts the first
-available AVD and waits for Android to finish booting. Set `ANDROID_DEVICE_ID`
-to target a particular connected emulator. It builds the web UI and Kirie AAR,
-exports the arm64 Mono APK with the custom Gradle source template, installs and
-launches it, waits for the Eventa marker, and writes the APK, logs, and screenshot
-under `dist/examples/basic-host-app-embedded/android/`.
+The output is
+`dist/examples/basic-host-app-embedded/android/ViewEmbedded-debug.apk`.
+
+### Android Emulator loop
+
+Start an AVD through Android Studio or the `emulator` command, then find its
+serial:
+
+```sh
+"$ANDROID_HOME/platform-tools/adb" devices -l
+```
+
+Install the prepared APK:
+
+```sh
+"$ANDROID_HOME/platform-tools/adb" -s emulator-5554 install -r \
+  dist/examples/basic-host-app-embedded/android/ViewEmbedded-debug.apk
+```
+
+Launch the packaged page:
+
+```sh
+"$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -S \
+  -n ai.moeru.kirie.examples.viewembedded/com.godot.game.GodotAppLauncher
+```
+
+Or launch against the running Vite server for web-only iteration:
+
+```sh
+"$ANDROID_HOME/platform-tools/adb" -s emulator-5554 shell am start -S \
+  -n ai.moeru.kirie.examples.viewembedded/com.godot.game.GodotAppLauncher \
+  --es kirie-web-url http://10.0.2.2:5173/
+```
 
 ## Upstream references
 

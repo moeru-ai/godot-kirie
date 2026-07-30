@@ -68,51 +68,33 @@ private struct UIKitBadge: UIViewRepresentable {
     }
 }
 
-private struct NativeHeader: View {
-    @Binding var nativeOverlayOnTop: Bool
-    @State private var tapCount = 0
+private struct NativeControlsOverlay: View {
+    @State private var nativeTapCount = 0
+    @State private var overlayTapCount = 0
 
     var body: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 5) {
-                UIKitBadge(text: "UIKit UILabel • tap \(tapCount)")
+        VStack {
+            HStack(spacing: 14) {
+                UIKitBadge(text: "UIKit UILabel • tap \(nativeTapCount)")
                     .frame(width: 184, height: 26)
-            }
 
-            Spacer()
+                Spacer(minLength: 12)
 
-            VStack(spacing: 6) {
                 Button("Native button") {
-                    tapCount += 1
+                    nativeTapCount += 1
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .foregroundColor(.white)
                 .background(Color(red: 0.08, green: 0.43, blue: 0.62))
                 .cornerRadius(10)
-
-                Button(nativeOverlayOnTop ? "Web layer ↑" : "Native layer ↑") {
-                    nativeOverlayOnTop.toggle()
-                }
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(Color(red: 0.58, green: 0.87, blue: 1))
             }
-        }
-        .padding(.horizontal, 18)
-        .frame(maxWidth: .infinity, minHeight: 108)
-        .background(Color(red: 0.035, green: 0.055, blue: 0.11))
-    }
-}
 
-private struct NativeSurfaceOverlay: View {
-    @State private var tapCount = 0
-
-    var body: some View {
-        VStack {
             Spacer()
+
             HStack {
-                Button("SwiftUI overlay • tap \(tapCount)") {
-                    tapCount += 1
+                Button("SwiftUI overlay • tap \(overlayTapCount)") {
+                    overlayTapCount += 1
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
@@ -123,38 +105,26 @@ private struct NativeSurfaceOverlay: View {
                 Spacer()
             }
         }
-        .padding(24)
+        .padding(18)
     }
 }
 
 @main
 struct BasicHostAppEmbeddedApp: App {
     @UIApplicationDelegateAdaptor(GDTApplicationDelegate.self) private var appDelegate
-    @State private var nativeOverlayOnTop = true
 
     var body: some Scene {
         WindowGroup {
-            VStack(spacing: 0) {
-                NativeHeader(nativeOverlayOnTop: $nativeOverlayOnTop)
-                ZStack {
-                    // NOTICE: Keep both embedded layers interactive and use their stacking order
-                    // to decide which one receives a hit where they overlap. Disabling the Kirie
-                    // host here would also disable WebView controls that are not covered by the
-                    // SwiftUI overlay.
-                    // References:
-                    // - https://developer.apple.com/documentation/swiftui/view/zindex(_:)
-                    // - https://developer.apple.com/documentation/uikit/uiview/hittest(_:with:)
-                    EmbeddedGodotView()
-                        .zIndex(0)
-                    EmbeddedKirieView()
-                        .zIndex(nativeOverlayOnTop ? 1 : 2)
-                    NativeSurfaceOverlay()
-                        .zIndex(nativeOverlayOnTop ? 2 : 1)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ZStack {
+                EmbeddedGodotView()
+                    .ignoresSafeArea()
+                    .zIndex(0)
+                EmbeddedKirieView()
+                    .ignoresSafeArea()
+                    .zIndex(1)
+                NativeControlsOverlay()
+                    .zIndex(2)
             }
-            .background(Color.black)
-            .ignoresSafeArea(edges: .bottom)
         }
     }
 }

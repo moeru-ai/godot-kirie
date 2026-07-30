@@ -3,18 +3,14 @@
   "version": "0.1.2",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.18.0",
   "scripts": {
-    "build:android": "node scripts/build.ts build-android",
-    "build:ios": "node scripts/build.ts build-ios",
-    "run:android-emulator": "node scripts/build.ts run-android-emulator",
-    "run:ios-device": "node scripts/build.ts run-ios-device",
-    "run:ios-simulator": "node scripts/build.ts run-ios-simulator",
+    "prepare:android": "node scripts/build.ts prepare-android",
+    "prepare:ios": "node scripts/build.ts prepare-ios",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --dir src-web run typecheck"
   },
   "devDependencies": {
-    "@types/node": "25.6.0",
-    "execa": "9.6.1",
-    "typescript": "6.0.3"
+    "@types/node": "catalog:",
+    "execa": "catalog:",
+    "typescript": "catalog:"
   }
 }

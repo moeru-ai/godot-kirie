@@ -1,3 +1,4 @@
+import "@gd-kirie/ipc/pointer-input/auto";
 import { createContext } from "@gd-kirie/ipc-eventa";
 import {
   defineEventa,
@@ -30,12 +31,14 @@ interface EchoResponse {
 const statusElement = document.querySelector<HTMLParagraphElement>("#status");
 const logElement = document.querySelector<HTMLPreElement>("#log");
 const invokeButton = document.querySelector<HTMLButtonElement>("#invokeGodotButton");
-if (!statusElement || !logElement || !invokeButton) {
+const cardElement = document.querySelector<HTMLElement>(".card");
+if (!statusElement || !logElement || !invokeButton || !cardElement) {
   throw new Error("Missing embedded Kirie UI");
 }
 
 const statusNode = statusElement;
 const logNode = logElement;
+const card = cardElement;
 const { context } = createContext();
 const webReady = defineEventa<WebReadyPayload>("web:ready");
 const webVerification = defineEventa<VerificationPayload>("web:verification");
@@ -132,6 +135,27 @@ context.on(godotStatus, onGodotStatus);
 defineInvokeHandler(context, webEcho, handleWebEcho);
 
 invokeButton.addEventListener("click", onInvokeGodotButton);
+
+/**
+ * Keeps pointer sequences which start on the WebView card owned by the web UI.
+ *
+ * Triggering workflow:
+ *
+ * {@link EventTarget.addEventListener}
+ *   -> `pointerdown`
+ *     -> {@link stopCardInputForwarding}
+ *
+ * Upstream:
+ * - {@link card}
+ *
+ * Downstream:
+ * - {@link Event.stopPropagation}
+ */
+function stopCardInputForwarding(event: Event): void {
+  event.stopPropagation();
+}
+
+card.addEventListener("pointerdown", stopCardInputForwarding);
 
 context.emit(webReady, { platform: window.kirie?.platform?.backend ?? "wkwebview" });
 appendLog("web:ready emitted");

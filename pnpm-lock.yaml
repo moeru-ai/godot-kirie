@@ -78,6 +78,40 @@ importers:
         specifier: workspace:*
         version: link:packages/cli
 
+  examples/basic-host-app-embedded:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.0
+      execa:
+        specifier: 'catalog:'
+        version: 9.6.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  examples/basic-host-app-embedded/src-web:
+    dependencies:
+      '@gd-kirie/ipc':
+        specifier: workspace:*
+        version: link:../../../packages/ipc
+      '@gd-kirie/ipc-eventa':
+        specifier: workspace:*
+        version: link:../../../packages/ipc-eventa
+      '@moeru/eventa':
+        specifier: ^1.0.0-beta.4
+        version: 1.0.0-beta.4
+    devDependencies:
+      '@unocss/reset':
+        specifier: 66.7.5
+        version: 66.7.5
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
+
   examples/basic-ipc/src-web:
     dependencies:
       '@gd-kirie/ipc':
@@ -901,6 +935,9 @@ packages:
 
   '@types/node@25.6.0':
     resolution: {integrity: sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==}
+
+  '@unocss/reset@66.7.5':
+    resolution: {integrity: sha512-z3wbt2cuQPjtT6w5xzRYZYFIIlUPzhVKz8yIcE9fvu7BgR3hO7uVsg/5mzDoGwQ96Ya3Sk68rpmI/gLYl4bJag==}
 
   '@valibot/to-json-schema@1.7.1':
     resolution: {integrity: sha512-3qkmU6KXWh8GIThEAW3kuRHPQBMjWkKy+Ppz3WkUucx53DTpOa6siMn4xDGSOhlVyMrDaJTCTMLYPZVAIk1P0A==}
@@ -2255,13 +2292,6 @@ snapshots:
 
   '@moeru/std@0.1.0-beta.20': {}
 
-  '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
-    dependencies:
-      '@emnapi/core': 1.10.0
-      '@emnapi/runtime': 1.10.0
-      '@tybys/wasm-util': 0.10.2
-    optional: true
-
   '@napi-rs/wasm-runtime@1.1.5(@emnapi/core@1.11.0)(@emnapi/runtime@1.11.0)':
     dependencies:
       '@emnapi/core': 1.11.0
@@ -2481,7 +2511,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.10.0
       '@emnapi/runtime': 1.10.0
-      '@napi-rs/wasm-runtime': 1.1.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
+      '@napi-rs/wasm-runtime': 1.1.6(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
     optional: true
 
   '@rolldown/binding-wasm32-wasi@1.1.1':
@@ -2546,6 +2576,8 @@ snapshots:
   '@types/node@25.6.0':
     dependencies:
       undici-types: 7.19.2
+
+  '@unocss/reset@66.7.5': {}
 
   '@valibot/to-json-schema@1.7.1(valibot@1.4.2(typescript@6.0.3))':
     dependencies:
