@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.18.0",
   "scripts": {
     "build": "pnpm -r run build",
-    "build:packages": "pnpm -rF './packages/*' run build",
+    "build:packages": "pnpm -rF \"./packages/*\" run build",
     "format:biome": "biome check --write .",
     "lint:alint": "alint",
     "lint:biome": "biome check .",

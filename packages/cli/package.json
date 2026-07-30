@@ -8,7 +8,7 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "kirie": "./dist/cli.js"
+    "kirie": "./kirie.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
