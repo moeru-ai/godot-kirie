@@ -1,5 +1,6 @@
 import Dispatch
 import Foundation
+import UIKit
 
 @_cdecl("kirie_swift_init")
 public func kirie_swift_init() {
@@ -14,6 +15,30 @@ public func kirie_swift_deinit() {
     kirieLogEntry("kirie_swift_deinit")
     DispatchQueue.main.async {
         KirieManager.shared.destroyAllWebViews()
+    }
+}
+
+@_cdecl("kirie_attach_host_view")
+public func kirie_attach_host_view(_ hostViewPointer: UnsafeMutableRawPointer?) {
+    guard let hostViewPointer else {
+        return
+    }
+
+    let hostView = Unmanaged<UIView>.fromOpaque(hostViewPointer).takeUnretainedValue()
+    DispatchQueue.main.async {
+        KirieManager.shared.attachHostView(hostView)
+    }
+}
+
+@_cdecl("kirie_detach_host_view")
+public func kirie_detach_host_view(_ hostViewPointer: UnsafeMutableRawPointer?) {
+    guard let hostViewPointer else {
+        return
+    }
+
+    let hostView = Unmanaged<UIView>.fromOpaque(hostViewPointer).takeUnretainedValue()
+    DispatchQueue.main.async {
+        KirieManager.shared.detachHostView(hostView)
     }
 }
 

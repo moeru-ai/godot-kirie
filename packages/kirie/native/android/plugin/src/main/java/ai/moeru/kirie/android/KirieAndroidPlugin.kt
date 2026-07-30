@@ -1,6 +1,10 @@
 package ai.moeru.kirie.android
 
+import android.app.Activity
 import android.util.Log
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
@@ -34,6 +38,8 @@ class KirieAndroidPlugin(
         )
     }
 
+    private var webViewHost: FrameLayout? = null
+
     override fun getPluginName(): String = BuildConfig.GODOT_PLUGIN_NAME
 
     override fun getPluginSignals(): Set<SignalInfo> =
@@ -44,6 +50,28 @@ class KirieAndroidPlugin(
             SIGNAL_DATA_RECEIVED,
             SIGNAL_IPC_ERROR,
         )
+
+    override fun onMainCreate(activity: Activity?): View? {
+        if (activity == null) {
+            return null
+        }
+
+        return FrameLayout(activity).also { hostView ->
+            hostView.layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                )
+            webViewHost = hostView
+            webViewManager.attachHostView(hostView)
+        }
+    }
+
+    override fun onMainDestroy() {
+        webViewManager.destroyAllWebViews()
+        webViewHost?.let(webViewManager::detachHostView)
+        webViewHost = null
+    }
 
     @UsedByGodot
     fun createWebView(
