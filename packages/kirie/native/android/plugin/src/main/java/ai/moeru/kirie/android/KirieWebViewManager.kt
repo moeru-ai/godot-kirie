@@ -19,6 +19,34 @@ class KirieWebViewManager(
     private val onIpcError: (viewId: Long, message: String) -> Unit,
 ) {
     private val webViews = LinkedHashMap<Long, WebViewSession>()
+    private var hostView: ViewGroup? = null
+    private var usesExplicitHost = false
+
+    fun attachHostView(hostView: ViewGroup) {
+        val activity = activityProvider() ?: return
+        activity.runOnUiThread {
+            usesExplicitHost = true
+            this.hostView = hostView
+            for (session in webViews.values) {
+                session.webView.removeFromSuperview()
+                hostView.addView(session.webView)
+            }
+        }
+    }
+
+    fun detachHostView(hostView: ViewGroup) {
+        val activity = activityProvider() ?: return
+        activity.runOnUiThread {
+            if (this.hostView !== hostView) {
+                return@runOnUiThread
+            }
+
+            this.hostView = null
+            for (session in webViews.values) {
+                session.webView.removeFromSuperview()
+            }
+        }
+    }
 
     fun createWebView(
         viewId: Long,
@@ -39,7 +67,13 @@ class KirieWebViewManager(
                 return@runOnUiThread
             }
 
-            val rootView = activity.findViewById<ViewGroup>(android.R.id.content).rootView as FrameLayout
+            val rootView =
+                hostView
+                    ?: if (usesExplicitHost) {
+                        null
+                    } else {
+                        activity.findViewById<FrameLayout>(android.R.id.content)
+                    }
             val createdWebView = WebView(activity)
 
             createdWebView.layoutParams =
@@ -70,7 +104,7 @@ class KirieWebViewManager(
                     assetRequestHandler = KirieAssetRequestHandler(activity.assets),
                 )
 
-            rootView.addView(createdWebView)
+            rootView?.addView(createdWebView)
             webViews[viewId] = WebViewSession(webView = createdWebView)
             onWebViewReady(viewId)
 
@@ -92,6 +126,18 @@ class KirieWebViewManager(
             existingWebView.stopLoading()
             existingWebView.removeFromSuperview()
             existingWebView.destroy()
+        }
+    }
+
+    fun destroyAllWebViews() {
+        val activity = activityProvider() ?: return
+        activity.runOnUiThread {
+            for (session in webViews.values) {
+                session.webView.stopLoading()
+                session.webView.removeFromSuperview()
+                session.webView.destroy()
+            }
+            webViews.clear()
         }
     }
 

@@ -67,11 +67,32 @@ final class KirieManager: NSObject {
     private let notificationCenter = NotificationCenter.default
     private let sessionID = UUID().uuidString.lowercased()
     private let resourceURLSchemeHandler = KirieResourceURLSchemeHandler()
+    private weak var hostViewOverride: UIView?
+    private var usesExplicitHost = false
     private var sessions: [Int64: (containerView: UIView, webView: WKWebView)] = [:]
 
     private override init() {
         super.init()
         logInfo("Manager initialized")
+    }
+
+    func attachHostView(_ hostView: UIView) {
+        usesExplicitHost = true
+        hostViewOverride = hostView
+        moveWebViews(to: hostView)
+        logInfo("Using an embedded WebView host")
+    }
+
+    func detachHostView(_ hostView: UIView) {
+        guard hostViewOverride === hostView else {
+            return
+        }
+
+        hostViewOverride = nil
+        for session in sessions.values {
+            session.containerView.removeFromSuperview()
+        }
+        logInfo("Embedded WebView host detached; waiting for the next explicit host")
     }
 
     func createWebView(viewID: Int64, initialURL: String?) {
@@ -88,9 +109,10 @@ final class KirieManager: NSObject {
                 + "remainingHostWindowAttempts=\(remainingHostWindowAttempts)"
         )
 
-        guard let hostWindow = resolveHostWindow() else {
+        let hostView = resolveHostView()
+        if hostView == nil, !usesExplicitHost {
             if remainingHostWindowAttempts > 0 {
-                logInfo("No active host window yet; retrying WebView creation")
+                logInfo("No WebView host is available yet; retrying WebView creation")
                 DispatchQueue.main.asyncAfter(deadline: .now() + Self.hostWindowRetryDelay) { [weak self] in
                     self?.createWebView(
                         viewID: viewID,
@@ -101,13 +123,13 @@ final class KirieManager: NSObject {
                 return
             }
 
-            emitIpcError("Cannot create WebView because no host window was found", viewID: viewID)
+            emitIpcError("Cannot create WebView because no host view was found", viewID: viewID)
             return
         }
 
-        let containerView = ensureContainerView(viewID: viewID, attachedTo: hostWindow)
+        let containerView = ensureContainerView(viewID: viewID, attachedTo: hostView)
         let webView = ensureWebView(viewID: viewID, attachedTo: containerView)
-        hostWindow.layoutIfNeeded()
+        hostView?.layoutIfNeeded()
 
         DispatchQueue.main.async { [weak self, weak webView] in
             guard let self, let webView, webView === self.sessions[viewID]?.webView else {
@@ -248,9 +270,9 @@ final class KirieManager: NSObject {
         webView.load(URLRequest(url: resolvedURL.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
     }
 
-    private func ensureContainerView(viewID: Int64, attachedTo hostView: UIView) -> UIView {
+    private func ensureContainerView(viewID: Int64, attachedTo hostView: UIView?) -> UIView {
         if let existingContainerView = sessions[viewID]?.containerView {
-            if existingContainerView.superview !== hostView {
+            if let hostView, existingContainerView.superview !== hostView {
                 logInfo("Reattaching existing container view")
                 existingContainerView.removeFromSuperview()
                 hostView.addSubview(existingContainerView)
@@ -267,8 +289,10 @@ final class KirieManager: NSObject {
         containerView.clipsToBounds = true
         containerView.accessibilityIdentifier = "KirieContainer"
 
-        hostView.addSubview(containerView)
-        pinToEdges(containerView, in: hostView)
+        if let hostView {
+            hostView.addSubview(containerView)
+            pinToEdges(containerView, in: hostView)
+        }
 
         logInfo("Created container view for viewID=\(viewID)")
         return containerView
@@ -332,16 +356,32 @@ final class KirieManager: NSObject {
             .filter { $0.activationState == .foregroundActive }
 
         for scene in activeScenes {
-            if let keyWindow = scene.windows.first(where: \.isKeyWindow) {
-                return keyWindow
-            }
-
-            if let firstWindow = scene.windows.first {
-                return firstWindow
+            if let hostWindow = resolveHostWindow(in: scene) {
+                return hostWindow
             }
         }
 
         return nil
+    }
+
+    private func resolveHostWindow(in scene: UIWindowScene) -> UIWindow? {
+        scene.windows.first(where: \.isKeyWindow)
+            ?? scene.windows.first(where: { !$0.isHidden })
+    }
+
+    private func resolveHostView() -> UIView? {
+        if usesExplicitHost {
+            return hostViewOverride
+        }
+
+        return resolveHostWindow()
+    }
+
+    private func moveWebViews(to hostView: UIView) {
+        for viewID in sessions.keys {
+            _ = ensureContainerView(viewID: viewID, attachedTo: hostView)
+        }
+        hostView.layoutIfNeeded()
     }
 
     private func pinToEdges(_ childView: UIView, in parentView: UIView) {
