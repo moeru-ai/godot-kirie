@@ -73,7 +73,6 @@ async function archiveIosFramework(
   configuration: string,
   destination: string,
   archivePath: string,
-  sourceRoot = godotSourceRoot,
 ): Promise<void> {
   await execa(
     "xcodebuild",
@@ -87,7 +86,7 @@ async function archiveIosFramework(
       configuration,
       "-derivedDataPath",
       iosDerivedDataPath,
-      `GODOT_SOURCE_ROOT=${sourceRoot}`,
+      `GODOT_SOURCE_ROOT=${godotSourceRoot}`,
       "SKIP_INSTALL=NO",
       "BUILD_LIBRARY_FOR_DISTRIBUTION=YES",
       "CODE_SIGNING_ALLOWED=NO",
@@ -107,7 +106,6 @@ async function createIosXcframework(
   configuration: string,
   name: string,
   outputPath: string,
-  sourceRoot = godotSourceRoot,
 ): Promise<void> {
   const deviceArchivePath = `${iosBuildDir}/Kirie-${name}-iOS.xcarchive`;
   const simulatorArchivePath = `${iosBuildDir}/Kirie-${name}-Simulator.xcarchive`;
@@ -116,13 +114,8 @@ async function createIosXcframework(
   fs.rmSync(simulatorArchivePath, { force: true, recursive: true });
   fs.rmSync(outputPath, { force: true, recursive: true });
 
-  await archiveIosFramework(configuration, "generic/platform=iOS", deviceArchivePath, sourceRoot);
-  await archiveIosFramework(
-    configuration,
-    "generic/platform=iOS Simulator",
-    simulatorArchivePath,
-    sourceRoot,
-  );
+  await archiveIosFramework(configuration, "generic/platform=iOS", deviceArchivePath);
+  await archiveIosFramework(configuration, "generic/platform=iOS Simulator", simulatorArchivePath);
 
   await execa(
     "xcodebuild",
@@ -168,7 +161,7 @@ export function checkAddonPack(): void {
 }
 
 // mise task entrypoint.
-export async function buildAndroidAar(outputDir = androidAddonLibraryDir): Promise<void> {
+export async function buildAndroidAar(): Promise<void> {
   await execa(
     "mise",
     [
@@ -186,13 +179,13 @@ export async function buildAndroidAar(outputDir = androidAddonLibraryDir): Promi
     },
   );
 
-  fs.mkdirSync(outputDir, { recursive: true });
+  fs.mkdirSync(androidAddonLibraryDir, { recursive: true });
 
-  const debugAar = `${outputDir}/Kirie-debug.aar`;
+  const debugAar = `${androidAddonLibraryDir}/Kirie-debug.aar`;
   fs.rmSync(debugAar, { force: true });
   fs.copyFileSync(`${androidAarOutputDir}/Kirie-debug.aar`, debugAar);
 
-  const releaseAar = `${outputDir}/Kirie-release.aar`;
+  const releaseAar = `${androidAddonLibraryDir}/Kirie-release.aar`;
   fs.rmSync(releaseAar, { force: true });
   fs.copyFileSync(`${androidAarOutputDir}/Kirie-release.aar`, releaseAar);
 }
@@ -208,14 +201,11 @@ export async function buildIosXcframework(): Promise<void> {
 }
 
 // mise task entrypoint.
-export async function buildIosDebugXcframework(
-  outputPath = iosDebugOutputXcframework,
-  sourceRoot = godotSourceRoot,
-): Promise<void> {
+export async function buildIosDebugXcframework(): Promise<void> {
   prepareIosBuildDirs();
   await generateIosProject();
 
-  await createIosXcframework("ReleaseDebug", "debug", outputPath, sourceRoot);
+  await createIosXcframework("ReleaseDebug", "debug", iosDebugOutputXcframework);
 }
 
 // mise task entrypoint.

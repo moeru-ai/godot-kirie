@@ -2,17 +2,18 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { execa } from "execa";
-import { buildAndroidAar, buildIosDebugXcframework } from "./build-kirie.ts";
-import { buildWebPackage, distDir, rootDir } from "./build-shared.ts";
 
-const exampleName = "basic-host-app-embedded";
 const appName = "BasicHostAppEmbedded";
 const presetName = "iOS Embed Debug";
 const androidPresetName = "Android Embed Debug";
 const marker = "KIRIE_VIEW_EMBED_EVENTA_PASS";
-const exampleDir = path.join(rootDir, "examples", exampleName);
-const outputRoot = path.join(rootDir, distDir, "examples", exampleName);
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const exampleDir = path.resolve(scriptDir, "..");
+const exampleName = path.basename(exampleDir);
+const rootDir = path.resolve(exampleDir, "../..");
+const outputRoot = path.join(rootDir, "dist/examples/basic-host-app-embedded");
 const stagedWorkspace = path.join(outputRoot, "workspace");
 const stagedProjectDir = path.join(stagedWorkspace, "examples", exampleName);
 const exportRoot = path.join(outputRoot, "ios_xcode");
@@ -21,6 +22,13 @@ const derivedDataDevice = path.join(outputRoot, "DerivedData-device");
 const androidOutputRoot = path.join(outputRoot, "android");
 const androidApk = path.join(androidOutputRoot, "ViewEmbedded-debug.apk");
 const androidActivity = "com.godot.game.GodotAppLauncher";
+const androidPluginDir = path.join(rootDir, "packages/kirie/native/android");
+const androidAarOutputDir = path.join(androidPluginDir, "plugin/build/outputs/aar");
+const iosPluginDir = path.join(rootDir, "packages/kirie/native/ios/Kirie");
+const iosBuildDir = path.join(iosPluginDir, ".build");
+const iosGeneratedDir = path.join(iosPluginDir, ".generated");
+const iosProjectPath = path.join(iosGeneratedDir, "Kirie.xcodeproj");
+const iosDerivedDataPath = path.join(iosBuildDir, "DerivedData");
 
 interface SimulatorDevice {
   isAvailable?: boolean;
@@ -31,6 +39,118 @@ interface SimulatorDevice {
 
 interface SimulatorListing {
   devices?: Record<string, SimulatorDevice[]>;
+}
+
+async function buildWeb(): Promise<void> {
+  await execa("corepack", ["pnpm", "--dir", path.join(exampleDir, "src-web"), "run", "build"], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
+}
+
+async function buildAndroidAar(outputDir: string): Promise<void> {
+  await execa(
+    "mise",
+    [
+      "x",
+      "--",
+      path.join(androidPluginDir, "gradlew"),
+      "--project-dir",
+      androidPluginDir,
+      ":plugin:assembleDebug",
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+
+  fs.mkdirSync(outputDir, { recursive: true });
+  const fileName = "Kirie-debug.aar";
+  fs.copyFileSync(path.join(androidAarOutputDir, fileName), path.join(outputDir, fileName));
+}
+
+async function generateIosProject(): Promise<void> {
+  fs.mkdirSync(iosGeneratedDir, { recursive: true });
+  await execa(
+    "xcodegen",
+    [
+      "generate",
+      "--spec",
+      path.join(iosPluginDir, "project.yml"),
+      "--project-root",
+      iosPluginDir,
+      "--project",
+      iosGeneratedDir,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+}
+
+async function archiveIosFramework(
+  sourceRoot: string,
+  destination: string,
+  archivePath: string,
+): Promise<void> {
+  await execa(
+    "xcodebuild",
+    [
+      "archive",
+      "-project",
+      iosProjectPath,
+      "-scheme",
+      "Kirie",
+      "-configuration",
+      "ReleaseDebug",
+      "-derivedDataPath",
+      iosDerivedDataPath,
+      `GODOT_SOURCE_ROOT=${sourceRoot}`,
+      "SKIP_INSTALL=NO",
+      "BUILD_LIBRARY_FOR_DISTRIBUTION=YES",
+      "CODE_SIGNING_ALLOWED=NO",
+      "-destination",
+      destination,
+      "-archivePath",
+      archivePath,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
+}
+
+async function buildIosDebugXcframework(outputPath: string, sourceRoot: string): Promise<void> {
+  fs.mkdirSync(iosBuildDir, { recursive: true });
+  await generateIosProject();
+
+  const deviceArchivePath = path.join(iosBuildDir, "Kirie-debug-iOS.xcarchive");
+  const simulatorArchivePath = path.join(iosBuildDir, "Kirie-debug-Simulator.xcarchive");
+  fs.rmSync(deviceArchivePath, { force: true, recursive: true });
+  fs.rmSync(simulatorArchivePath, { force: true, recursive: true });
+  fs.rmSync(outputPath, { force: true, recursive: true });
+
+  await archiveIosFramework(sourceRoot, "generic/platform=iOS", deviceArchivePath);
+  await archiveIosFramework(sourceRoot, "generic/platform=iOS Simulator", simulatorArchivePath);
+  await execa(
+    "xcodebuild",
+    [
+      "-create-xcframework",
+      "-framework",
+      path.join(deviceArchivePath, "Products/Library/Frameworks/Kirie.framework"),
+      "-framework",
+      path.join(simulatorArchivePath, "Products/Library/Frameworks/Kirie.framework"),
+      "-output",
+      outputPath,
+    ],
+    {
+      cwd: rootDir,
+      stdio: "inherit",
+    },
+  );
 }
 
 function requiredEnvironment(name: string): string {
@@ -105,6 +225,7 @@ function stageExampleProject(): void {
     "addons",
     "export_presets.cfg",
     "NuGet.Config",
+    "node_modules",
   ]);
   fs.cpSync(exampleDir, stagedProjectDir, {
     recursive: true,
@@ -112,6 +233,9 @@ function stageExampleProject(): void {
       const relative = path.relative(exampleDir, source);
       const [topLevel, secondLevel] = relative.split(path.sep);
       if (excludedTopLevel.has(topLevel)) {
+        return false;
+      }
+      if (topLevel === "scripts" && secondLevel === "build.ts") {
         return false;
       }
       return !(topLevel === "src-web" && secondLevel === "node_modules");
@@ -271,7 +395,7 @@ async function prepareIosExport(): Promise<void> {
     }
   }
 
-  await buildWebPackage("@gd-kirie/basic-host-app-embedded-web");
+  await buildWeb();
   stageExampleProject();
   await buildIosDebugXcframework(
     path.join(stagedProjectDir, "addons/kirie/ios/Kirie.debug.xcframework"),
@@ -342,7 +466,7 @@ async function prepareAndroidExport(): Promise<void> {
     }
   }
 
-  await buildWebPackage("@gd-kirie/basic-host-app-embedded-web");
+  await buildWeb();
   stageExampleProject();
   await buildAndroidAar(path.join(stagedProjectDir, "addons/kirie/libraries/android"));
   renderBuildConfiguration({
@@ -606,20 +730,17 @@ async function waitForSimulatorMarker(simulatorId: string, processId: string): P
   throw new Error(`Timed out waiting for ${marker}\n${latestLog.slice(-6000)}`);
 }
 
-// mise task entrypoint.
-export async function buildBasicHostAppEmbeddedIos(): Promise<void> {
+async function buildBasicHostAppEmbeddedIos(): Promise<void> {
   await prepareIosExport();
   console.log(`Prepared native SwiftUI host Xcode project: ${exportRoot}`);
 }
 
-// mise task entrypoint.
-export async function buildBasicHostAppEmbeddedAndroid(): Promise<void> {
+async function buildBasicHostAppEmbeddedAndroid(): Promise<void> {
   await prepareAndroidExport();
   console.log(`Prepared Kotlin-hosted Android application: ${androidApk}`);
 }
 
-// mise task entrypoint.
-export async function runBasicHostAppEmbeddedAndroidEmulator(): Promise<void> {
+async function runBasicHostAppEmbeddedAndroidEmulator(): Promise<void> {
   await prepareAndroidExport();
   const androidSdk = resolveAndroidSdk();
   const adb = path.join(androidSdk, "platform-tools/adb");
@@ -650,8 +771,7 @@ export async function runBasicHostAppEmbeddedAndroidEmulator(): Promise<void> {
   console.log(`Screenshot: ${screenshot}`);
 }
 
-// mise task entrypoint.
-export async function runBasicHostAppEmbeddedIosSimulator(): Promise<void> {
+async function runBasicHostAppEmbeddedIosSimulator(): Promise<void> {
   await prepareIosExport();
   const simulator = await selectSimulator();
   await execa("xcrun", ["simctl", "boot", simulator.udid], { reject: false });
@@ -690,8 +810,7 @@ export async function runBasicHostAppEmbeddedIosSimulator(): Promise<void> {
   console.log(`Screenshot: ${screenshot}`);
 }
 
-// mise task entrypoint.
-export async function runBasicHostAppEmbeddedIosDevice(): Promise<void> {
+async function runBasicHostAppEmbeddedIosDevice(): Promise<void> {
   const xcodeDeviceId = requiredEnvironment("IOS_XCODE_DEVICE_ID");
   const coreDeviceId = requiredEnvironment("IOS_CORE_DEVICE_ID");
   const teamId = requiredEnvironment("IOS_TEAM_ID");
@@ -723,3 +842,35 @@ export async function runBasicHostAppEmbeddedIosDevice(): Promise<void> {
     { stdio: "inherit" },
   );
 }
+
+const commands = {
+  "build-android": buildBasicHostAppEmbeddedAndroid,
+  "build-ios": buildBasicHostAppEmbeddedIos,
+  "run-android-emulator": runBasicHostAppEmbeddedAndroidEmulator,
+  "run-ios-device": runBasicHostAppEmbeddedIosDevice,
+  "run-ios-simulator": runBasicHostAppEmbeddedIosSimulator,
+} satisfies Record<string, () => Promise<void>>;
+
+async function main(): Promise<void> {
+  const command = process.argv[2];
+  if (!command || command === "--help" || command === "-h") {
+    console.log(`Usage: node scripts/build.ts <command>
+
+Commands:
+  build-android
+  build-ios
+  run-android-emulator
+  run-ios-device
+  run-ios-simulator`);
+    return;
+  }
+
+  const run = commands[command as keyof typeof commands];
+  if (!run) {
+    throw new Error(`Unknown command: ${command}`);
+  }
+
+  await run();
+}
+
+await main();

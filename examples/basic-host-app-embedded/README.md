@@ -22,6 +22,23 @@ a unary invoke. After both invoke directions and the event acknowledgement
 complete, the Godot process prints
 `KIRIE_VIEW_EMBED_EVENTA_PASS`.
 
+The example owns its package scripts, dependency lockfile, native build
+orchestration, export, deployment, and verification commands. Install its
+dependencies once from the repository root:
+
+```sh
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded install --frozen-lockfile
+```
+
+No example-specific tasks are registered in the repository's root `mise.toml`.
+The example still intentionally consumes the Kirie addon and C# Eventa adapter
+from this checkout, so it is self-contained as a repository example rather than
+a directory that can be copied out of the monorepo unchanged.
+
+Build without installing or launching the result with `build:ios` or
+`build:android`. The platform sections below use the corresponding `run:*`
+commands for end-to-end verification.
+
 ## Why this uses a custom Godot build
 
 The example follows the proven single-instance Apple embedded lifecycle from
@@ -53,7 +70,7 @@ template, and local Godot NuGet packages prepared as described by that branch:
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
-mise run run:basic-host-app-embedded-ios-simulator
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:ios-simulator
 ```
 
 The task builds the web page, stages a read-only copy of the project and addon
@@ -80,7 +97,7 @@ IOS_TEAM_ID=YOUR_TEAM_ID \
 IOS_BUNDLE_ID=your.owned.bundle.identifier \
 IOS_XCODE_DEVICE_ID=HARDWARE_UDID \
 IOS_CORE_DEVICE_ID=COREDEVICE_IDENTIFIER \
-mise run run:basic-host-app-embedded-ios-device
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:ios-device
 ```
 
 The iPhone must be connected, paired, trusted, unlocked, and in Developer Mode.
@@ -126,7 +143,7 @@ With an AVD installed, run:
 ```sh
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 ANDROID_HOME="$HOME/Library/Android/sdk" \
-mise run run:basic-host-app-embedded-android-emulator
+mise x -- corepack pnpm --dir examples/basic-host-app-embedded run run:android-emulator
 ```
 
 The task prefers an already booted emulator. Otherwise it starts the first
