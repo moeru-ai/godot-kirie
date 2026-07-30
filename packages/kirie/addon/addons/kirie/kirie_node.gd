@@ -17,7 +17,9 @@ var _kirie := GdKirie.new()
 func _ready() -> void:
 	_kirie.webview_ready.connect(func() -> void: webview_ready.emit())
 	_kirie.text_received.connect(func(message: String) -> void: text_received.emit(message))
-	_kirie.binary_received.connect(func(bytes: PackedByteArray) -> void: binary_received.emit(bytes))
+	_kirie.binary_received.connect(
+		func(bytes: PackedByteArray) -> void: binary_received.emit(bytes)
+	)
 	_kirie.data_received.connect(func(value: Variant) -> void: data_received.emit(value))
 	_kirie.ipc_error.connect(func(error: String) -> void: ipc_error.emit(error))
 
@@ -68,3 +70,11 @@ func send_binary(bytes: PackedByteArray) -> void:
 
 func send_data(value: Variant) -> void:
 	_kirie.send_data(value)
+
+
+func get_launch_option(key: String) -> String:
+	return _kirie.get_launch_option(key)
+
+
+func is_available() -> bool:
+	return _kirie.is_available()
