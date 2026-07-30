@@ -385,15 +385,11 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
   let importError: unknown;
 
   try {
-    await execa(
-      godotCommand,
-      ["--headless", "--editor", "--quit", "--path", integrationProjectDir],
-      {
-        cwd: rootDir,
-        stderr: importLogStream,
-        stdout: importLogStream,
-      },
-    );
+    await execa(godotCommand, ["--headless", "--import", "--path", integrationProjectDir], {
+      cwd: rootDir,
+      stderr: importLogStream,
+      stdout: importLogStream,
+    });
   } catch (error) {
     importError = error;
   } finally {
