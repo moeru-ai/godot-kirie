@@ -65,13 +65,72 @@ final class KirieManager: NSObject {
     """
 
     private let notificationCenter = NotificationCenter.default
+    private let hostRestorationPolicy = KirieHostRestorationPolicy()
     private let sessionID = UUID().uuidString.lowercased()
     private let resourceURLSchemeHandler = KirieResourceURLSchemeHandler()
+    private weak var hostViewOverride: UIView?
+    private weak var restorationWindow: UIWindow?
+    private weak var restorationScene: UIWindowScene?
     private var sessions: [Int64: (containerView: UIView, webView: WKWebView)] = [:]
 
     private override init() {
         super.init()
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(sceneDidActivate(_:)),
+            name: UIScene.didActivateNotification,
+            object: nil
+        )
         logInfo("Manager initialized")
+    }
+
+    func attachHostView(_ hostView: UIView) {
+        hostViewOverride = hostView
+        restorationWindow = nil
+        restorationScene = nil
+        hostRestorationPolicy.attach(host: hostView, scene: nil)
+        captureRestorationTarget(from: hostView)
+        moveWebViews(to: hostView)
+        logInfo("Using an embedded WebView host")
+
+        DispatchQueue.main.async { [weak self, weak hostView] in
+            guard let self, let hostView, self.hostViewOverride === hostView else {
+                return
+            }
+
+            self.captureRestorationTarget(from: hostView)
+        }
+    }
+
+    func detachHostView(_ hostView: UIView) {
+        guard hostViewOverride === hostView else {
+            return
+        }
+
+        captureRestorationTarget(from: hostView)
+        let hostWindow = resolveRestorationWindow()
+        let disposition = hostRestorationPolicy.detach(
+            host: hostView,
+            canRestoreImmediately: hostWindow != nil
+        )
+        hostViewOverride = nil
+
+        switch disposition {
+        case .restoreNow:
+            guard let hostWindow else {
+                return
+            }
+
+            moveWebViews(to: hostWindow)
+            clearRestorationTarget()
+            logInfo("Using the embedded host's window as WebView host")
+        case .waitForScene:
+            logInfo("Embedded WebView host detached; waiting for its scene to provide a window")
+        case .waitForNextHost:
+            logInfo("Embedded WebView host detached before entering a scene; waiting for the next explicit host")
+        case .ignored:
+            break
+        }
     }
 
     func createWebView(viewID: Int64, initialURL: String?) {
@@ -88,9 +147,9 @@ final class KirieManager: NSObject {
                 + "remainingHostWindowAttempts=\(remainingHostWindowAttempts)"
         )
 
-        guard let hostWindow = resolveHostWindow() else {
+        guard let hostView = resolveHostView() else {
             if remainingHostWindowAttempts > 0 {
-                logInfo("No active host window yet; retrying WebView creation")
+                logInfo("No WebView host is available yet; retrying WebView creation")
                 DispatchQueue.main.asyncAfter(deadline: .now() + Self.hostWindowRetryDelay) { [weak self] in
                     self?.createWebView(
                         viewID: viewID,
@@ -101,13 +160,13 @@ final class KirieManager: NSObject {
                 return
             }
 
-            emitIpcError("Cannot create WebView because no host window was found", viewID: viewID)
+            emitIpcError("Cannot create WebView because no host view was found", viewID: viewID)
             return
         }
 
-        let containerView = ensureContainerView(viewID: viewID, attachedTo: hostWindow)
+        let containerView = ensureContainerView(viewID: viewID, attachedTo: hostView)
         let webView = ensureWebView(viewID: viewID, attachedTo: containerView)
-        hostWindow.layoutIfNeeded()
+        hostView.layoutIfNeeded()
 
         DispatchQueue.main.async { [weak self, weak webView] in
             guard let self, let webView, webView === self.sessions[viewID]?.webView else {
@@ -332,16 +391,73 @@ final class KirieManager: NSObject {
             .filter { $0.activationState == .foregroundActive }
 
         for scene in activeScenes {
-            if let keyWindow = scene.windows.first(where: \.isKeyWindow) {
-                return keyWindow
-            }
-
-            if let firstWindow = scene.windows.first {
-                return firstWindow
+            if let hostWindow = resolveHostWindow(in: scene) {
+                return hostWindow
             }
         }
 
         return nil
+    }
+
+    private func resolveHostWindow(in scene: UIWindowScene) -> UIWindow? {
+        scene.windows.first(where: \.isKeyWindow)
+            ?? scene.windows.first(where: { !$0.isHidden })
+    }
+
+    private func resolveRestorationWindow(for activatingScene: UIWindowScene? = nil) -> UIWindow? {
+        guard let restorationScene,
+              activatingScene == nil || restorationScene === activatingScene,
+              restorationScene.activationState == .foregroundActive else {
+            return nil
+        }
+
+        if let restorationWindow,
+           restorationWindow.windowScene === restorationScene,
+           restorationScene.windows.contains(where: { $0 === restorationWindow }),
+           !restorationWindow.isHidden {
+            return restorationWindow
+        }
+
+        return resolveHostWindow(in: restorationScene)
+    }
+
+    private func resolveHostView() -> UIView? {
+        hostViewOverride ?? resolveHostWindow()
+    }
+
+    private func moveWebViews(to hostView: UIView) {
+        for viewID in sessions.keys {
+            _ = ensureContainerView(viewID: viewID, attachedTo: hostView)
+        }
+        hostView.layoutIfNeeded()
+    }
+
+    private func captureRestorationTarget(from hostView: UIView) {
+        guard let window = hostView as? UIWindow ?? hostView.window else {
+            return
+        }
+
+        restorationWindow = window
+        restorationScene = window.windowScene
+        hostRestorationPolicy.refreshRestorationScene(window.windowScene, for: hostView)
+    }
+
+    private func clearRestorationTarget() {
+        restorationWindow = nil
+        restorationScene = nil
+    }
+
+    @objc private func sceneDidActivate(_ notification: Notification) {
+        guard let scene = notification.object as? UIWindowScene,
+              hostRestorationPolicy.shouldRestore(when: scene),
+              let hostWindow = resolveRestorationWindow(for: scene) else {
+            return
+        }
+
+        moveWebViews(to: hostWindow)
+        hostRestorationPolicy.didRestore()
+        clearRestorationTarget()
+        logInfo("Restored the WebView host after its scene became active")
     }
 
     private func pinToEdges(_ childView: UIView, in parentView: UIView) {
