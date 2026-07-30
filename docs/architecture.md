@@ -56,10 +56,13 @@ The Godot-facing `Kirie` script is expected to stay a thin wrapper over the
 platform singleton, keeping naming and serialization concerns on the Godot side
 without duplicating native lifecycle logic.
 
-The C# `KirieClient` wrapper follows the same low-level surface and forwards to
-the same platform singleton. Its public API should feel idiomatic to .NET users:
-methods use C# naming, and Kirie signals are exposed as C# events. Internal
-Godot `Callable` usage exists only to connect native singleton signals.
+The C# `KirieClient` wrapper follows the same low-level surface. Its default
+constructor forwards to the platform singleton, while `FromNode(...)` borrows
+an existing scene `KirieNode` so C# can retain a typed API without creating a
+second WebView owner. Methods use C# naming, and Kirie signals are exposed as C#
+events. Internal Godot `Callable` usage exists only inside this wrapper. A
+borrowed node must outlive the client; disposing the client disconnects its
+callbacks but leaves node and WebView ownership with `KirieNode`.
 
 Current signals should also stay narrow:
 
