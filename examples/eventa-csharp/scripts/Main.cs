@@ -44,7 +44,7 @@ public partial class Main : Control
             .RegisterEvent(_webReady, EventaExampleJsonContext.Default.WebReadyPayload)
             .RegisterInvoke(_godotEcho, EventaExampleJsonContext.Default.EchoResponse, EventaExampleJsonContext.Default.EchoRequest)
             .RegisterInvoke(_webEcho, EventaExampleJsonContext.Default.EchoResponse, EventaExampleJsonContext.Default.EchoRequest);
-        _eventa = KirieEventa.CreateContext(new KirieClientTextTransport(_kirie), registry, disposeTransport: true);
+        _eventa = _kirie.CreateEventaContext(registry);
         _eventa.Adapter.Error += error => AppendLog($"eventa_error {error.Message}");
         _eventa.Context.Subscribe(_webReady, envelope =>
         {
@@ -131,34 +131,6 @@ public partial class Main : Control
     private void SetStatus(string text)
     {
         _statusLabel.Text = text;
-    }
-
-    private sealed class KirieClientTextTransport : IKirieTextTransport, IDisposable
-    {
-        private readonly KirieClient _client;
-
-        public KirieClientTextTransport(KirieClient client)
-        {
-            _client = client;
-            _client.TextReceived += OnTextReceived;
-        }
-
-        public event Action<string>? TextReceived;
-
-        public void SendText(string message)
-        {
-            _client.SendText(message);
-        }
-
-        public void Dispose()
-        {
-            _client.TextReceived -= OnTextReceived;
-        }
-
-        private void OnTextReceived(string message)
-        {
-            TextReceived?.Invoke(message);
-        }
     }
 
     private sealed record WebReadyPayload(string UserAgent);

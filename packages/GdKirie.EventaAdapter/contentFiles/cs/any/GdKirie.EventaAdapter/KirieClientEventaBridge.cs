@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace GdKirie.EventaAdapter;
 
@@ -8,10 +9,12 @@ namespace GdKirie.EventaAdapter;
 public sealed class KirieClientTextTransport : IKirieTextTransport, IDisposable
 {
     private readonly global::KirieClient _client;
+    private readonly SynchronizationContext? _synchronizationContext;
 
     public KirieClientTextTransport(global::KirieClient client)
     {
         _client = client ?? throw new ArgumentNullException(nameof(client));
+        _synchronizationContext = SynchronizationContext.Current;
         _client.TextReceived += OnTextReceived;
     }
 
@@ -19,7 +22,14 @@ public sealed class KirieClientTextTransport : IKirieTextTransport, IDisposable
 
     public void SendText(string message)
     {
-        _client.SendText(message);
+        if (_synchronizationContext is null
+            || ReferenceEquals(SynchronizationContext.Current, _synchronizationContext))
+        {
+            _client.SendText(message);
+            return;
+        }
+
+        _synchronizationContext.Post(_ => _client.SendText(message), null);
     }
 
     public void Dispose()
