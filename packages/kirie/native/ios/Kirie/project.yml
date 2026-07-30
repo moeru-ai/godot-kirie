@@ -84,7 +84,6 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - path: Sources/Kirie/KirieIpcPacketCodec.swift
-      - path: Sources/Kirie/KirieHostRestorationPolicy.swift
       - path: Tests/KirieTests
     settings:
       PRODUCT_NAME: KirieTests

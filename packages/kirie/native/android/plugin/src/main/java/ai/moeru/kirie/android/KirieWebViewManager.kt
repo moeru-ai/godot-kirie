@@ -20,10 +20,12 @@ class KirieWebViewManager(
 ) {
     private val webViews = LinkedHashMap<Long, WebViewSession>()
     private var hostView: ViewGroup? = null
+    private var usesExplicitHost = false
 
     fun attachHostView(hostView: ViewGroup) {
         val activity = activityProvider() ?: return
         activity.runOnUiThread {
+            usesExplicitHost = true
             this.hostView = hostView
             for (session in webViews.values) {
                 session.webView.removeFromSuperview()
@@ -35,8 +37,13 @@ class KirieWebViewManager(
     fun detachHostView(hostView: ViewGroup) {
         val activity = activityProvider() ?: return
         activity.runOnUiThread {
-            if (this.hostView === hostView) {
-                this.hostView = null
+            if (this.hostView !== hostView) {
+                return@runOnUiThread
+            }
+
+            this.hostView = null
+            for (session in webViews.values) {
+                session.webView.removeFromSuperview()
             }
         }
     }
@@ -60,7 +67,13 @@ class KirieWebViewManager(
                 return@runOnUiThread
             }
 
-            val rootView = hostView ?: activity.findViewById<FrameLayout>(android.R.id.content)
+            val rootView =
+                hostView
+                    ?: if (usesExplicitHost) {
+                        null
+                    } else {
+                        activity.findViewById<FrameLayout>(android.R.id.content)
+                    }
             val createdWebView = WebView(activity)
 
             createdWebView.layoutParams =
@@ -91,7 +104,7 @@ class KirieWebViewManager(
                     assetRequestHandler = KirieAssetRequestHandler(activity.assets),
                 )
 
-            rootView.addView(createdWebView)
+            rootView?.addView(createdWebView)
             webViews[viewId] = WebViewSession(webView = createdWebView)
             onWebViewReady(viewId)
 

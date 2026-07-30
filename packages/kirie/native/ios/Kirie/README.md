@@ -75,11 +75,10 @@ framework build configuration.
 - Native Swift hosts can expose the C entry points `kirie_attach_host_view` and
   `kirie_detach_host_view` through their bridging header to attach Kirie
   WebViews to an explicit `UIView` container. Existing WebViews move with the
-  selected host. Detaching the active host restores its original application
-  window, or waits for that same `UIWindowScene` to become active if no window
-  is currently available. If the host detaches before it ever belongs to a
-  scene, its WebViews wait for the next explicit host. Restoration never selects
-  a window from another scene.
+  selected host. Detaching the active host removes its WebViews from the view
+  hierarchy while preserving their sessions for the next explicit host. A
+  stale detach for a previously replaced host is ignored. Before a host is
+  explicitly selected, Kirie retains its legacy active-window hosting behavior.
 - Known issue: if iOS shows a system-level modal during early app startup, such
   as an account sign-in prompt, WebView creation can fail before an active host
   window is available. Future lifecycle work should queue creation until the
