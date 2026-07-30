@@ -190,7 +190,9 @@ kirie run [--mode <mode>] [--export]
 kirie dev
 kirie init
 kirie doctor
+kirie doctor [target]
 kirie doctor --fix
+kirie doctor --fix [target]
 ```
 
 ```mermaid
@@ -302,7 +304,7 @@ release matching the CLI version. The command is non-interactive and does not
 migrate or repair existing projects. It only sets the generated
 `package.json.name` and `src-web/index.html` title; template-owned Godot
 configuration is copied unchanged. The initial `basic` template is pinned at
-commit `27c823fd57bffae65175058779663bce45476863`. `kirie doctor` is read-only
+commit `f0dc158c8ee1f6316cc493dc0dd51a39de847892`. `kirie doctor` is read-only
 diagnostics and `kirie doctor --fix` may apply supported repairs. Repair writes
 to Godot-owned configuration files, including `project.godot` and
 `export_presets.cfg`, must go through Godot itself, for example a headless
@@ -319,6 +321,14 @@ The check implementation should preserve enough failure detail for diagnostics;
 avoid generic boolean helpers that collapse missing paths, wrong file types,
 permission failures, and command failures into the same result.
 
+Optional prerequisites are reported as warnings and do not make an unscoped
+`kirie doctor` invocation fail. `kirie doctor <target>` limits diagnosis to one
+supported prerequisite. `kirie doctor --fix <target>` repairs that prerequisite,
+while a bare `kirie doctor --fix` applies every supported automatic repair. This
+means every available fixer, not every environment problem reported by doctor;
+system SDKs and tools remain user-managed. The initial repair target is
+`godot-cef`.
+
 The initial `kirie doctor` check matrix is:
 
 | Check | Purpose | Required behavior |
@@ -328,11 +338,11 @@ The initial `kirie doctor` check matrix is:
 | Android SDK | Confirm Android export prerequisites can find an SDK. | Prefer `ANDROID_HOME`, accept compatible existing environments, and report whether the SDK directory exists. |
 | Android Java path | Confirm Godot's Android editor settings point at a usable Java/JDK. | Read Godot `EditorSettings`, check the Android Java SDK path, and report missing, invalid, or non-executable Java configuration. |
 | Android export preset | Confirm the project export preset contains required Android options for Kirie workflows. | Inspect `export_presets.cfg` through a structured parser and report missing presets or required option mismatches without rewriting the file. |
+| Godot CEF | Confirm the optional desktop backend addon is installed and complete. | Warn when absent, fail when the addon directory is malformed, and offer `kirie doctor --fix godot-cef` as the explicit download and installation path. |
 
-Later doctor checks may cover the iOS toolchain, Godot C#/.NET setup, and the
-desktop Godot CEF backend. Add those checks only when the corresponding Kirie
-workflow is implemented enough that a failed prerequisite can be explained with
-a concrete fix path.
+Later doctor checks may cover the iOS toolchain and Godot C#/.NET setup. Add
+those checks only when the corresponding Kirie workflow is implemented enough
+that a failed prerequisite can be explained with a concrete fix path.
 
 Kirie enforces Vite as the web toolchain. Users should not hand-write a fixed
 development URL. The CLI should let Vite handle port conflicts, then pass the
@@ -473,10 +483,11 @@ platform-information object.
 
 Desktop Godot CEF binaries are external downloaded artifacts, not part of the
 default `kirie-addon.zip`. Kirie's pinned Godot CEF version and artifact
-checksum live in `addons/kirie/godot_cef.json`. Only desktop run or export flows
-should check for Godot CEF. If a required desktop artifact is missing, fail
-before export or run and print the exact setup command. Android and iOS workflows
-must not require a Godot CEF download.
+checksum live in `addons/kirie/godot_cef.json`. `kirie doctor` reports a missing
+Godot CEF addon as an optional warning. Desktop run or export flows require it;
+if it is missing, fail before export or run and print
+`pnpm kirie doctor --fix godot-cef`. Android and iOS workflows must not require
+a Godot CEF download.
 
 Downloaded Godot CEF addons should use the standard Godot addon layout:
 
@@ -484,10 +495,17 @@ Downloaded Godot CEF addons should use the standard Godot addon layout:
 addons/godot_cef/
 ```
 
-This lets Godot load the Godot CEF GDExtension normally. Repository instances of
-that directory are ignored and should not be committed. Download logic must pin
-the Godot CEF version and verify the downloaded artifact before installing it.
-The repository installer command is:
+This lets Godot load the Godot CEF GDExtension normally. Project instances of
+that directory should be ignored and not committed. The CLI streams the pinned
+release to disk, reports download progress and speed, verifies its checksum and
+archive layout, and only then installs it. The public installer command is:
+
+```sh
+pnpm kirie doctor --fix godot-cef
+```
+
+The repository root declares `kirie` for examples and integration fixtures. Its
+mise wrapper runs that root-local binary against the selected Godot project:
 
 ```sh
 mise run install:godot-cef <godot-project-dir>

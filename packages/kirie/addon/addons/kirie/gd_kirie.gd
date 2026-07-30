@@ -229,12 +229,11 @@ func _initialize_desktop_cef_backend() -> void:
 		var message := (
 			(
 				"Kirie desktop backend requires Godot CEF %s to be installed "
-				+ "and registered in [native_extensions]. Install it with: %s %s"
+				+ "and registered in [native_extensions]. Install it with: %s"
 			)
 			% [
 				_godot_cef_config["version"],
 				_godot_cef_config["setup_command"],
-				ProjectSettings.globalize_path("res://"),
 			]
 		)
 		push_error(message)

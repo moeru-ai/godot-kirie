@@ -31,7 +31,7 @@ Desktop runs use the pinned Godot CEF addon. Install it into this example before
 running on macOS, Windows, or Linux:
 
 ```sh
-mise run install:godot-cef examples/basic-kirie-cli
+mise x -- corepack pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
 ```
 
 Start the CLI-managed Vite server and Godot project:

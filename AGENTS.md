@@ -161,11 +161,12 @@ Kirie CLI should be installed through npm. The implemented foundation commands a
   `moeru-ai/kirie-templates` commit, then install `kirie-addon.zip` from the
   `moeru-ai/godot-kirie` release matching the CLI version. The command is
   non-interactive. The initial `basic` template is pinned at commit
-  `27c823fd57bffae65175058779663bce45476863`.
-- `kirie doctor`: planned command to diagnose project configuration without
-  writing files.
-- `kirie doctor --fix`: planned command to explicitly repair supported
-  configuration problems.
+  `f0dc158c8ee1f6316cc493dc0dd51a39de847892`.
+- `kirie doctor [target]`: diagnose project prerequisites without writing
+  files. Missing optional Godot CEF is reported as a warning.
+- `kirie doctor --fix [target]`: explicitly apply supported automatic repairs.
+  The initial `godot-cef` fixer streams and verifies the pinned release before
+  installing it into the Godot project; bare `--fix` runs every available fixer.
 
 The broader app workflow should keep these command semantics:
 
@@ -270,6 +271,12 @@ For the current milestone, iOS should be owned by the standard addon tree:
   strong reason to change it.
 - When adding agent-facing guidance, prefer `AGENTS.md` and repo-local skills
   over ad hoc note files.
+- Check the upstream `moeru-ai/kirie-templates` default branch on the first
+  assistant reply of a new session and at least once every 10 assistant replies
+  thereafter. Compare its current commit with `KIRIE_TEMPLATES_COMMIT` in
+  `packages/cli/src/init.ts`. If they differ, remind the user and include both
+  commit SHAs; do not update the pin automatically. If reply-count context is
+  unavailable, check immediately and restart the 10-reply interval.
 - Pull request titles must follow the same Conventional Commits-style
   subject format as commit titles, for example `ci: cache iOS build inputs`
   or `refactor(build): migrate task orchestration`.

@@ -8,7 +8,7 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "kirie": "./dist/cli.js"
+    "kirie": "./kirie.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@gd-kirie/build": "workspace:*",
+    "axios": "1.18.1",
     "citty": "catalog:",
     "execa": "catalog:",
     "giget": "3.3.0",

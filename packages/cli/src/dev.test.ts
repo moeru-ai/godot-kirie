@@ -8,6 +8,7 @@ import { resolveAndroidReverseWebUrl, runDev } from "./dev.ts";
 import { createKirieDevLaunchOptions, runIosSimulator } from "./run.ts";
 import {
   createBasicKirieCliProjectTracker,
+  installGodotCefFixture,
   installKirieConfigFixture,
   installProjectFixture,
 } from "./test-project.ts";
@@ -44,6 +45,7 @@ describe("runDev", () => {
 
     await installProjectFixture(project, "fake-godot.js");
     await installKirieConfigFixture(project, "dev-fake-godot.kirie.config.ts");
+    await installGodotCefFixture(project);
 
     await runDev({
       cwd: project,
@@ -164,6 +166,7 @@ describe("runDev", () => {
 
     await installProjectFixture(project, "fake-godot.js");
     await installKirieConfigFixture(project, "dev-fake-godot.kirie.config.ts");
+    await installGodotCefFixture(project);
 
     await execa(process.execPath, [cliPath, "dev", "--project", project], {
       cwd: path.dirname(project),
@@ -244,6 +247,7 @@ describe("runDev", () => {
   it("rejects Kirie-owned Vite options", async () => {
     const project = await projects.copy();
     await installKirieConfigFixture(project, "dev-owned-server-port.kirie.config.ts");
+    await installGodotCefFixture(project);
 
     await expect(
       runDev({
@@ -256,12 +260,26 @@ describe("runDev", () => {
     const project = await projects.copy();
     await fs.rm(path.join(project, "src-web", "index.html"));
     await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
+    await installGodotCefFixture(project);
 
     await expect(
       runDev({
         cwd: project,
       }),
     ).rejects.toThrow(/Kirie dev requires .*index\.html/);
+  });
+
+  it("requires Godot CEF before starting desktop dev", async () => {
+    const project = await projects.copy();
+    await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
+
+    await expect(runDev({ cwd: project })).rejects.toThrow(
+      "Run: pnpm kirie doctor --fix godot-cef",
+    );
+
+    await expect(fs.stat(path.join(project, FAKE_GODOT_INVOCATIONS_FILE))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
   });
 });
 

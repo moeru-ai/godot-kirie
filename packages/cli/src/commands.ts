@@ -3,7 +3,7 @@ import { type CommandDef, defineCommand } from "citty";
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
-import { runDoctor } from "./doctor.ts";
+import { DoctorTarget, runDoctor } from "./doctor/index.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
 import { runInit } from "./init.ts";
 import { runAndroid, runIosSimulator } from "./run.ts";
@@ -27,6 +27,11 @@ const projectArgs = {
 
 const doctorArgs = {
   ...projectArgs,
+  target: {
+    description: "Optional prerequisite to check or repair.",
+    required: false,
+    type: "positional",
+  },
   fix: { description: "Apply supported repairs.", type: "boolean" },
 } as const;
 
@@ -104,7 +109,6 @@ type ExportCommandArgs = CommandArgs<typeof exportArgs>;
 type DevCommandArgs = CommandArgs<typeof devArgs> &
   CommandArgs<typeof androidDevArgs> &
   CommandArgs<typeof iosDevArgs>;
-type DoctorCommandArgs = CommandArgs<typeof doctorArgs>;
 type InitCommandArgs = CommandArgs<typeof initArgs>;
 type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
 
@@ -210,6 +214,22 @@ function resolveClearScreen(args: DevCommandArgs): boolean | undefined {
   return undefined;
 }
 
+function parseDoctorTarget(
+  rawTarget: string | undefined,
+  positionals: string[],
+): DoctorTarget | undefined {
+  if (positionals.length > 1) {
+    throw new Error(`Unexpected doctor argument: ${positionals[1]}`);
+  }
+  if (!rawTarget) {
+    return undefined;
+  }
+  if (rawTarget === DoctorTarget.GodotCef) {
+    return DoctorTarget.GodotCef;
+  }
+  throw new Error(`Unknown doctor target: ${rawTarget}`);
+}
+
 export const mainCommand: CommandDef = defineCommand({
   meta: {
     description: "Kirie development tools.",
@@ -269,10 +289,11 @@ export const mainCommand: CommandDef = defineCommand({
     doctor: defineCommand({
       args: doctorArgs,
       meta: { description: "Diagnose Kirie project prerequisites.", name: "doctor" },
-      run: ({ args }: { args: DoctorCommandArgs }) =>
+      run: ({ args }) =>
         runDoctor({
           cwd: args.project,
           fix: args.fix,
+          target: parseDoctorTarget(args.target, args._),
         }),
     }),
     init: defineCommand({
