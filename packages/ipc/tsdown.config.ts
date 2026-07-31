@@ -4,7 +4,11 @@ export default defineConfig({
   dts: {
     sourcemap: true,
   },
-  entry: "src/index.ts",
+  entry: {
+    index: "src/index.ts",
+    "pointer-input/auto": "src/pointer-input/auto.ts",
+    "pointer-input/index": "src/pointer-input/index.ts",
+  },
   format: "esm",
   platform: "browser",
   sourcemap: true,

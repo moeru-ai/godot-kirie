@@ -40,17 +40,22 @@ adapter convention and should be sent with `sendText()` when needed.
 ## Pointer input forwarding
 
 Kirie can opt in to forwarding browser pointer events back through Godot's
-input pipeline. Enable it on the Godot owner and install the browser listener:
+input pipeline. Enable it on the Godot owner and import the automatic browser
+listener:
 
 ```gdscript
 $KirieNode.pointer_input_forwarding_enabled = true
 ```
 
 ```ts
-import { installPointerEventForwarding } from "@gd-kirie/ipc";
-
-const removePointerForwarding = installPointerEventForwarding();
+import "@gd-kirie/ipc/pointer-input/auto";
 ```
+
+For explicit composition, `@gd-kirie/ipc/pointer-input` exports
+`phaseFromPointerEvent`, `sendPointerEvent`, and
+`createPointerEventsHandler` together with their pointer input types. The
+automatic entry uses the same functions and only adds document listener
+registration.
 
 The listener uses the normal DOM bubbling phase. A web-owned interactive region
 can keep its pointer sequence in the WebView with `event.stopPropagation()`;

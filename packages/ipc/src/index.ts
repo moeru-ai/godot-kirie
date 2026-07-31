@@ -1,7 +1,5 @@
 import { decode, encode } from "cborg";
 
-import { installPointerEventForwarding as installPointerEventForwardingInternal } from "./pointer-input-forwarding";
-
 const READY_MESSAGE = new ArrayBuffer(0);
 const ENCODE_OPTIONS = { float64: true } as const;
 
@@ -354,10 +352,6 @@ export function sendBinary(bytes: Uint8Array): void {
 
 export function sendData(value: KirieData): void {
   currentTransport().sendData(value);
-}
-
-export function installPointerEventForwarding(): () => void {
-  return installPointerEventForwardingInternal(sendData);
 }
 
 export function onTextReceived(handler: KirieMessageHandler<string>): () => void {

@@ -12,6 +12,12 @@
   "exports": {
     ".": {
       "import": "./src/index.ts"
+    },
+    "./pointer-input": {
+      "import": "./src/pointer-input/index.ts"
+    },
+    "./pointer-input/auto": {
+      "import": "./src/pointer-input/auto.ts"
     }
   },
   "files": [
@@ -37,6 +43,14 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./pointer-input": {
+        "types": "./dist/pointer-input/index.d.ts",
+        "import": "./dist/pointer-input/index.js"
+      },
+      "./pointer-input/auto": {
+        "types": "./dist/pointer-input/auto.d.ts",
+        "import": "./dist/pointer-input/auto.js"
       }
     }
   }
