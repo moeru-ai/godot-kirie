@@ -33,9 +33,6 @@ export function sendPointerEvent(
   phase: PointerPhase = phaseFromPointerEvent(event),
 ): void {
   const view = event.view ?? window;
-  if (view.innerWidth <= 0 || view.innerHeight <= 0) {
-    throw new RangeError("Kirie cannot forward pointer input from an empty viewport.");
-  }
 
   const pointerType = event.pointerType;
   if (pointerType !== "mouse" && pointerType !== "pen" && pointerType !== "touch") {
