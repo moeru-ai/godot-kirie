@@ -1,4 +1,5 @@
 import { onTextReceived, sendText } from "@gd-kirie/ipc";
+import "@gd-kirie/ipc/pointer-input/auto";
 
 import "./style.css";
 
@@ -33,12 +34,14 @@ interface GodotToWebMessage {
 
 const logNodeElement = document.querySelector<HTMLPreElement>("#log");
 const sendButtonElement = document.querySelector<HTMLButtonElement>("#sendButton");
-if (!logNodeElement || !sendButtonElement) {
+const cardElement = document.querySelector<HTMLElement>(".card");
+if (!logNodeElement || !sendButtonElement || !cardElement) {
   throw new Error("Missing Kirie example UI.");
 }
 
 const logNode = logNodeElement;
 const sendButton = sendButtonElement;
+const card = cardElement;
 const mode = resolveMode();
 
 function resolveMode(): KirieExampleMode {
@@ -90,6 +93,27 @@ sendButton.addEventListener("click", () => {
     },
   });
 });
+
+/**
+ * Keeps pointer sequences handled by the web card out of Godot forwarding.
+ *
+ * Triggering workflow:
+ *
+ * {@link EventTarget.addEventListener}
+ *   -> `pointerdown`
+ *     -> {@link stopCardInputForwarding}
+ *
+ * Upstream:
+ * - {@link card}
+ *
+ * Downstream:
+ * - {@link Event.stopPropagation}
+ */
+const stopCardInputForwarding = (event: Event): void => {
+  event.stopPropagation();
+};
+
+card.addEventListener("pointerdown", stopCardInputForwarding);
 
 appendLog(`Mode: ${mode}`);
 

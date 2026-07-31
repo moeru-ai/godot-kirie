@@ -14,6 +14,7 @@ var _webview_is_ready := false
 
 
 func _ready() -> void:
+	_kirie.pointer_input_forwarding_enabled = true
 	_kirie.webview_ready.connect(_on_webview_ready)
 	_kirie.text_received.connect(_on_text_received)
 	_kirie.ipc_error.connect(_on_ipc_error)
@@ -66,6 +67,11 @@ func _on_destroy_button_pressed() -> void:
 
 func _on_send_button_pressed() -> void:
 	_send_test_message()
+
+
+func _on_behind_button_pressed() -> void:
+	_set_status("Status: Godot received forwarded input")
+	_append_log("godot_button_pressed")
 
 
 func _on_webview_ready() -> void:

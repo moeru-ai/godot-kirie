@@ -60,7 +60,16 @@ size_flags_vertical = 3
 text = "Log:"
 autowrap_mode = 3
 
+[node name="BehindWebViewButton" type="Button" parent="." unique_id=2107349855]
+layout_mode = 0
+offset_left = 408.0
+offset_top = 500.0
+offset_right = 744.0
+offset_bottom = 564.0
+text = "Godot button behind WebView"
+
 [connection signal="pressed" from="VBoxContainer/ButtonRow/CreateButton" to="." method="_on_create_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonRow/ProbeButton" to="." method="_on_probe_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonRow/DestroyButton" to="." method="_on_destroy_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonRow/SendButton" to="." method="_on_send_button_pressed"]
+[connection signal="pressed" from="BehindWebViewButton" to="." method="_on_behind_button_pressed"]
