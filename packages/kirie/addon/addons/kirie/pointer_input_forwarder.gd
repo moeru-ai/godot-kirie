@@ -1,7 +1,13 @@
 extends RefCounted
 
+# Replays pointer control records from a Kirie WebView as Godot InputEvents.
 const PACKET_KEY := "__gd_kirie_control"
-const SYNTHETIC_DEVICE_ID := 0x4B495249
+
+# ASCII "KIRI". A stable non-hardware ID lets consumers distinguish forwarded
+# events from physical input instead of reporting them as Godot's default device 0.
+# InputEvent.device:
+# https://docs.godotengine.org/en/stable/classes/class_inputevent.html
+const FORWARDED_POINTER_DEVICE_ID := 0x4B495249
 
 var _last_positions: Dictionary[int, Vector2] = {}
 var _active_pointers: Dictionary[int, Dictionary] = {}
@@ -22,7 +28,7 @@ func reset(cef_control: Control = null) -> void:
 				continue
 
 			var button := InputEventMouseButton.new()
-			button.device = SYNTHETIC_DEVICE_ID
+			button.device = FORWARDED_POINTER_DEVICE_ID
 			button.position = position
 			button.global_position = position
 			button.button_index = button_index
@@ -31,7 +37,7 @@ func reset(cef_control: Control = null) -> void:
 			event = button
 		else:
 			var touch := InputEventScreenTouch.new()
-			touch.device = SYNTHETIC_DEVICE_ID
+			touch.device = FORWARDED_POINTER_DEVICE_ID
 			touch.index = pointer_id
 			touch.position = position
 			touch.pressed = false
@@ -132,7 +138,7 @@ func _create_touch_event(
 ) -> InputEvent:
 	if phase == "move":
 		var drag := InputEventScreenDrag.new()
-		drag.device = SYNTHETIC_DEVICE_ID
+		drag.device = FORWARDED_POINTER_DEVICE_ID
 		drag.index = pointer_id
 		drag.position = position
 		drag.relative = position - previous_position
@@ -141,7 +147,7 @@ func _create_touch_event(
 		return drag
 
 	var touch := InputEventScreenTouch.new()
-	touch.device = SYNTHETIC_DEVICE_ID
+	touch.device = FORWARDED_POINTER_DEVICE_ID
 	touch.index = pointer_id
 	touch.position = position
 	touch.pressed = phase == "down"
@@ -158,7 +164,7 @@ func _create_mouse_event(
 ) -> InputEvent:
 	if phase == "move":
 		var motion := InputEventMouseMotion.new()
-		motion.device = SYNTHETIC_DEVICE_ID
+		motion.device = FORWARDED_POINTER_DEVICE_ID
 		motion.position = position
 		motion.global_position = position
 		motion.relative = position - previous_position
@@ -176,7 +182,7 @@ func _create_mouse_event(
 		return null
 
 	var button := InputEventMouseButton.new()
-	button.device = SYNTHETIC_DEVICE_ID
+	button.device = FORWARDED_POINTER_DEVICE_ID
 	button.position = position
 	button.global_position = position
 	button.button_index = button_index
@@ -204,6 +210,16 @@ func _dispatch_event(event: InputEvent, cef_control: Control) -> void:
 		Input.parse_input_event(event)
 		return
 
+	# parse_input_event() injects the forwarded event into Godot's normal input
+	# pipeline. Godot CEF receives that pipeline in CefTexture.input() and sends
+	# pointer events back to CEF. If its Control remains active, the event loops
+	# WebView -> Godot -> WebView. Temporarily disable _input() to break the loop
+	# and use MOUSE_FILTER_IGNORE so Godot Controls behind CEF receive the event.
+	# Flush synchronously before restoring both settings.
+	# Godot API:
+	# https://docs.godotengine.org/en/stable/classes/class_input.html
+	# Godot CEF: CefTexture.input() and handle_input_event().
+	# https://github.com/dsh0416/godot-cef/blob/main/crates/gdcef/src/cef_texture/mod.rs
 	var was_processing_input := cef_control.is_processing_input()
 	var previous_mouse_filter := cef_control.mouse_filter
 	cef_control.set_process_input(false)
