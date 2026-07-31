@@ -9,6 +9,7 @@ signal ipc_error(error: String)
 
 const PLUGIN_SINGLETON_NAME := "Kirie"
 const GodotCefConfig = preload("res://addons/kirie/godot_cef_config.gd")
+const PointerInputForwarder = preload("res://addons/kirie/pointer_input_forwarder.gd")
 const GODOT_CEF_PRELOAD_SCRIPT := """
 globalThis.kirie ??= {};
 globalThis.kirie.platform = Object.freeze({
@@ -17,9 +18,16 @@ globalThis.kirie.platform = Object.freeze({
 });
 """
 
+var pointer_input_forwarding_enabled := false:
+	set(value):
+		pointer_input_forwarding_enabled = value
+		if not value and _pointer_input_forwarder != null:
+			_pointer_input_forwarder.reset(_plugin_singleton as Control)
+
 var _plugin_singleton = null
 var _godot_cef_config: Dictionary = {}
 var _view_id := get_instance_id()
+var _pointer_input_forwarder := PointerInputForwarder.new()
 
 
 func _init() -> void:
@@ -61,6 +69,7 @@ func create_webview(options: Dictionary = {}) -> void:
 
 
 func destroy_webview() -> void:
+	_pointer_input_forwarder.reset(_plugin_singleton as Control)
 	if _plugin_singleton == null:
 		return
 
@@ -175,23 +184,23 @@ func _connect_plugin_signals() -> void:
 
 	if _plugin_singleton.has_signal(&"webview_ready"):
 		print("[Kirie][gd] connecting webview_ready signal")
-		_plugin_singleton.webview_ready.connect(_on_plugin_webview_ready)
+		_plugin_singleton.connect(&"webview_ready", _on_plugin_webview_ready)
 
 	if _plugin_singleton.has_signal(&"text_received"):
 		print("[Kirie][gd] connecting text_received signal")
-		_plugin_singleton.text_received.connect(_on_plugin_text_received)
+		_plugin_singleton.connect(&"text_received", _on_plugin_text_received)
 
 	if _plugin_singleton.has_signal(&"binary_received"):
 		print("[Kirie][gd] connecting binary_received signal")
-		_plugin_singleton.binary_received.connect(_on_plugin_binary_received)
+		_plugin_singleton.connect(&"binary_received", _on_plugin_binary_received)
 
 	if _plugin_singleton.has_signal(&"data_received"):
 		print("[Kirie][gd] connecting data_received signal")
-		_plugin_singleton.data_received.connect(_on_plugin_data_received)
+		_plugin_singleton.connect(&"data_received", _on_plugin_data_received)
 
 	if _plugin_singleton.has_signal(&"ipc_error"):
 		print("[Kirie][gd] connecting ipc_error signal")
-		_plugin_singleton.ipc_error.connect(_on_plugin_ipc_error)
+		_plugin_singleton.connect(&"ipc_error", _on_plugin_ipc_error)
 
 
 func _ensure_plugin_singleton(method_name: String) -> bool:
@@ -445,6 +454,14 @@ func _on_plugin_binary_received(view_id: int, bytes: PackedByteArray) -> void:
 
 func _on_plugin_data_received(view_id: int, value: Variant) -> void:
 	if _should_ignore_view_signal(view_id): return
+
+	var cef_control := _plugin_singleton as Control
+	if _pointer_input_forwarder.try_forward_pointer_input(
+		value,
+		pointer_input_forwarding_enabled,
+		cef_control,
+	):
+		return
 
 	print("[Kirie][gd] signal data_received %s" % str(value))
 	data_received.emit(value)

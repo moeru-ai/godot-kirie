@@ -70,6 +70,36 @@ public partial class KirieClient : GodotObject
         ? (bool)_sceneNode.Call("is_available")
         : _pluginSingleton is not null;
 
+    /// <summary>
+    /// Enables browser pointer forwarding on a borrowed scene KirieNode.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// This client was created without <see cref="FromNode(GodotObject)"/>.
+    /// </exception>
+    public bool PointerInputForwardingEnabled
+    {
+        get
+        {
+            if (_sceneNode is null)
+            {
+                throw new InvalidOperationException(
+                    "Pointer input forwarding requires a KirieClient borrowed from KirieNode.");
+            }
+
+            return _sceneNode.Get("pointer_input_forwarding_enabled").AsBool();
+        }
+        set
+        {
+            if (_sceneNode is null)
+            {
+                throw new InvalidOperationException(
+                    "Pointer input forwarding requires a KirieClient borrowed from KirieNode.");
+            }
+
+            _sceneNode.Set("pointer_input_forwarding_enabled", value);
+        }
+    }
+
     public void CreateWebView(string initialUrl = "")
     {
         if (_sceneNode is not null)

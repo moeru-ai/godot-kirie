@@ -10,11 +10,17 @@ signal ipc_error(error: String)
 @export var initial_url := ""
 @export var auto_create := true
 @export var auto_destroy := true
+@export var pointer_input_forwarding_enabled := false:
+	set(value):
+		pointer_input_forwarding_enabled = value
+		if _kirie != null:
+			_kirie.pointer_input_forwarding_enabled = value
 
 var _kirie := GdKirie.new()
 
 
 func _ready() -> void:
+	_kirie.pointer_input_forwarding_enabled = pointer_input_forwarding_enabled
 	_kirie.webview_ready.connect(func() -> void: webview_ready.emit())
 	_kirie.text_received.connect(func(message: String) -> void: text_received.emit(message))
 	_kirie.binary_received.connect(
