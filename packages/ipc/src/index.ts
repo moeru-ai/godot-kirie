@@ -71,7 +71,6 @@ type KiriePointerPhase = "down" | "move" | "up" | "cancel";
 type KiriePointerType = "mouse" | "pen" | "touch";
 
 interface KiriePointerInputRecord extends Record<string, KirieData> {
-  version: 1;
   kind: "pointer";
   phase: KiriePointerPhase;
   pointer_id: number;
@@ -84,7 +83,7 @@ interface KiriePointerInputRecord extends Record<string, KirieData> {
 }
 
 interface KirieControlRecord extends Record<string, KirieData> {
-  __gd_kirie_control_v1: KiriePointerInputRecord;
+  __gd_kirie_control: KiriePointerInputRecord;
 }
 
 interface KirieTransport {
@@ -386,8 +385,7 @@ function forwardPointerEvent(event: PointerEvent, phase = pointerPhase(event.typ
   }
 
   currentTransport().sendData({
-    __gd_kirie_control_v1: {
-      version: 1,
+    __gd_kirie_control: {
       kind: "pointer",
       phase,
       pointer_id: event.pointerId,

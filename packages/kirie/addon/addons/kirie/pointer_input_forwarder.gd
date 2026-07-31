@@ -1,7 +1,6 @@
 extends RefCounted
 
-const PACKET_KEY := "__gd_kirie_control_v1"
-const PACKET_VERSION := 1
+const PACKET_KEY := "__gd_kirie_control"
 const SYNTHETIC_DEVICE_ID := 0x4B495249
 
 var _last_positions: Dictionary[int, Vector2] = {}
@@ -57,7 +56,7 @@ func try_forward_pointer_input(
 		return true
 
 	var input := input_candidate as Dictionary
-	if int(input.get("version", 0)) != PACKET_VERSION or str(input.get("kind", "")) != "pointer":
+	if str(input.get("kind", "")) != "pointer":
 		push_warning("Ignored unsupported Kirie input control record")
 		return true
 

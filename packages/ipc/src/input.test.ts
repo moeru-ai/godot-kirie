@@ -52,8 +52,7 @@ describe("installPointerEventForwarding", () => {
     expect(postMessage).toHaveBeenCalledTimes(1);
     const packet = decode(new Uint8Array(postMessage.mock.calls[0]?.[0] as ArrayBuffer));
     expect(packet).toEqual({
-      __gd_kirie_control_v1: {
-        version: 1,
+      __gd_kirie_control: {
         kind: "pointer",
         phase: "down",
         pointer_id: 7,
@@ -96,9 +95,9 @@ describe("installPointerEventForwarding", () => {
     expect(
       postMessage.mock.calls.map(([bytes]) => {
         const packet = decode(new Uint8Array(bytes as ArrayBuffer)) as {
-          __gd_kirie_control_v1: { phase: string };
+          __gd_kirie_control: { phase: string };
         };
-        return packet.__gd_kirie_control_v1.phase;
+        return packet.__gd_kirie_control.phase;
       }),
     ).toEqual(["down", "move", "up"]);
 
@@ -132,9 +131,9 @@ describe("installPointerEventForwarding", () => {
     expect(
       postMessage.mock.calls.map(([bytes]) => {
         const packet = decode(new Uint8Array(bytes as ArrayBuffer)) as {
-          __gd_kirie_control_v1: { phase: string };
+          __gd_kirie_control: { phase: string };
         };
-        return packet.__gd_kirie_control_v1.phase;
+        return packet.__gd_kirie_control.phase;
       }),
     ).toEqual(["down", "cancel"]);
   });
