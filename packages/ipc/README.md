@@ -39,9 +39,13 @@ adapter convention and should be sent with `sendText()` when needed.
 
 ## Pointer input forwarding
 
-Kirie can opt in to forwarding browser pointer events back through Godot's
-input pipeline. Enable it on the Godot owner and import the automatic browser
-listener:
+> [!IMPORTANT]
+> Kirie WebViews normally fill their native host above Godot. CSS transparency
+> does not pass native hit tests through to Godot, so visible Godot controls
+> behind the WebView cannot be clicked without pointer forwarding. Most Kirie
+> pages should import `@gd-kirie/ipc/pointer-input/auto`.
+
+Enable both sides; the browser entry registers on import:
 
 ```gdscript
 $KirieNode.pointer_input_forwarding_enabled = true
@@ -51,20 +55,26 @@ $KirieNode.pointer_input_forwarding_enabled = true
 import "@gd-kirie/ipc/pointer-input/auto";
 ```
 
-For explicit composition, `@gd-kirie/ipc/pointer-input` exports
-`phaseFromPointerEvent`, `sendPointerEvent`, and
-`createPointerEventsHandler` together with their pointer input types. The
-automatic entry uses the same functions and only adds document listener
-registration.
+### Custom event orchestration
 
-The listener uses the normal DOM bubbling phase. A web-owned interactive region
-can keep its pointer sequence in the WebView with `event.stopPropagation()`;
-the `pointerdown` event decides whether the complete sequence is converted into
-synthetic Godot input events.
+For custom targets or lifetimes, use the explicit entry instead:
 
-Forwarding is disabled by default. It replays pointer input into Godot; it does
-not make the native WebView itself hit-test transparent. The implementation uses
-Godot's
+```ts
+import {
+  createPointerEventsHandler,
+  phaseFromPointerEvent,
+  sendPointerEvent,
+} from "@gd-kirie/ipc/pointer-input";
+```
+
+`createPointerEventsHandler()` returns `capture`, `bubble`, and `cancel` handlers;
+the caller owns their registration and removal.
+
+`pointerdown` bubbling decides ownership: `event.stopPropagation()` keeps the
+sequence in the WebView; otherwise its move, up, and cancel events are forwarded
+to Godot.
+
+Forwarding uses Godot's
 [`Input.parse_input_event()`](https://docs.godotengine.org/en/stable/classes/class_input.html#class-input-method-parse-input-event)
 API; forwarded mouse and touch events retain their destination
 [`window_id`](https://docs.godotengine.org/en/stable/classes/class_inputeventfromwindow.html#class-inputeventfromwindow-property-window-id).
