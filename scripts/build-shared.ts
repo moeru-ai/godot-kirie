@@ -1,7 +1,7 @@
 import path from "node:path";
 import process from "node:process";
 import { execa } from "execa";
-import { exportIosSimulatorApp as exportCliIosSimulatorApp } from "../packages/cli/src/ios.ts";
+import { exportIosApp as exportCliIosApp } from "../packages/cli/src/ios.ts";
 
 export const rootDir = process.cwd();
 export const scriptsDir = path.join(rootDir, "scripts");
@@ -43,14 +43,17 @@ export async function exportAndroidDebug(options: AndroidDebugExportOptions): Pr
   await runKirieCli(args);
 }
 
-export async function exportIosSimulatorApp(projectDir: string, appPath: string): Promise<void> {
-  const exportName = path.basename(projectDir);
-  const xcodeExportDir = `${path.dirname(appPath)}/ios_xcode`;
-
-  await exportCliIosSimulatorApp({
+export async function exportIosApp(
+  projectDir: string,
+  appPath: string,
+  target: "device" | "simulator",
+  device?: string,
+): Promise<void> {
+  await exportCliIosApp({
     appPath: path.resolve(rootDir, appPath),
     cwd: path.resolve(rootDir, projectDir),
-    xcodeProjectPath: path.resolve(rootDir, `${xcodeExportDir}/${exportName}.xcodeproj`),
+    device,
+    target,
   });
   console.log(`Successfully built: ${appPath}`);
 }

@@ -6,7 +6,8 @@ import { type DevTarget, runDev } from "./dev.ts";
 import { DoctorTarget, runDoctor } from "./doctor/index.ts";
 import { type ExportPlatform, runExport } from "./export.ts";
 import { runInit } from "./init.ts";
-import { runAndroid, runIosSimulator } from "./run.ts";
+import { exportIosApp } from "./ios.ts";
+import { isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
 
 type CommandArgSchema = Record<string, { readonly type: "boolean" | "positional" | "string" }>;
 type CommandArgs<T extends CommandArgSchema> = {
@@ -14,7 +15,7 @@ type CommandArgs<T extends CommandArgSchema> = {
 };
 
 const exportArgs = {
-  "no-build": { description: "Skip local input build before export.", type: "boolean" },
+  build: { description: "Build local inputs before export.", type: "boolean" },
   output: { alias: "o", description: "Export output path.", type: "string" },
   project: { description: "Godot project directory.", type: "string" },
   preset: { description: "Godot export preset name.", type: "string" },
@@ -57,6 +58,11 @@ const devServerArgs = {
 
 const mobileDeviceArgs = {
   device: { description: "Target device or simulator selector.", type: "string" },
+} as const;
+
+const iosExportArgs = {
+  ...exportArgs,
+  ...mobileDeviceArgs,
 } as const;
 
 const androidLaunchArgs = {
@@ -105,7 +111,7 @@ const iosDevArgs = {
   app: { description: "iOS simulator .app output path.", type: "string" },
 } as const;
 
-type ExportCommandArgs = CommandArgs<typeof exportArgs>;
+type ExportCommandArgs = CommandArgs<typeof exportArgs> & CommandArgs<typeof iosExportArgs>;
 type DevCommandArgs = CommandArgs<typeof devArgs> &
   CommandArgs<typeof androidDevArgs> &
   CommandArgs<typeof iosDevArgs>;
@@ -122,9 +128,31 @@ function parseUserArgs(rawArgs: string[]): string[] {
 }
 
 function runExportCommand(platform: ExportPlatform) {
-  return ({ args, rawArgs }: { args: ExportCommandArgs; rawArgs: string[] }) =>
-    runExport({
-      build: !args["no-build"],
+  return async ({ args, rawArgs }: { args: ExportCommandArgs; rawArgs: string[] }) => {
+    if (platform === "ios") {
+      const targetIsSimulator =
+        !args.device || (await isIosSimulatorDevice(args.device, args.project));
+      const configuration = args.release ? "release" : "debug";
+      const target = targetIsSimulator ? "simulator" : "device";
+
+      await exportIosApp({
+        appPath:
+          args.output ??
+          (targetIsSimulator
+            ? `dist/kirie/ios/${configuration}.app`
+            : `dist/kirie/ios/device_${configuration}.app`),
+        build: args.build !== false,
+        cwd: args.project,
+        device: args.device,
+        preset: args.preset,
+        release: args.release,
+        target,
+      });
+      return;
+    }
+
+    await runExport({
+      build: args.build !== false,
       cwd: args.project,
       output: args.output,
       platform,
@@ -132,6 +160,7 @@ function runExportCommand(platform: ExportPlatform) {
       release: args.release,
       userArgs: parseUserArgs(rawArgs),
     });
+  };
 }
 
 function runDevCommand(target: DevTarget) {
@@ -279,7 +308,7 @@ export const mainCommand: CommandDef = defineCommand({
         ios: defineCommand({
           args: iosDevArgs,
           meta: {
-            description: "Export, install, and launch an iOS simulator with Vite dev.",
+            description: "Export, install, and launch iOS with Vite dev.",
             name: "ios",
           },
           run: runDevCommand("ios"),
@@ -320,8 +349,8 @@ export const mainCommand: CommandDef = defineCommand({
           run: runExportCommand("android"),
         }),
         ios: defineCommand({
-          args: exportArgs,
-          meta: { description: "Export the iOS Godot preset.", name: "ios" },
+          args: iosExportArgs,
+          meta: { description: "Build an installable iOS app.", name: "ios" },
           run: runExportCommand("ios"),
         }),
       },
@@ -345,13 +374,13 @@ export const mainCommand: CommandDef = defineCommand({
         }),
         ios: defineCommand({
           args: iosRunArgs,
-          meta: { description: "Install and launch an iOS simulator export.", name: "ios" },
+          meta: { description: "Install and launch an iOS export.", name: "ios" },
           run: ({ args }: { args: RunCommandArgs }) =>
-            runIosSimulator({
+            runIos({
               appPath: args.app,
               cwd: args.project,
+              device: args.device,
               launchOptions: parseLaunchOptions(args["launch-option"]),
-              simulatorId: args.device,
               terminateExisting: args["terminate-existing"],
             }),
         }),

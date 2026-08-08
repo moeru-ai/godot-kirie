@@ -140,8 +140,9 @@ arg "<platform>" help="Target platform" {
   choices "android" "ios"
 }
 arg "<example_name>" help="Example project name"
+arg "[device_id]" help="Optional target device ID; omit for the iOS simulator"
 '''
-run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_example_name?}"'
+run = './scripts/run-build-task.js runExample "${usage_platform?}" "${usage_example_name?}" "${usage_device_id}"'
 
 [tasks."test:dotnet"]
 description = "Run .NET tests"

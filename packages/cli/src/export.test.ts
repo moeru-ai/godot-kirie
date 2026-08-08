@@ -60,6 +60,7 @@ describe("runExport", () => {
       cwd: realProject,
       env: {},
     });
+    await expect(fs.access(path.join(project, "src-web", "dist"))).rejects.toThrow();
   });
 });
 
