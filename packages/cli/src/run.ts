@@ -50,6 +50,18 @@ export interface RunIosSimulatorOptions {
   terminateExisting?: boolean;
 }
 
+export interface RunIosDeviceOptions {
+  appPath?: string;
+  bundleId?: string;
+  config?: ResolvedKirieConfig;
+  cwd?: string;
+  device?: string;
+  launchOptions?: LaunchOptions;
+  terminateExisting?: boolean;
+}
+
+export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
+
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
   const config =
     options.config ??
@@ -155,9 +167,6 @@ export async function reverseAndroidTcp(options: ReverseAndroidTcpOptions): Prom
 }
 
 export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Promise<void> {
-  // TODO: Add a separate physical-device path. Capacitor's CLI uses the
-  // selected iOS target for xcodebuild, then deploys the built app with
-  // native-run instead of routing physical devices through simctl.
   const config =
     options.config ??
     (await loadKirieConfig({
@@ -211,6 +220,98 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       stdio: "inherit",
     },
   );
+}
+
+export async function runIos(options: RunIosOptions = {}): Promise<void> {
+  if (!options.device || (await isIosSimulatorDevice(options.device, options.cwd))) {
+    return runIosSimulator({
+      appPath: options.appPath,
+      bundleId: options.bundleId,
+      config: options.config,
+      cwd: options.cwd,
+      launchOptions: options.launchOptions,
+      simulatorId: options.device,
+      terminateExisting: options.terminateExisting,
+    });
+  }
+
+  return runIosDevice(options);
+}
+
+export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<void> {
+  const config =
+    options.config ??
+    (await loadKirieConfig({
+      command: "build",
+      cwd: options.cwd,
+    }));
+  const device = options.device ?? process.env.IOS_DEVICE_ID;
+
+  if (!device) {
+    throw new Error("iOS physical-device runs require --device <UDID>.");
+  }
+
+  const bundleId =
+    options.bundleId ??
+    (options.appPath
+      ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
+      : readIosBundleId(config.godot.project));
+
+  if (options.appPath) {
+    await execa(
+      "xcrun",
+      [
+        "devicectl",
+        "device",
+        "install",
+        "app",
+        "--device",
+        device,
+        path.resolve(config.cwd, options.appPath),
+      ],
+      {
+        cwd: config.cwd,
+        stdio: "inherit",
+      },
+    );
+  }
+
+  const launchArgs = ["devicectl", "device", "process", "launch", "--device", device];
+  if (options.terminateExisting) {
+    launchArgs.push("--terminate-existing");
+  }
+  launchArgs.push("--console", bundleId, ...iosLaunchOptionArgs(options.launchOptions));
+
+  await execa("xcrun", launchArgs, {
+    cwd: config.cwd,
+    stdio: "inherit",
+  });
+}
+
+export async function isIosSimulatorDevice(device: string, cwd?: string): Promise<boolean> {
+  if (device === "booted") {
+    return true;
+  }
+
+  const result = await execa("xcrun", ["simctl", "list", "devices", "--json"], {
+    cwd,
+    reject: false,
+    stderr: "ignore",
+  });
+  if (result.exitCode !== 0) {
+    return false;
+  }
+
+  try {
+    const devices = JSON.parse(result.stdout) as {
+      devices?: Record<string, Array<{ udid?: string }>>;
+    };
+    return Object.values(devices.devices ?? {}).some((runtimeDevices) =>
+      runtimeDevices.some((simulator) => simulator.udid === device),
+    );
+  } catch {
+    return false;
+  }
 }
 
 function readAndroidPackageName(

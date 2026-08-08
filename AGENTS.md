@@ -187,8 +187,7 @@ sessions, device selection, install, launch, log streaming, and watch policy in
 `kirie`. Repository integration and example tasks should exercise CLI
 workflows where practical.
 
-Keep `kirie create` outside the current CLI scope. Mobile dev targets should
-use a unified platform and device selector such as
+Mobile dev targets should use a unified platform and device selector such as
 `kirie dev ios --device <selector>` or
 `kirie dev android --device <selector>`; do not expose simulator and real device
 as separate user-facing target names.

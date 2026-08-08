@@ -117,8 +117,39 @@ Build, install, and launch the iOS simulator example:
 mise run run:example -- ios basic-kirie-cli
 ```
 
-This iOS example runner is currently simulator-only because it reuses the same
-local Godot iOS export path used by integration testing. That is a tooling
-shortcut, not a design requirement for examples. Manual example runs should
-eventually allow the most useful local target, such as an iOS Simulator, a real
-iOS device, or an iOS app running directly on an Apple Silicon Mac.
+Build, sign, install, and launch the iOS example on a connected physical
+device. Xcode uses the Apple Development identity and provisioning profile
+managed by the local Xcode account:
+
+```bash
+mise run run:example -- ios basic-kirie-cli <device-udid>
+```
+
+The CLI uses `xcodebuild` for the device app and Apple's `devicectl` for
+installation and launch. The same unified device selector is available for
+development runs:
+
+```bash
+pnpm kirie dev ios --project examples/basic-kirie-cli --device <device-udid>
+```
+
+The public export command also produces an installable `.app`. It defaults to
+an arm64 simulator build:
+
+```bash
+pnpm kirie export ios --project examples/basic-kirie-cli
+```
+
+Pass a physical-device UDID to build a signed device app. Xcode obtains the
+signing identity and provisioning profile from the local Xcode account:
+
+```bash
+pnpm kirie export ios \
+  --project examples/basic-kirie-cli \
+  --device <device-udid> \
+  --output dist/kirie/ios/device-debug.app
+pnpm kirie run ios \
+  --project examples/basic-kirie-cli \
+  --device <device-udid> \
+  --app dist/kirie/ios/device-debug.app
+```

@@ -97,6 +97,9 @@ packaging, or platform WebView bridge details.
 
 ## Apple
 
+- [Xcode command-line tool reference](https://developer.apple.com/documentation/xcode/xcode-command-line-tool-reference)
+  Official reference for command-line Xcode build and device-development
+  tooling used by the public iOS export and run commands.
 - [WKWebView](https://developer.apple.com/documentation/webkit/wkwebview)
   Primary API reference for embedded web content on Apple platforms.
 - [WKScriptMessageHandler](https://developer.apple.com/documentation/webkit/wkscriptmessagehandler)

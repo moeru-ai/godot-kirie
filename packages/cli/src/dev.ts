@@ -4,12 +4,13 @@ import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 import { assertGodotCefInstalled } from "./doctor/godot-cef.ts";
 import { runExport } from "./export.ts";
 import { launchGodot, prepareGodotProject } from "./godot.ts";
-import { exportIosSimulatorApp } from "./ios.ts";
+import { exportIosApp } from "./ios.ts";
 import {
   createKirieDevLaunchOptions,
+  isIosSimulatorDevice,
   reverseAndroidTcp,
   runAndroid,
-  runIosSimulator,
+  runIos,
 } from "./run.ts";
 import { type StartViteDevServerOptions, startViteDevServer } from "./vite.ts";
 
@@ -140,26 +141,35 @@ async function runIosDev(
   webUrl: string,
   options: DevOptions,
 ): Promise<void> {
-  const appPath = options.appPath ?? "dist/kirie/ios/debug.app";
+  const physicalDevice =
+    options.device && !(await isIosSimulatorDevice(options.device, config.cwd));
+  const appPath =
+    options.appPath ??
+    (physicalDevice ? "dist/kirie/ios/device_debug.app" : "dist/kirie/ios/debug.app");
 
   await buildDotnet({
     projectDir: config.godot.project,
     skipMissingProject: true,
   });
-  await exportIosSimulatorApp({
+  const exportOptions = {
     appPath,
-    build: false,
     config,
     cwd: config.cwd,
     godotCommand: options.godotCommand,
     mode: options.mode,
+  };
+  await exportIosApp({
+    ...exportOptions,
+    build: false,
+    device: options.device,
+    target: physicalDevice ? "device" : "simulator",
   });
-  await runIosSimulator({
+  await runIos({
     appPath,
     config,
     cwd: config.cwd,
+    device: options.device,
     launchOptions: createKirieDevLaunchOptions(webUrl),
-    simulatorId: options.device,
     terminateExisting: options.terminateExisting ?? true,
   });
 }
