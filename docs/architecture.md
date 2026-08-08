@@ -233,8 +233,12 @@ runs a hot-reload development session. `run --export` is the explicit form for
 exporting before running; users may also run `kirie export && kirie run` when
 they want the steps separated. For exported mobile targets, `run` is an
 install-and-launch command: Android `run` installs the default APK before
-starting the app, and iOS simulator `run` installs the selected `.app` before
-launching it. `build`, `export`, and `run` default to `production` mode and
+starting the app, and iOS `run` installs the selected `.app` before launching
+it. `kirie export ios` first asks Godot for the Xcode project and then invokes
+`xcodebuild` to produce an installable `.app`; without `--device` it builds for
+the iOS Simulator, while `--device <UDID>` selects a physical-device build
+and lets Xcode use the local Apple Development signing configuration. `build`,
+`export`, and `run` default to `production` mode and
 should accept `--mode <mode>` for `development`, `staging`, or other
 user-defined modes once that option is implemented. `dev` should never run the
 production web build because it owns the Vite hot-reload server; desktop
@@ -402,16 +406,14 @@ remains planned.
 
 The current CLI plan keeps these outside the application workflow:
 
-- `kirie create`
 - BrowserWindow APIs
 
 Mobile development targets use one platform command with unified device
 selection: `kirie dev ios --device <selector>` and
-`kirie dev android --device <selector>`. The current iOS backend is
-simulator-oriented, but the user-facing API should not split iOS simulator and
-iOS device into separate target names. Kirie may still use different launch
-backends internally for simulators, real devices, Android emulators, and Android
-devices.
+`kirie dev android --device <selector>`. iOS export and run support both
+simulators and physical devices behind the same selector; Kirie may still use
+different launch backends internally for simulators, real devices, Android
+emulators, and Android devices.
 
 ## Packaged web resource loading
 

@@ -1,7 +1,7 @@
 import path from "node:path";
 import {
   buildWebPackage,
-  exportIosSimulatorApp,
+  exportIosApp,
   integrationDistDir,
   integrationProjectDir,
   rootDir,
@@ -27,5 +27,5 @@ export async function buildIntegrationAndroid(): Promise<void> {
 // mise task entrypoint.
 export async function buildIntegrationIos(): Promise<void> {
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
-  await exportIosSimulatorApp(integrationProjectDir, appPath);
+  await exportIosApp(integrationProjectDir, appPath, "simulator");
 }
