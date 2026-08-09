@@ -72,7 +72,8 @@ jobs:
             vulkan_sdk_path="${MOLTENVK_PATH}" \
             core/version_generated.gen.h \
             core/disabled_classes.gen.h \
-            core/extension/gdextension_interface.gen.h
+            core/extension/gdextension_interface.gen.h \
+            core/object/gdvirtual.gen.h
 
       - name: Cache Godot iOS simulator template
         uses: actions/cache@v5
