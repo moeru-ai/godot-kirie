@@ -5,7 +5,7 @@ version = "10.0.300"
 backend = "core:dotnet"
 
 [[tools.godot]]
-version = "4.6.2-stable-mono"
+version = "4.7.1-stable-mono"
 backend = "asdf:https://github.com/mkungla/asdf-godot.git"
 
 [[tools.java]]

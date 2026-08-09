@@ -29,7 +29,7 @@ jobs:
           - windows-latest
           - ubuntu-latest
     env:
-      GODOT_VERSION: 4.6.2
+      GODOT_VERSION: 4.7.1
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
       MISE_TASK_RUN_AUTO_INSTALL: "false"

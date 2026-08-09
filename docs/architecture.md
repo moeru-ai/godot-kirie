@@ -665,16 +665,16 @@ data lane protocol shape, and it does not force CBOR values to be map roots.
 Root `null`, scalar, array, and map values are still encoded as their original
 CBOR data item.
 
-The relevant Godot 4.6.2 stable sources are
-[`GodotPlugin.java`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/java/lib/src/main/java/org/godotengine/godot/plugin/GodotPlugin.java#L153-L161)
+The relevant Godot 4.7.1 stable sources are
+[`GodotPlugin.java`](https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/platform/android/java/lib/src/main/java/org/godotengine/godot/plugin/GodotPlugin.java#L129-L161)
 method registration,
-[`godot_plugin_jni.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/plugin/godot_plugin_jni.cpp#L72-L88)
+[`godot_plugin_jni.cpp`](https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/platform/android/plugin/godot_plugin_jni.cpp#L72-L91)
 native method registration,
-[`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/java_class_wrapper.cpp#L118-L128)
+[`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/platform/android/java_class_wrapper.cpp#L118-L128)
 Java object argument validation,
-[`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/java_class_wrapper.cpp#L224-L247)
+[`java_class_wrapper.cpp`](https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/platform/android/java_class_wrapper.cpp#L224-L255)
 array argument validation, and
-[`jni_utils.cpp`](https://github.com/godotengine/godot/blob/001aa128b1cd80dc4e47e823c360bccf45ed6bad/platform/android/jni_utils.cpp#L199-L211)
+[`jni_utils.cpp`](https://github.com/godotengine/godot/blob/a13da4feb8d8aefc283c3763d33a2f170a18d541/platform/android/jni_utils.cpp#L158-L211)
 Variant container conversion.
 
 The browser-side `@gd-kirie/ipc` package uses `cborg` for CBOR. Android native

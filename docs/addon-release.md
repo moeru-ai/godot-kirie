@@ -108,7 +108,7 @@ The `Addon Release` workflow has three intended modes:
 
 - [GitHub Actions `workflow_dispatch` documentation](https://docs.github.com/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)
 - [GitHub Releases documentation](https://docs.github.com/repositories/releasing-projects-on-github/about-releases)
-- [Godot installing plugins documentation](https://docs.godotengine.org/en/4.4/tutorials/plugins/editor/installing_plugins.html)
+- [Godot installing plugins documentation](https://docs.godotengine.org/en/4.7/tutorials/plugins/editor/installing_plugins.html)
 - [Godot iOS plugin documentation](https://docs.godotengine.org/en/stable/tutorials/platform/ios/ios_plugin.html)
 - [Godot iOS plugins repository](https://github.com/godot-sdk-integrations/godot-ios-plugins)
 - [Godot `EditorExportPlugin` documentation](https://docs.godotengine.org/en/stable/classes/class_editorexportplugin.html)

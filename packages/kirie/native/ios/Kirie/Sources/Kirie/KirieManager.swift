@@ -95,21 +95,27 @@ final class KirieManager: NSObject {
         logInfo("Embedded WebView host detached; waiting for the next explicit host")
     }
 
-    func createWebView(viewID: Int64, initialURL: String?) {
+    func createWebView(viewID: Int64, initialURL: String?, defaultHostView: UIView?) {
         createWebView(
             viewID: viewID,
             initialURL: initialURL,
+            defaultHostView: defaultHostView,
             remainingHostWindowAttempts: Self.maxHostWindowResolveAttempts
         )
     }
 
-    private func createWebView(viewID: Int64, initialURL: String?, remainingHostWindowAttempts: Int) {
+    private func createWebView(
+        viewID: Int64,
+        initialURL: String?,
+        defaultHostView: UIView?,
+        remainingHostWindowAttempts: Int
+    ) {
         logInfo(
             "createWebView viewID=\(viewID) initialURL=\(initialURL ?? "<nil>") "
                 + "remainingHostWindowAttempts=\(remainingHostWindowAttempts)"
         )
 
-        let hostView = resolveHostView()
+        let hostView = resolveHostView(defaultHostView: defaultHostView)
         if hostView == nil, !usesExplicitHost {
             if remainingHostWindowAttempts > 0 {
                 logInfo("No WebView host is available yet; retrying WebView creation")
@@ -117,6 +123,7 @@ final class KirieManager: NSObject {
                     self?.createWebView(
                         viewID: viewID,
                         initialURL: initialURL,
+                        defaultHostView: defaultHostView,
                         remainingHostWindowAttempts: remainingHostWindowAttempts - 1
                     )
                 }
@@ -369,12 +376,12 @@ final class KirieManager: NSObject {
             ?? scene.windows.first(where: { !$0.isHidden })
     }
 
-    private func resolveHostView() -> UIView? {
+    private func resolveHostView(defaultHostView: UIView?) -> UIView? {
         if usesExplicitHost {
             return hostViewOverride
         }
 
-        return resolveHostWindow()
+        return defaultHostView ?? resolveHostWindow()
     }
 
     private func moveWebViews(to hostView: UIView) {
