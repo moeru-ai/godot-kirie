@@ -1,13 +1,14 @@
 #include "KiriePlugin.h"
 
 #include "core/object/class_db.h"
+#include "servers/display/display_server.h"
 
 #include <cstdint>
 #include <cstring>
 
 #import <Foundation/Foundation.h>
 
-extern "C" void kirie_swift_create_webview(int64_t view_id, const char *initial_url);
+extern "C" void kirie_swift_create_webview(int64_t view_id, const char *initial_url, void *default_host_view);
 extern "C" void kirie_swift_destroy_webview(int64_t view_id);
 extern "C" void kirie_swift_load_url(int64_t view_id, const char *url);
 extern "C" void kirie_swift_load_html_string(int64_t view_id, const char *html, const char *base_url);
@@ -203,7 +204,9 @@ static Variant unwrap_carried_data(Variant value) {
 
 void KiriePlugin::createWebView(int64_t view_id, String initial_url) {
 	CharString encoded_initial_url = initial_url.utf8();
-	kirie_swift_create_webview(view_id, encoded_initial_url.get_data());
+	void *default_host_view = reinterpret_cast<void *>(
+			DisplayServer::get_singleton()->window_get_native_handle(DisplayServerEnums::WINDOW_VIEW));
+	kirie_swift_create_webview(view_id, encoded_initial_url.get_data(), default_host_view);
 }
 
 void KiriePlugin::destroyWebView(int64_t view_id) {

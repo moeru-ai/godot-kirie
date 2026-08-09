@@ -43,11 +43,22 @@ public func kirie_detach_host_view(_ hostViewPointer: UnsafeMutableRawPointer?) 
 }
 
 @_cdecl("kirie_swift_create_webview")
-public func kirie_swift_create_webview(_ viewID: Int64, _ initialURLPointer: UnsafePointer<CChar>?) {
+public func kirie_swift_create_webview(
+    _ viewID: Int64,
+    _ initialURLPointer: UnsafePointer<CChar>?,
+    _ defaultHostViewPointer: UnsafeMutableRawPointer?
+) {
     let initialURL = initialURLPointer.map { String(cString: $0) }
+    let defaultHostView = defaultHostViewPointer.map { pointer in
+        Unmanaged<UIView>.fromOpaque(pointer).takeUnretainedValue()
+    }
     kirieLogEntry("kirie_swift_create_webview viewID=\(viewID) initialURL=\(initialURL ?? "<nil>")")
     DispatchQueue.main.async {
-        KirieManager.shared.createWebView(viewID: viewID, initialURL: initialURL?.isEmpty == true ? nil : initialURL)
+        KirieManager.shared.createWebView(
+            viewID: viewID,
+            initialURL: initialURL?.isEmpty == true ? nil : initialURL,
+            defaultHostView: defaultHostView
+        )
     }
 }
 

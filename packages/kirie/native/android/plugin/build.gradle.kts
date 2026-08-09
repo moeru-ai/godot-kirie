@@ -52,5 +52,5 @@ android {
 dependencies {
     implementation("androidx.webkit:webkit:1.16.0")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.21.3")
-    implementation("org.godotengine:godot:4.6.2.stable")
+    implementation("org.godotengine:godot:4.7.1.stable")
 }
