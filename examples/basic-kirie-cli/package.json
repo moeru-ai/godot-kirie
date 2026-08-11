@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "kirie build",
-    "dev": "kirie dev",
-    "typecheck": "tsc -p src-web/tsconfig.json --noEmit"
+    "build": "pnpm run build:godot && kirie build",
+    "build:godot": "tstogd convert",
+    "dev": "pnpm run build:godot && kirie dev",
+    "generate:godot": "tstogd convert --no-check",
+    "typecheck": "pnpm run build:godot && tsc -p src-web/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@gd-kirie/ipc": "workspace:*"
@@ -15,6 +17,7 @@
     "kirie": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
+    "typescript-to-gdscript": "0.1.2",
     "vite": "catalog:"
   }
 }

@@ -16,6 +16,8 @@ obj/
 godot/
 tests/integration/web/
 **/addons/godot_cef/
+examples/basic-kirie-cli/src-godot/generated/
+examples/basic-kirie-cli/src-godot/_typings/
 *.apk
 *.aab
 *.aar

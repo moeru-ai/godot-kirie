@@ -1,4 +1,5 @@
 import path from "node:path";
+import { execa } from "execa";
 
 import { buildAndroidAar, buildIosXcframework } from "./build-kirie.ts";
 import { distDir, exportAndroidDebug, exportIosApp, rootDir, runKirieCli } from "./build-shared.ts";
@@ -54,6 +55,13 @@ export async function runExample(
 
   const platform = platformArg.toLowerCase() as "android" | "ios";
   const projectDir = `examples/${exampleName}`;
+
+  if (exampleName === "basic-kirie-cli") {
+    await execa("corepack", ["pnpm", "-C", projectDir, "run", "build:godot"], {
+      cwd: rootDir,
+      stdio: "inherit",
+    });
+  }
 
   switch (platform) {
     case "android":

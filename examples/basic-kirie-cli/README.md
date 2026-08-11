@@ -19,11 +19,24 @@ The example supports two startup sources for the same app page:
 - `project.godot`
   the Godot project
 - `src-godot`
-  the Godot scene, script, and project resources
+  the Godot scene, TypeScript-authored controller, generated GDScript, and
+  project resources
+- `tstogd.json` and `tsconfig.json`
+  the isolated TypeScript-to-GDScript configuration
 - `kirie.config.ts`
   Kirie CLI configuration for the Godot project and Vite web root
 - `src-web`
   a small Vite app for WebView IPC testing
+
+## TypeScript-authored GDScript
+
+The scene controller follows tstogd's
+[manual project setup](https://github.com/nnn3d/typescript-to-gdscript/blob/v0.1.2/docs/configuration.md).
+The experiment is intentionally limited to `src-godot/scripts/main.ts`. Kirie
+addon and scene typings are disabled because tstogd 0.1.2 cannot generate valid
+TypeScript for the current Kirie addon or the hyphenated `src-godot` scene path.
+The source declares only the small Kirie API surface it uses; Kirie's native
+GDScript remains unchanged.
 
 ## Running desktop dev
 
@@ -41,7 +54,9 @@ mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run dev
 ```
 
 The CLI passes the resolved Vite URL to Godot through the `kirie-web-url` launch
-option. The example creates a WebView with that URL when the project starts.
+option. The package script first regenerates
+`src-godot/generated/main.gd` from `src-godot/scripts/main.ts`, then creates a
+WebView with that URL when the project starts.
 
 ## Running the packaged web build
 
@@ -62,6 +77,17 @@ round-trip:
 
 Recommended to use [mise](https://mise.jdx.dev/) to manage Godot versions.
 
+After changing the TypeScript controller, regenerate the scene-attached
+GDScript:
+
+```bash
+mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run build:godot
+```
+
+`src-godot/generated/` is ignored. Run the generator before opening the Godot
+project directly, and edit `src-godot/scripts/main.ts` instead of generated
+GDScript.
+
 Run the Godot editor with the current project:
 
 ```bash
@@ -75,6 +101,10 @@ mise x -- godot --path ./examples/basic-kirie-cli
 ```
 
 ## Running an exported mobile app
+
+Run `pnpm run build:godot` after editing `main.ts` before using the direct
+`pnpm kirie` commands below. The repository's `mise run run:example` workflow
+regenerates the GDScript automatically.
 
 Manual CLI runs keep export and run as separate steps. Export the Android APK:
 
