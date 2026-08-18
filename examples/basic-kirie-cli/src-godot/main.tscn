@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://creqve4qj85n3"]
 
-[ext_resource type="Script" uid="uid://ct2grey2xs0am" path="res://src-godot/scripts/main.gd" id="1_h1m2n"]
+[ext_resource type="Script" uid="uid://ct2grey2xs0am" path="res://src-godot/generated/main.gd" id="1_h1m2n"]
 [ext_resource type="Theme" path="res://src-godot/theme.tres" id="2_m3n4o"]
 
 [node name="Main" type="Control" unique_id=2124677647]

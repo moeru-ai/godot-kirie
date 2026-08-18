@@ -86,7 +86,7 @@ run = "corepack pnpm run format:biome"
 
 [tasks."format:gdscript"]
 description = "Format GDScript files"
-run = "gdformat packages/kirie/addon/addons/kirie examples tests/integration/scripts"
+run = "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc tests/integration/scripts"
 
 [tasks."format:kotlin"]
 description = "Format Kotlin and Gradle Kotlin DSL files"
@@ -102,7 +102,7 @@ run = "dotnet format style -v diag"
 
 [tasks.lint]
 description = "Run all linters"
-run = "corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
+run = "corepack pnpm -C examples/basic-kirie-cli run generate:godot && corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
 
 [tasks."lint:biome"]
 description = "Lint TypeScript, JSON, CSS, and HTML files"
