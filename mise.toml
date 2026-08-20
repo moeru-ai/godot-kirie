@@ -125,8 +125,11 @@ description = "Lint C# files"
 run = "dotnet format analyzers -v diag"
 
 [tasks."pack:nuget"]
-description = "Pack the .NET Eventa adapter NuGet package"
-run = "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release"
+description = "Pack the .NET Eventa adapter and Platform NuGet packages"
+run = [
+  "dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release",
+  "dotnet pack packages/GdKirie.Platform/GdKirie.Platform.csproj --configuration Release",
+]
 
 [tasks.release]
 description = "Run the package release flow"

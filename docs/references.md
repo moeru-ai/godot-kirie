@@ -186,8 +186,20 @@ packaging, or platform WebView bridge details.
 - [Vite server options](https://vite.dev/config/server-options.html)
   Reference for development server host, port, strict port behavior, and related
   options owned by Kirie CLI defaults.
-- [Electron BrowserWindow](https://www.electronjs.org/docs/latest/api/browser-window)
-  Comparison point for future high-level host-side browser window APIs.
+- [Godot Window](https://docs.godotengine.org/en/4.7/classes/class_window.html)
+  Reference for native move and resize gestures, always-on-top, and Godot's
+  platform window behavior.
+- [Godot DisplayServer](https://docs.godotengine.org/en/4.7/classes/class_displayserver.html)
+  Reference for cursor coordinates, usable display rectangles, display-server
+  limits, and native window handles.
+- [Godot Windows hit testing](https://github.com/godotengine/godot/blob/master/platform/windows/display_server_windows.cpp#L5352-L5355)
+  Upstream implementation showing that Godot's mouse-passthrough path returns
+  `HTTRANSPARENT` on Windows.
+- [Windows layered windows](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features)
+  Reference for cross-application hit testing through layered transparent
+  windows.
+- [Microsoft CsWin32](https://github.com/microsoft/CsWin32)
+  Source generator for the Windows APIs used by `GdKirie.Platform`.
 - [Electron preload scripts](https://www.electronjs.org/docs/latest/tutorial/tutorial-preload)
   Comparison point for renderer-side runtime injection before a page is loaded.
 - [Tauri WebviewWindowBuilder initialization scripts](https://docs.rs/tauri/latest/src/tauri/webview/webview_window.rs.html)

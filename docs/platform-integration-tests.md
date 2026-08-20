@@ -31,6 +31,8 @@ The browser fixture uses `@gd-kirie/ipc` to exercise the text, binary, and data
 lanes across the platform runners. The Swift codec also keeps host-side XCTest
 coverage for CBOR serialization in the Unit Tests workflow. Eventa adapter
 behavior should be tested separately.
+Host-window behavior, especially Windows cross-application pointer passthrough,
+belongs in an interactive desktop suite rather than this raw bridge suite.
 
 The C# wrapper should be covered by a small exported-app smoke test that uses
 `KirieClient` events and verifies the same WebView IPC round-trip as the

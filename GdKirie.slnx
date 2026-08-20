@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/packages/">
     <Project Path="packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj" />
+    <Project Path="packages/GdKirie.Platform/GdKirie.Platform.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GdKirie.EventaAdapter.Tests/GdKirie.EventaAdapter.Tests.csproj" />
