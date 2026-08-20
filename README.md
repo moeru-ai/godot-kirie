@@ -54,10 +54,14 @@ example, and regression-test areas:
   plugin code
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
+- [`@gd-kirie/platform`](packages/platform/README.md): browser-side host-window
+  capabilities
 - `packages/build`: public build and export automation API for scripts
 - `packages/cli`: Kirie command-line tools for development sessions, export,
   install, and launch workflows
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
+- [`GdKirie.Platform`](packages/GdKirie.Platform/README.md): Godot host for the
+  Platform Eventa contract
 - `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
 - `examples/basic-kirie-cli`: beginner-friendly demo project for the Kirie CLI workflow
 - `examples/eventa-csharp`: beginner-friendly demo project for Godot C# Eventa adapter usage

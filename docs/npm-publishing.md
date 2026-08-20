@@ -11,21 +11,22 @@ for .NET adapter packages.
 
 - `@gd-kirie/ipc` is published from `packages/ipc`.
 - `@gd-kirie/ipc-eventa` is published from `packages/ipc-eventa`.
+- `@gd-kirie/platform` is published from
+  [`packages/platform`](../packages/platform/README.md).
 - `@gd-kirie/build` is published from `packages/build` as a public
   programmatic build and export API package.
 - `kirie` is the command-line owner for project initialization and development
   sessions.
 
-`@gd-kirie/ipc-eventa` uses the same npm publishing lane while keeping Eventa
-protocol behavior above the low-level `@gd-kirie/ipc` transport package.
 `kirie` may depend on `@gd-kirie/build`, but `@gd-kirie/build` must not
 depend on the CLI.
 
 ## npm Setup
 
 The npm organization and package scope is `gd-kirie`; public JavaScript
-packages include `@gd-kirie/ipc`, `@gd-kirie/ipc-eventa`, and
-`@gd-kirie/build`. The unscoped `kirie` package publishes the CLI.
+packages include `@gd-kirie/ipc`, `@gd-kirie/ipc-eventa`,
+`@gd-kirie/platform`, and `@gd-kirie/build`. The unscoped `kirie` package
+publishes the CLI.
 
 Configure trusted publishing for each public browser package on npmjs.com. These
 fields identify the GitHub repository that is allowed to publish the package:

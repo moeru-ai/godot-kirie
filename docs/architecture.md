@@ -15,11 +15,12 @@ The low-level plugin and IPC core provide:
 - packaged `res://` web resource loading for exported apps
 - a repo-level platform integration test project
 
-Application-framework behavior such as CLI workflows, BrowserWindow-style
-composition, routing, export orchestration, and mobile development sessions
+Application-framework behavior such as CLI workflows, host-window
+capabilities, routing, export orchestration, and mobile development sessions
 belongs above that core. The current `@gd-kirie/ipc` package is intentionally
 only a browser-side transport wrapper on top of the raw native bridge. Eventa
-adapters live above Kirie and use that low-level text transport.
+adapters and Platform capability packages live above Kirie and use that
+low-level text transport.
 
 The mobile IPC experiment keeps Kirie core byte-oriented and CBOR-based while
 preserving separate text, binary, and data lanes. Higher-level protocols,
@@ -72,20 +73,60 @@ Current signals should also stay narrow:
 - `data_received`
 - `ipc_error`
 
-Browser lifecycle events and higher-level invocation APIs are intentionally
-deferred until there is a real need for them.
+Higher-level invocation APIs do not enter Kirie core. Confirmed application
+capabilities are implemented above it through `@gd-kirie/platform` and
+`GdKirie.Platform`.
 
 For the current milestone, Kirie should treat `KirieNode` as the public
 scene-tree ownership unit for a platform WebView. A user may place a
 `KirieNode` under the main scene, under a Godot `Window` node, or in another
 scene structure that fits their project.
 
-Kirie core should not own window organization. Optional higher-level helpers may
-later provide prefab window, panel, workspace, cross-view forwarding, or routing
-APIs, but those helpers must live above the low-level WebView and IPC surface.
-Do not add Electron-like BrowserWindow APIs to GDScript; future high-level
-window APIs should live in C# and TypeScript packages, with GDScript remaining
-the low-level plugin substrate.
+Kirie core does not own window organization. Prefab windows, panels,
+workspaces, cross-view forwarding, and routing remain application concerns
+above the low-level WebView and IPC surface. Do not create a general
+BrowserWindow facade or add these capabilities to GDScript.
+
+## Platform capability layer
+
+The Platform layer exposes confirmed host-owned capabilities that ordinary Web
+APIs cannot provide. Its dependency direction is:
+
+```text
+@gd-kirie/platform -> @gd-kirie/ipc-eventa -> @gd-kirie/ipc
+GdKirie.Platform -> GdKirie.EventaAdapter
+```
+
+The browser client borrows the application's existing `KirieEventaContext`.
+The Godot host registers the matching Eventa contract against that context and
+binds its lifetime to one explicit `Window`; neither package creates a second
+IPC owner.
+
+The first milestone contains only host-window interaction required by AIRI:
+
+- unscaled pixel position snapshots relative to the host window
+- pointer passthrough
+- native move and resize gestures
+- always-on-top
+- centering on the current display
+
+The public API is independent of Uninvoke. Any Uninvoke-specific names, event
+IDs, compatibility behavior, or unsupported-method policy belong in the
+Uninvoke repository's Kirie adapter. Application lifecycle, display
+enumeration, shell, permissions, updater behavior, multi-window factories, and
+general capability discovery remain outside this milestone.
+
+`@gd-kirie/platform` is the application capability SDK. It must not be confused
+with the existing `window.kirie.platform` value and TypeScript
+`KiriePlatform` interface in `@gd-kirie/ipc`; those describe the selected
+low-level transport backend (`android`, `ios`, or `cef`) and are not capability
+objects.
+
+Windows pointer passthrough is the one initial native exception. Godot's current
+Windows hit-test path returns `HTTRANSPARENT`, whose forwarding scope is limited
+to windows in the same thread. `GdKirie.Platform` therefore changes the bound
+window's layered/transparent extended styles through P/Invoke so pointer hits
+can reach other applications. Other platforms use Godot's window API directly.
 
 The public Godot API should primarily let users address WebViews through node
 references:
@@ -404,9 +445,8 @@ are also not part of the `kirie dev` surface because Kirie owns those values
 through `kirie.config.ts` and the app layout. A Kirie `--config <path>` override
 remains planned.
 
-The current CLI plan keeps these outside the application workflow:
-
-- BrowserWindow APIs
+Host-window capabilities remain outside the CLI workflow and are composed by
+application code through the Platform packages.
 
 Mobile development targets use one platform command with unified device
 selection: `kirie dev ios --device <selector>` and
@@ -609,14 +649,14 @@ iOS plugin and Apple embedded platform export APIs.
 
 GitHub Release addon publishing is configured through the `Addon Release`
 workflow. Keep it separate from the npm publishing flow, which is only for
-browser-side workspace packages such as `@gd-kirie/ipc` and
-`@gd-kirie/ipc-eventa`.
+browser-side workspace packages such as `@gd-kirie/ipc`,
+`@gd-kirie/ipc-eventa`, and `@gd-kirie/platform`.
 
 The release artifact shape and workflow modes live in
 [Addon Release](./addon-release.md).
 
-The .NET Eventa adapter uses a separate NuGet release lane. Keep it separate
-from addon zip publishing and npm publishing.
+The .NET Eventa adapter and Platform host use a separate NuGet release lane.
+Keep them separate from addon zip publishing and npm publishing.
 
 ## IPC and adapter split
 

@@ -1,0 +1,4 @@
+GetWindowLong
+SetWindowLong
+SetWindowPos
+WINDOW_EX_STYLE

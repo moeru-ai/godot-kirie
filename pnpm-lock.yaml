@@ -290,6 +290,22 @@ importers:
 
   packages/kirie: {}
 
+  packages/platform:
+    dependencies:
+      '@gd-kirie/ipc-eventa':
+        specifier: workspace:*
+        version: link:../ipc-eventa
+      '@moeru/eventa':
+        specifier: 'catalog:'
+        version: 1.0.0-beta.4
+    devDependencies:
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.2(typescript@6.0.3)(unrun@0.2.37)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   scripts:
     dependencies:
       execa:

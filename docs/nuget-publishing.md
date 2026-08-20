@@ -1,7 +1,9 @@
 # NuGet Publishing
 
-`GdKirie.EventaAdapter` is the .NET package for Eventa over Kirie text IPC. It
-is separate from addon zip publishing and browser-side npm publishing.
+This lane publishes
+[`GdKirie.EventaAdapter`](../packages/GdKirie.EventaAdapter/README.md) and
+[`GdKirie.Platform`](../packages/GdKirie.Platform/README.md). It is separate
+from addon zip publishing and browser-side npm publishing.
 
 The package targets `net10.0` only because the upstream Eventa .NET package
 targets `net10.0`. Projects targeting `net8.0` or `net9.0` should expect
@@ -18,9 +20,10 @@ mise x -- dotnet restore GdKirie.slnx
 mise x -- dotnet build GdKirie.slnx --configuration Release
 mise x -- dotnet test --solution GdKirie.slnx --configuration Release --no-build
 mise x -- dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release --no-build
+mise x -- dotnet pack packages/GdKirie.Platform/GdKirie.Platform.csproj --configuration Release --no-build
 ```
 
-The package includes a NuGet `contentFiles` source bridge that connects the
+The Eventa adapter includes a NuGet `contentFiles` source bridge that connects the
 addon-shipped `KirieClient.cs` to the adapter without placing Eventa source in
 `addons/kirie`.
 
