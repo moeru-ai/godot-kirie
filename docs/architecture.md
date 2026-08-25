@@ -102,13 +102,22 @@ The Godot host registers the matching Eventa contract against that context and
 binds its lifetime to one explicit `Window`; neither package creates a second
 IPC owner.
 
-The first milestone contains only host-window interaction required by AIRI:
+The implemented Platform capabilities are:
 
 - unscaled pixel position snapshots relative to the host window
 - pointer passthrough
 - native move and resize gestures
 - always-on-top
 - centering on the current display
+- system-wide global shortcuts, with the macOS backend implemented first
+
+Global shortcuts use Godot logical keys and explicit register/unregister
+operations. The browser receives pressed and released states through one
+`onKeyEvent` handler, including while the Godot window is hidden or unfocused.
+The registration lifetime belongs to `GdKiriePlatformHost`. Windows and Linux
+backends remain pending work under
+[ADR-0002](decisions/0002-add-system-wide-global-shortcuts.md), not excluded
+platforms.
 
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the

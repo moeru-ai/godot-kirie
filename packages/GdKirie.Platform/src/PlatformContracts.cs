@@ -10,27 +10,49 @@ internal sealed record PointerPositionPayload(
     int Y,
     bool Inside);
 
+internal sealed record GlobalShortcutPayload(
+    long Keycode,
+    bool ShiftPressed,
+    bool AltPressed,
+    bool CtrlPressed,
+    bool MetaPressed,
+    bool CommandOrControlAutoremap);
+
+internal sealed record GlobalShortcutKeyEventPayload(
+    GlobalShortcutPayload Shortcut,
+    string State);
+
 internal static class PlatformEvents
 {
-    private const string Prefix = "kirie:platform:host-window";
+    private const string HostWindowPrefix = "kirie:platform:host-window";
+    private const string GlobalShortcutPrefix = "kirie:platform:global-shortcut";
 
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> BeginMove =
-        new($"{Prefix}:begin-move");
+        new($"{HostWindowPrefix}:begin-move");
 
     public static readonly InvokeEventDefinition<EmptyPayload, string> BeginResize =
-        new($"{Prefix}:begin-resize");
+        new($"{HostWindowPrefix}:begin-resize");
 
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> Center =
-        new($"{Prefix}:center");
+        new($"{HostWindowPrefix}:center");
 
     public static readonly InvokeEventDefinition<PointerPositionPayload, EmptyPayload> GetPointerPosition =
-        new($"{Prefix}:get-pointer-position");
+        new($"{HostWindowPrefix}:get-pointer-position");
 
     public static readonly InvokeEventDefinition<EmptyPayload, bool> SetAlwaysOnTop =
-        new($"{Prefix}:set-always-on-top");
+        new($"{HostWindowPrefix}:set-always-on-top");
 
     public static readonly InvokeEventDefinition<EmptyPayload, bool> SetPointerPassthrough =
-        new($"{Prefix}:set-pointer-passthrough");
+        new($"{HostWindowPrefix}:set-pointer-passthrough");
+
+    public static readonly InvokeEventDefinition<EmptyPayload, GlobalShortcutPayload> RegisterGlobalShortcut =
+        new($"{GlobalShortcutPrefix}:register");
+
+    public static readonly InvokeEventDefinition<EmptyPayload, GlobalShortcutPayload> UnregisterGlobalShortcut =
+        new($"{GlobalShortcutPrefix}:unregister");
+
+    public static readonly EventDefinition<GlobalShortcutKeyEventPayload> GlobalShortcutStateChanged =
+        new($"{GlobalShortcutPrefix}:state-changed");
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -38,4 +60,6 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(PointerPositionPayload))]
+[JsonSerializable(typeof(GlobalShortcutPayload))]
+[JsonSerializable(typeof(GlobalShortcutKeyEventPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;

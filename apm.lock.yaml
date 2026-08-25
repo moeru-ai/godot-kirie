@@ -1,0 +1,148 @@
+lockfile_version: '1'
+generated_at: '2026-08-24T13:18:53.645637+00:00'
+apm_version: 0.28.0
+dependencies:
+- repo_url: skillrecordings/adr-skill
+  name: adr-skill
+  host: github.com
+  resolved_commit: 2fc2269f83b0d17b2a134ae644a8c0a08cb19e07
+  resolved_ref: 2fc2269f83b0d17b2a134ae644a8c0a08cb19e07
+  version: unknown
+  package_type: skill_bundle
+  deployed_files:
+  - .agents/skills/adr-skill
+  - .agents/skills/adr-skill/SKILL.md
+  - .agents/skills/adr-skill/assets/templates/adr-madr.md
+  - .agents/skills/adr-skill/assets/templates/adr-readme.md
+  - .agents/skills/adr-skill/assets/templates/adr-simple.md
+  - .agents/skills/adr-skill/references/adr-conventions.md
+  - .agents/skills/adr-skill/references/examples.md
+  - .agents/skills/adr-skill/references/review-checklist.md
+  - .agents/skills/adr-skill/references/template-variants.md
+  - .agents/skills/adr-skill/scripts/bootstrap_adr.js
+  - .agents/skills/adr-skill/scripts/new_adr.js
+  - .agents/skills/adr-skill/scripts/set_adr_status.js
+  deployed_file_hashes:
+    .agents/skills/adr-skill/SKILL.md: sha256:c1376772f1d0deb10dc53c39c1402c220684c981f69b4af81b5f5b714919771d
+    .agents/skills/adr-skill/assets/templates/adr-madr.md: sha256:e4c72e9c06d95deac7888e6326416b064fd13acdd6bc1d12fb6499bcc0cff932
+    .agents/skills/adr-skill/assets/templates/adr-readme.md: sha256:5646eb605ae8c98bf1111d5945d48085ecfb9e8f94dcdfcacd885ab7c0bcfb0a
+    .agents/skills/adr-skill/assets/templates/adr-simple.md: sha256:107df972c97f55896c3f7e8565b059f26d63e06653d7a23ee3d9f4f33902156c
+    .agents/skills/adr-skill/references/adr-conventions.md: sha256:f9da7d97016b12b9f951767c7759bd90e562c30d9e6ac91c7128a038584ff0c7
+    .agents/skills/adr-skill/references/examples.md: sha256:d535b761b5685e367fe9497e5e75073d546f9035991568c33ea9e67f4df0b25b
+    .agents/skills/adr-skill/references/review-checklist.md: sha256:f06dec98f8d9c603b434242ad518e54a80e71f0773cb551e6a5139fd5fc4b3d6
+    .agents/skills/adr-skill/references/template-variants.md: sha256:e60cd6e00727222fb9564149717b6e14de55c41f6a9916106e4f5a1a2b390e35
+    .agents/skills/adr-skill/scripts/bootstrap_adr.js: sha256:693c7bf7efadf79ab5fcd440682e908460ea3ed94f768e9b176ffb3c79ab888b
+    .agents/skills/adr-skill/scripts/new_adr.js: sha256:ec0964e370ae1903ce0feceefca37691bc62416c851fe7d626b6a925db7a9b21
+    .agents/skills/adr-skill/scripts/set_adr_status.js: sha256:d83efa3c4f96fc4a5518c0873ddcf2dc13902b4f2c128ad75be5ea6f3ddd84ca
+  content_hash: sha256:f2214b8ecf904ee347b7e4f31c33ff17f601e6ca7d53512ec4cf2e9bdad16f56
+  skill_subset:
+  - adr-skill
+deployments:
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: null
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:c1376772f1d0deb10dc53c39c1402c220684c981f69b4af81b5f5b714919771d
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/assets/templates/adr-madr.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:e4c72e9c06d95deac7888e6326416b064fd13acdd6bc1d12fb6499bcc0cff932
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/assets/templates/adr-readme.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:5646eb605ae8c98bf1111d5945d48085ecfb9e8f94dcdfcacd885ab7c0bcfb0a
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/assets/templates/adr-simple.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:107df972c97f55896c3f7e8565b059f26d63e06653d7a23ee3d9f4f33902156c
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/references/adr-conventions.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:f9da7d97016b12b9f951767c7759bd90e562c30d9e6ac91c7128a038584ff0c7
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/references/examples.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:d535b761b5685e367fe9497e5e75073d546f9035991568c33ea9e67f4df0b25b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/references/review-checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:f06dec98f8d9c603b434242ad518e54a80e71f0773cb551e6a5139fd5fc4b3d6
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/references/template-variants.md
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:e60cd6e00727222fb9564149717b6e14de55c41f6a9916106e4f5a1a2b390e35
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/scripts/bootstrap_adr.js
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:693c7bf7efadf79ab5fcd440682e908460ea3ed94f768e9b176ffb3c79ab888b
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/scripts/new_adr.js
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:ec0964e370ae1903ce0feceefca37691bc62416c851fe7d626b6a925db7a9b21
+- kind: project-relative
+  target: agent-skills
+  value: .agents/skills/adr-skill/scripts/set_adr_status.js
+  runtime: null
+  scope: project
+  owners:
+  - skillrecordings/adr-skill
+  active_owner: skillrecordings/adr-skill
+  content_hash: sha256:d83efa3c4f96fc4a5518c0873ddcf2dc13902b4f2c128ad75be5ea6f3ddd84ca

@@ -9,8 +9,8 @@
     <PackageId>GdKirie.Platform</PackageId>
     <Version>0.1.2</Version>
     <Authors>Moeru AI</Authors>
-    <Description>Godot host-window capabilities over Kirie Eventa IPC.</Description>
-    <PackageTags>godot;kirie;eventa;platform;window;webview</PackageTags>
+    <Description>Godot desktop Platform capabilities over Kirie Eventa IPC.</Description>
+    <PackageTags>godot;kirie;eventa;platform;window;shortcut;webview</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/moeru-ai/godot-kirie</PackageProjectUrl>

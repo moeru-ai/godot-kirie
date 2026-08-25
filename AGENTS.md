@@ -7,6 +7,8 @@ Use the human-facing sources of truth instead:
 
 - `README.md` for installation and repository entry points
 - `docs/architecture.md` for current architecture and design rationale
+- `docs/decisions/README.md` for accepted architecture decisions and their
+  rationale
 - `docs/platform-integration-tests.md` for integration-test responsibilities
 - `docs/addon-release.md`, `docs/npm-publishing.md`, and
   `docs/nuget-publishing.md` for release operations

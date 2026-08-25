@@ -9,6 +9,7 @@ namespace GdKirie.Platform;
 public sealed class GdKiriePlatformHost : IDisposable
 {
     private readonly Window _window;
+    private readonly GlobalShortcutManager _globalShortcuts;
     private readonly List<IDisposable> _registrations = [];
     private bool _windowsPointerPassthrough;
     private bool _disposed;
@@ -16,6 +17,8 @@ public sealed class GdKiriePlatformHost : IDisposable
     internal GdKiriePlatformHost(IEventContext context, Window window)
     {
         _window = window;
+        _globalShortcuts = new GlobalShortcutManager(payload =>
+            context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>
@@ -54,6 +57,20 @@ public sealed class GdKiriePlatformHost : IDisposable
                 SetPointerPassthrough(enabled);
                 return Task.FromResult(new EmptyPayload());
             }));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.RegisterGlobalShortcut,
+            (shortcut, _) =>
+            {
+                _globalShortcuts.Register(shortcut);
+                return Task.FromResult(new EmptyPayload());
+            }));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.UnregisterGlobalShortcut,
+            (shortcut, _) =>
+            {
+                _globalShortcuts.Unregister(shortcut);
+                return Task.FromResult(new EmptyPayload());
+            }));
 
         _window.TreeExiting += Dispose;
     }
@@ -74,7 +91,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _disposed = true;
         _window.TreeExiting -= Dispose;
 
-        Exception? restorationError = null;
+        List<Exception> cleanupErrors = [];
         try
         {
             if (_windowsPointerPassthrough && OperatingSystem.IsWindowsVersionAtLeast(5))
@@ -84,18 +101,39 @@ public sealed class GdKiriePlatformHost : IDisposable
         }
         catch (Exception error)
         {
-            restorationError = error;
+            cleanupErrors.Add(error);
+        }
+
+        try
+        {
+            _globalShortcuts.Dispose();
+        }
+        catch (Exception error)
+        {
+            cleanupErrors.Add(error);
         }
 
         foreach (var registration in _registrations)
         {
-            registration.Dispose();
+            try
+            {
+                registration.Dispose();
+            }
+            catch (Exception error)
+            {
+                cleanupErrors.Add(error);
+            }
         }
 
         _registrations.Clear();
-        if (restorationError is not null)
+        if (cleanupErrors.Count == 1)
         {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(restorationError).Throw();
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(cleanupErrors[0]).Throw();
+        }
+
+        if (cleanupErrors.Count > 1)
+        {
+            throw new AggregateException("Failed to release one or more Platform resources.", cleanupErrors);
         }
     }
 

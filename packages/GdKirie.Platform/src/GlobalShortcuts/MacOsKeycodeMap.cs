@@ -1,0 +1,137 @@
+using System.Runtime.Versioning;
+using Godot;
+
+namespace GdKirie.Platform;
+
+[SupportedOSPlatform("macos")]
+internal static class MacOsKeycodeMap
+{
+    private static readonly (Key PhysicalKey, uint VirtualKeycode)[] Keys =
+    [
+        (Key.A, 0),
+        (Key.S, 1),
+        (Key.D, 2),
+        (Key.F, 3),
+        (Key.H, 4),
+        (Key.G, 5),
+        (Key.Z, 6),
+        (Key.X, 7),
+        (Key.C, 8),
+        (Key.V, 9),
+        (Key.Section, 10),
+        (Key.B, 11),
+        (Key.Q, 12),
+        (Key.W, 13),
+        (Key.E, 14),
+        (Key.R, 15),
+        (Key.Y, 16),
+        (Key.T, 17),
+        (Key.Key1, 18),
+        (Key.Key2, 19),
+        (Key.Key3, 20),
+        (Key.Key4, 21),
+        (Key.Key6, 22),
+        (Key.Key5, 23),
+        (Key.Equal, 24),
+        (Key.Key9, 25),
+        (Key.Key7, 26),
+        (Key.Minus, 27),
+        (Key.Key8, 28),
+        (Key.Key0, 29),
+        (Key.Bracketright, 30),
+        (Key.O, 31),
+        (Key.U, 32),
+        (Key.Bracketleft, 33),
+        (Key.I, 34),
+        (Key.P, 35),
+        (Key.Enter, 36),
+        (Key.L, 37),
+        (Key.J, 38),
+        (Key.Apostrophe, 39),
+        (Key.K, 40),
+        (Key.Semicolon, 41),
+        (Key.Backslash, 42),
+        (Key.Comma, 43),
+        (Key.Slash, 44),
+        (Key.N, 45),
+        (Key.M, 46),
+        (Key.Period, 47),
+        (Key.Tab, 48),
+        (Key.Space, 49),
+        (Key.Quoteleft, 50),
+        (Key.Backspace, 51),
+        (Key.Escape, 53),
+        (Key.Capslock, 57),
+        (Key.F17, 64),
+        (Key.KpPeriod, 65),
+        (Key.KpMultiply, 67),
+        (Key.KpAdd, 69),
+        (Key.Numlock, 71),
+        (Key.Volumeup, 72),
+        (Key.Volumedown, 73),
+        (Key.Volumemute, 74),
+        (Key.KpDivide, 75),
+        (Key.KpEnter, 76),
+        (Key.KpSubtract, 78),
+        (Key.F18, 79),
+        (Key.F19, 80),
+        (Key.Kp0, 82),
+        (Key.Kp1, 83),
+        (Key.Kp2, 84),
+        (Key.Kp3, 85),
+        (Key.Kp4, 86),
+        (Key.Kp5, 87),
+        (Key.Kp6, 88),
+        (Key.Kp7, 89),
+        (Key.F20, 90),
+        (Key.Kp8, 91),
+        (Key.Kp9, 92),
+        (Key.Yen, 93),
+        (Key.Underscore, 94),
+        (Key.F5, 96),
+        (Key.F6, 97),
+        (Key.F7, 98),
+        (Key.F3, 99),
+        (Key.F8, 100),
+        (Key.F9, 101),
+        (Key.JisEisu, 102),
+        (Key.F11, 103),
+        (Key.JisKana, 104),
+        (Key.F13, 105),
+        (Key.F16, 106),
+        (Key.F14, 107),
+        (Key.F10, 109),
+        (Key.Menu, 110),
+        (Key.F12, 111),
+        (Key.F15, 113),
+        (Key.Insert, 114),
+        (Key.Home, 115),
+        (Key.Pageup, 116),
+        (Key.Delete, 117),
+        (Key.F4, 118),
+        (Key.End, 119),
+        (Key.F2, 120),
+        (Key.Pagedown, 121),
+        (Key.F1, 122),
+        (Key.Left, 123),
+        (Key.Right, 124),
+        (Key.Down, 125),
+        (Key.Up, 126),
+    ];
+
+    public static uint Resolve(Key logicalKey)
+    {
+        foreach (var (physicalKey, virtualKeycode) in Keys)
+        {
+            if (DisplayServer.KeyboardGetKeycodeFromPhysical(physicalKey) == logicalKey)
+            {
+                return virtualKeycode;
+            }
+        }
+
+        throw new ArgumentOutOfRangeException(
+            nameof(logicalKey),
+            logicalKey,
+            "The Godot logical key cannot be registered as a macOS global shortcut.");
+    }
+}

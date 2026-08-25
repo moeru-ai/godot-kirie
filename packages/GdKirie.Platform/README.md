@@ -1,8 +1,7 @@
 # GdKirie.Platform
 
 `GdKirie.Platform` registers the Godot side of `@gd-kirie/platform` on an
-application-owned Kirie Eventa context and exposes host-window interaction
-capabilities.
+application-owned Kirie Eventa context and exposes desktop host capabilities.
 
 ```csharp
 var registry = new KirieEventaJsonRegistry();
