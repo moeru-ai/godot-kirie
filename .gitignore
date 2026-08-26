@@ -5,6 +5,9 @@
 .tmp/
 .idea/
 node_modules/
+# APM resolves these directories from apm.yml and apm.lock.yaml.
+apm_modules/
+/.agents/skills/
 dist/
 build/
 !packages/build/

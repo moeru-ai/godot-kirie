@@ -1,0 +1,18 @@
+name: godot-kirie
+version: 1.0.0
+description: APM project for godot-kirie
+author: MoeruAI
+# Which agent platforms to deploy to.
+# Resolution order: --target flag > this field > auto-detect from filesystem.
+# Accepted values: agent-skills, antigravity, claude, codex, copilot, cursor, gemini, grok-build, kiro, opencode, windsurf
+targets:
+  - agent-skills
+dependencies:
+  apm:
+    - git: skillrecordings/adr-skill
+      ref: 2fc2269f83b0d17b2a134ae644a8c0a08cb19e07
+      skills:
+        - adr-skill
+  mcp: []
+includes: auto
+scripts: {}

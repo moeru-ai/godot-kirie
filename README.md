@@ -54,7 +54,7 @@ example, and regression-test areas:
   plugin code
 - `packages/ipc`: a thin browser-side transport wrapper for Kirie WebView pages
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
-- [`@gd-kirie/platform`](packages/platform/README.md): browser-side host-window
+- [`@gd-kirie/platform`](packages/platform/README.md): browser-side desktop host
   capabilities
 - `packages/build`: public build and export automation API for scripts
 - `packages/cli`: Kirie command-line tools for development sessions, export,

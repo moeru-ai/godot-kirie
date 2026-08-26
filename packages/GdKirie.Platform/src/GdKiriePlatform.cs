@@ -5,7 +5,7 @@ using Godot;
 namespace GdKirie.Platform;
 
 /// <summary>
-/// Registers and attaches Kirie's host-window Platform capabilities.
+/// Registers and attaches Kirie's desktop Platform capabilities.
 /// </summary>
 public static class GdKiriePlatform
 {
@@ -40,7 +40,18 @@ public static class GdKiriePlatform
             .RegisterInvoke(
                 PlatformEvents.SetPointerPassthrough,
                 PlatformJsonContext.Default.EmptyPayload,
-                PlatformJsonContext.Default.Boolean);
+                PlatformJsonContext.Default.Boolean)
+            .RegisterInvoke(
+                PlatformEvents.RegisterGlobalShortcut,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.GlobalShortcutPayload)
+            .RegisterInvoke(
+                PlatformEvents.UnregisterGlobalShortcut,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.GlobalShortcutPayload)
+            .RegisterEvent(
+                PlatformEvents.GlobalShortcutStateChanged,
+                PlatformJsonContext.Default.GlobalShortcutKeyEventPayload);
     }
 
     /// <summary>

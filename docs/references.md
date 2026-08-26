@@ -70,6 +70,11 @@ packaging, or platform WebView bridge details.
   Reference for idiomatic C# event usage when working with Godot signals.
 - [Signal class (stable)](https://docs.godotengine.org/en/stable/classes/class_signal.html)
   Reference for Godot signal behavior and cross-language signal concepts.
+- [InputEventKey (Godot 4.7)](https://docs.godotengine.org/en/4.7/classes/class_inputeventkey.html)
+  Reference for logical keycodes, physical keycodes, modifiers, pressed state,
+  and keyboard echo behavior.
+- [Godot 4.7.1 macOS key mapping](https://github.com/godotengine/godot/blob/4.7.1-stable/platform/macos/key_mapping_macos.mm)
+  Upstream mapping between Godot keys and macOS virtual keycodes.
 
 ## Android
 
@@ -107,6 +112,9 @@ packaging, or platform WebView bridge details.
   `window.webkit.messageHandlers`.
 - [WKUserScriptInjectionTime.atDocumentStart](https://developer.apple.com/documentation/webkit/wkuserscriptinjectiontime/atdocumentstart)
   Reference for iOS document-start script injection before page content loads.
+- [Tauri global-hotkey macOS backend](https://github.com/tauri-apps/global-hotkey/blob/dev/src/platform_impl/macos/mod.rs)
+  Upstream implementation reference for Carbon hot-key registration and
+  pressed/released event dispatch on the application event target.
 
 ## IPC formats and compatibility targets
 
@@ -152,6 +160,9 @@ packaging, or platform WebView bridge details.
 - [Introduction to AOT warnings](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/fixing-warnings)
   Reference for warning categories that flag code patterns that may fail under
   Native AOT.
+- [.NET native interop best practices](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/best-practices)
+  Reference for source-generated P/Invoke and long-lived native callback
+  function pointers.
 - [System.Text.Json source generation](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/source-generation)
   Reference for AOT-friendly JSON metadata generation.
 - [Microsoft.Testing.Platform migration to v2](https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-migration-from-v1-to-v2)
