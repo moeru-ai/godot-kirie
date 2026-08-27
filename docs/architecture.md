@@ -104,6 +104,8 @@ IPC owner.
 
 The implemented Platform capabilities are:
 
+- host-window bounds snapshots in screen coordinates
+- current-display bounds snapshots in screen coordinates
 - unscaled pixel position snapshots relative to the host window
 - pointer passthrough
 - native move and resize gestures

@@ -1,0 +1,27 @@
+{
+  "name": "@gd-kirie/basic-platform-web",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 0.0.0.0",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@gd-kirie/ipc-eventa": "workspace:*",
+    "@gd-kirie/platform": "workspace:*",
+    "@proj-airi/ui": "0.11.3",
+    "@vueuse/core": "14.4.0",
+    "vue": "3.5.41"
+  },
+  "devDependencies": {
+    "@proj-airi/unocss-preset-chromatic": "1.1.4",
+    "@unocss/reset": "66.8.1",
+    "@vitejs/plugin-vue": "6.0.8",
+    "typescript": "catalog:",
+    "unocss": "66.8.1",
+    "vite": "catalog:",
+    "vue-tsc": "3.3.11"
+  }
+}

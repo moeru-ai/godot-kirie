@@ -30,6 +30,14 @@ public static class GdKiriePlatform
                 PlatformJsonContext.Default.EmptyPayload,
                 PlatformJsonContext.Default.EmptyPayload)
             .RegisterInvoke(
+                PlatformEvents.GetBounds,
+                PlatformJsonContext.Default.BoundsPayload,
+                PlatformJsonContext.Default.EmptyPayload)
+            .RegisterInvoke(
+                PlatformEvents.GetCurrentDisplayBounds,
+                PlatformJsonContext.Default.BoundsPayload,
+                PlatformJsonContext.Default.EmptyPayload)
+            .RegisterInvoke(
                 PlatformEvents.GetPointerPosition,
                 PlatformJsonContext.Default.PointerPositionPayload,
                 PlatformJsonContext.Default.EmptyPayload)

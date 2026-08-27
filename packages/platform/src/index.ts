@@ -17,7 +17,16 @@ export interface HostWindowPointerPosition {
   inside: boolean;
 }
 
+export interface PlatformBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface HostWindowClient {
+  getBounds: () => Promise<PlatformBounds>;
+  getCurrentDisplayBounds: () => Promise<PlatformBounds>;
   getPointerPosition: () => Promise<HostWindowPointerPosition>;
   setPointerPassthrough: (enabled: boolean) => Promise<void>;
   beginMove: () => Promise<void>;
@@ -67,6 +76,12 @@ const events = {
     "kirie:platform:host-window:begin-resize",
   ),
   center: defineInvokeEventa<EmptyPayload, EmptyPayload>("kirie:platform:host-window:center"),
+  getBounds: defineInvokeEventa<PlatformBounds, EmptyPayload>(
+    "kirie:platform:host-window:get-bounds",
+  ),
+  getCurrentDisplayBounds: defineInvokeEventa<PlatformBounds, EmptyPayload>(
+    "kirie:platform:host-window:get-current-display-bounds",
+  ),
   getPointerPosition: defineInvokeEventa<HostWindowPointerPosition, EmptyPayload>(
     "kirie:platform:host-window:get-pointer-position",
   ),
@@ -115,6 +130,12 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
 
   return {
     hostWindow: {
+      getBounds() {
+        return invokes.getBounds({});
+      },
+      getCurrentDisplayBounds() {
+        return invokes.getCurrentDisplayBounds({});
+      },
       getPointerPosition() {
         return invokes.getPointerPosition({});
       },

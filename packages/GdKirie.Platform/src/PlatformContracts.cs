@@ -10,6 +10,12 @@ internal sealed record PointerPositionPayload(
     int Y,
     bool Inside);
 
+internal sealed record BoundsPayload(
+    int X,
+    int Y,
+    int Width,
+    int Height);
+
 internal sealed record GlobalShortcutPayload(
     long Keycode,
     bool ShiftPressed,
@@ -36,6 +42,12 @@ internal static class PlatformEvents
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> Center =
         new($"{HostWindowPrefix}:center");
 
+    public static readonly InvokeEventDefinition<BoundsPayload, EmptyPayload> GetBounds =
+        new($"{HostWindowPrefix}:get-bounds");
+
+    public static readonly InvokeEventDefinition<BoundsPayload, EmptyPayload> GetCurrentDisplayBounds =
+        new($"{HostWindowPrefix}:get-current-display-bounds");
+
     public static readonly InvokeEventDefinition<PointerPositionPayload, EmptyPayload> GetPointerPosition =
         new($"{HostWindowPrefix}:get-pointer-position");
 
@@ -60,6 +72,7 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(PointerPositionPayload))]
+[JsonSerializable(typeof(BoundsPayload))]
 [JsonSerializable(typeof(GlobalShortcutPayload))]
 [JsonSerializable(typeof(GlobalShortcutKeyEventPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;
