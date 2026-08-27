@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,13 +55,30 @@ jobs:
           mise x -- dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release --no-build
           mise x -- dotnet pack packages/GdKirie.Platform/GdKirie.Platform.csproj --configuration Release --no-build
 
+      - name: Validate Trusted Publishing configuration
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          if [[ -z "${NUGET_USER}" ]]; then
+            echo "::error::NUGET_USER must be configured as a repository Actions variable."
+            exit 1
+          fi
+
+      - name: Log in to NuGet
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
       - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
           mise x -- dotnet nuget push "packages/GdKirie.EventaAdapter/bin/Release/*.nupkg" \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key "${NUGET_API_KEY}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
           mise x -- dotnet nuget push "packages/GdKirie.Platform/bin/Release/*.nupkg" \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key "${NUGET_API_KEY}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate

@@ -30,3 +30,30 @@ addon-shipped `KirieClient.cs` to the adapter without placing Eventa source in
 The repository `global.json` opts `dotnet test` into
 Microsoft.Testing.Platform, which is required for this xUnit v3 test project on
 .NET 10 SDKs.
+
+## GitHub Actions Publishing
+
+The `Publish NuGet Packages` workflow publishes both packages for pushed `v*`
+tags after verifying that the tagged commit is on `main`. It uses NuGet Trusted
+Publishing to exchange a GitHub Actions OIDC token for a short-lived NuGet API
+key; do not configure a long-lived NuGet API key for this workflow.
+
+Create a Trusted Publishing policy on NuGet.org for the user or organization
+that owns both packages. Configure the GitHub repository identity as:
+
+- Repository owner: `moeru-ai`
+- Repository: `godot-kirie`
+- Workflow file: `nuget-release.yml`
+- Environment: empty
+
+The policy applies to every package owned by the selected NuGet policy owner.
+Choose that owner deliberately, then configure a repository Actions variable
+named `NUGET_USER` with the NuGet profile username used by the login action, not
+an email address. The workflow rejects a missing username before requesting an
+OIDC credential.
+
+## References
+
+- [NuGet Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)
+- [NuGet OIDC login action](https://github.com/NuGet/login)
+- [NuGet `dotnet nuget push`](https://learn.microsoft.com/dotnet/core/tools/dotnet-nuget-push)
