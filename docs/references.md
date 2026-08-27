@@ -12,7 +12,10 @@ packaging, or platform WebView bridge details.
   `KirieNode`.
 - [Window class (stable)](https://docs.godotengine.org/en/stable/classes/class_window.html)
   Reference for Godot window nodes. Kirie users may place `KirieNode` under a
-  `Window`, but Kirie core does not own window organization.
+  `Window`, but Kirie core does not own window organization. Platform uses its
+  current screen, position, and size for host-window telemetry.
+- [DisplayServer class (stable)](https://docs.godotengine.org/en/stable/classes/class_displayserver.html)
+  Reference for the current display's position and pixel size.
 - [Godot Android plugins (stable)](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
   Main reference for Godot Android plugin v2 packaging and export flow.
 - [Exporting projects (stable)](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html)
@@ -198,8 +201,8 @@ packaging, or platform WebView bridge details.
   Reference for development server host, port, strict port behavior, and related
   options owned by Kirie CLI defaults.
 - [Godot Window](https://docs.godotengine.org/en/4.7/classes/class_window.html)
-  Reference for native move and resize gestures, always-on-top, and Godot's
-  platform window behavior.
+  Reference for screen position, native move and resize gestures,
+  always-on-top, and Godot's platform window behavior.
 - [Godot DisplayServer](https://docs.godotengine.org/en/4.7/classes/class_displayserver.html)
   Reference for cursor coordinates, usable display rectangles, display-server
   limits, and native window handles.

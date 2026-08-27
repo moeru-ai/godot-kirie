@@ -12,13 +12,17 @@ const platform = createPlatformClient(eventa.context);
 
 await platform.hostWindow.setAlwaysOnTop(true);
 
+const windowBounds = await platform.hostWindow.getBounds();
+const displayBounds = await platform.hostWindow.getCurrentDisplayBounds();
 const pointer = await platform.hostWindow.getPointerPosition();
-console.log(pointer.x, pointer.y, pointer.inside);
+console.log(windowBounds, displayBounds, pointer);
 eventa.dispose();
 ```
 
 ## Host window
 
+- window position and size in screen coordinates
+- current display position and size in screen coordinates
 - pointer position relative to the host window, including while it is
   click-through
 - pointer passthrough

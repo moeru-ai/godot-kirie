@@ -109,7 +109,7 @@ func send_text(message: String) -> void:
 	if not _ensure_plugin_singleton("send_text"):
 		return
 
-	print("[Kirie][gd] send_text bytes=%d" % message.length())
+	# print("[Kirie][gd] send_text bytes=%d" % message.length())
 	if _is_godot_cef_backend():
 		_plugin_singleton.call("send_ipc_message", message)
 		return
@@ -441,7 +441,7 @@ func _on_plugin_webview_ready(view_id: int) -> void:
 func _on_plugin_text_received(view_id: int, message: String) -> void:
 	if _should_ignore_view_signal(view_id): return
 
-	print("[Kirie][gd] signal text_received %s" % message)
+	# print("[Kirie][gd] signal text_received %s" % message)
 	text_received.emit(message)
 
 

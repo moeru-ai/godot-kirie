@@ -41,6 +41,23 @@ public sealed class GdKiriePlatformHost : IDisposable
                 return Task.FromResult(new EmptyPayload());
             }));
         _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.GetBounds,
+            (EmptyPayload _, CancellationToken _) =>
+            {
+                var position = _window.Position;
+                var size = _window.Size;
+                return Task.FromResult(new BoundsPayload(position.X, position.Y, size.X, size.Y));
+            }));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.GetCurrentDisplayBounds,
+            (EmptyPayload _, CancellationToken _) =>
+            {
+                var screen = _window.CurrentScreen;
+                var position = DisplayServer.ScreenGetPosition(screen);
+                var size = DisplayServer.ScreenGetSize(screen);
+                return Task.FromResult(new BoundsPayload(position.X, position.Y, size.X, size.Y));
+            }));
+        _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.GetPointerPosition,
             (EmptyPayload _, CancellationToken _) => Task.FromResult(GetPointerPosition())));
         _registrations.Add(context.RegisterInvokeHandler(
