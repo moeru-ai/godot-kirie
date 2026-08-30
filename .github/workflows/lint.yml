@@ -29,7 +29,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node python java ktlint swiftlint pipx:gdtoolkit dotnet
+          install_args: node python uv java ktlint swiftlint pipx:gdtoolkit dotnet
           cache: true
 
       - name: Enable Corepack
@@ -70,7 +70,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node python java ktlint swiftlint pipx:gdtoolkit dotnet
+          install_args: node python uv java ktlint swiftlint pipx:gdtoolkit dotnet
           cache: true
 
       - name: Enable Corepack
