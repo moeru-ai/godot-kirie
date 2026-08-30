@@ -5,8 +5,29 @@ version = "10.0.300"
 backend = "core:dotnet"
 
 [[tools.godot]]
-version = "4.7.1-stable-mono"
-backend = "asdf:https://github.com/mkungla/asdf-godot.git"
+version = "4.7.1-stable_mono"
+backend = "vfox:godot"
+
+[tools.godot."platforms.linux-arm64"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_arm64.zip"
+
+[tools.godot."platforms.linux-arm64-musl"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_arm64.zip"
+
+[tools.godot."platforms.linux-x64"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip"
+
+[tools.godot."platforms.linux-x64-musl"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip"
+
+[tools.godot."platforms.macos-arm64"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_macos.universal.zip"
+
+[tools.godot."platforms.macos-x64"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_macos.universal.zip"
+
+[tools.godot."platforms.windows-x64"]
+url = "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_win64.zip"
 
 [[tools.java]]
 version = "temurin-21.0.10+7.0.LTS"
