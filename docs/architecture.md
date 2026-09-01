@@ -314,6 +314,10 @@ passes the dev launch options as Godot user arguments:
 --kirie-web-url=http://127.0.0.1:<actual-port>/
 ```
 
+Applications with packaged content select the injected `kirie-web-url` when it
+is present and otherwise use their production resource path. This selection
+does not depend on a debug build or require the separate `kirie-dev` option.
+
 Android development exports and installs the debug APK, runs
 `adb reverse tcp:<actual-port> tcp:<actual-port>`, then passes the same
 hyphenated keys as Android intent extras. The Android app receives

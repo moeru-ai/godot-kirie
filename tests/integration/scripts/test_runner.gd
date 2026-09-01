@@ -15,7 +15,7 @@ func _ready() -> void:
 		_fail("Kirie singleton is not available")
 		return
 
-	_test_name = _resolve_test_name()
+	_test_name = _kirie.get_launch_option(LAUNCH_TEST_OPTION).strip_edges()
 	if _test_name == "":
 		_test_name = "unknown"
 		_fail("Missing launch option: %s" % LAUNCH_TEST_OPTION)
@@ -38,18 +38,6 @@ func _ready() -> void:
 		return
 
 	_fail(failure_reason)
-
-
-func _resolve_test_name() -> String:
-	var launch_test_name := _kirie.get_launch_option(LAUNCH_TEST_OPTION).strip_edges()
-	if launch_test_name != "":
-		return launch_test_name
-
-	for arg in OS.get_cmdline_args() + OS.get_cmdline_user_args():
-		if arg.begins_with("--kirie-test="):
-			return arg.trim_prefix("--kirie-test=").strip_edges()
-
-	return ""
 
 
 func _run_test_case(kirie: Object, tree: SceneTree, test_name: String) -> Variant:

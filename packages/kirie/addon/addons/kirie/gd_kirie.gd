@@ -166,16 +166,39 @@ func get_launch_option(key: String) -> String:
 	if not _ensure_plugin_singleton("get_launch_option"):
 		return ""
 
+	var value := ""
 	if _is_godot_cef_backend():
-		return ""
+		value = _get_desktop_launch_option(key)
+	else:
+		value = str(_plugin_singleton.getLaunchOption(key))
 
-	var value := str(_plugin_singleton.getLaunchOption(key))
 	print("[Kirie][gd] get_launch_option key=%s value=%s" % [key, value])
 	return value
 
 
 func is_available() -> bool:
 	return _plugin_singleton != null
+
+
+func _get_desktop_launch_option(key: String) -> String:
+	var option_names := PackedStringArray([key])
+	var dash_key := key.replace("_", "-")
+	if dash_key != key:
+		option_names.append(dash_key)
+
+	var arguments := OS.get_cmdline_user_args()
+	for index in arguments.size():
+		var argument := arguments[index]
+		for option_name in option_names:
+			var option := "--%s" % option_name
+			var option_prefix := "%s=" % option
+			if argument.begins_with(option_prefix):
+				return argument.trim_prefix(option_prefix)
+
+			if argument == option and index + 1 < arguments.size():
+				return arguments[index + 1]
+
+	return ""
 
 
 func _connect_plugin_signals() -> void:

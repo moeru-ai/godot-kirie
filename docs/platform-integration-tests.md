@@ -68,20 +68,17 @@ tests/integration/
 
 The exported app runs one test per app session.
 
-On Android, the runner reads the test name from the launch option:
+The runner reads the test name from the launch option:
 
 ```text
 kirie_test
 ```
 
-The Android plugin exposes this through:
+Kirie exposes this through:
 
 ```gdscript
 Kirie.get_launch_option("kirie_test")
 ```
-
-The runner also supports `--kirie-test=<name>` from Godot command-line user
-args for local non-Android runs.
 
 `scripts/test_runner.gd` owns only:
 
@@ -271,7 +268,8 @@ mise run test:integration-desktop res_asset_loading_probe
 
 The desktop runner first performs a headless editor import so Godot discovers
 GDExtensions such as Godot CEF, then launches the runtime with `--headless`,
-captures stdout, and waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
+passes `--kirie-test=<name>` as a Godot user argument, captures stdout, and
+waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
 
 ## CI Direction
 

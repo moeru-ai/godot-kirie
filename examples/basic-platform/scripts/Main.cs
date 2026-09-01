@@ -4,8 +4,6 @@ using Godot;
 
 public partial class Main : Node
 {
-    private const string PageUrl = "res://src-web/dist/index.html";
-
     private KirieClient? _kirie;
     private KirieEventaContextHandle? _eventa;
     private GdKiriePlatformHost? _platform;
@@ -22,9 +20,15 @@ public partial class Main : Node
         var registry = GdKiriePlatform.Register(new KirieEventaJsonRegistry());
         _eventa = _kirie.CreateEventaContext(registry);
         _platform = GdKiriePlatform.Attach(_eventa.Context, GetWindow());
-        _kirie.WebViewReady += OnWebViewReady;
         _kirie.IpcError += GD.PushError;
-        _kirie.CreateWebView();
+
+        var initialUrl = _kirie.GetLaunchOption("kirie-web-url").Trim();
+        if (initialUrl.Length == 0)
+        {
+            initialUrl = "res://src-web/dist/index.html";
+        }
+
+        _kirie.CreateWebView(initialUrl);
     }
 
     public override void _ExitTree()
@@ -32,10 +36,5 @@ public partial class Main : Node
         _platform?.Dispose();
         _eventa?.Dispose();
         _kirie?.Dispose();
-    }
-
-    private void OnWebViewReady()
-    {
-        _kirie!.LoadUrl(PageUrl);
     }
 }
