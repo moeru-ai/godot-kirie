@@ -1,19 +1,18 @@
 namespace GdKirie.Platform;
 
-internal sealed class GlobalShortcutManager : IDisposable
+internal sealed class GlobalShortcutManager(
+    Action<GlobalShortcutKeyEventPayload> onKeyEvent,
+    SynchronizationContext? synchronizationContext) : IDisposable
 {
-    private readonly Action<GlobalShortcutKeyEventPayload> _onKeyEvent;
+    private readonly Action<GlobalShortcutKeyEventPayload> _onKeyEvent = onKeyEvent;
+    private readonly SynchronizationContext? _synchronizationContext = synchronizationContext;
     private readonly Dictionary<GlobalShortcut, IDisposable> _registrations = [];
     private IGlobalShortcutBackend? _backend;
     private bool _disposed;
 
-    public GlobalShortcutManager(Action<GlobalShortcutKeyEventPayload> onKeyEvent)
-    {
-        _onKeyEvent = onKeyEvent;
-    }
-
     public void Register(GlobalShortcutPayload payload)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         var shortcut = GlobalShortcut.FromPayload(payload);
         if (_registrations.ContainsKey(shortcut))
         {
@@ -29,6 +28,7 @@ internal sealed class GlobalShortcutManager : IDisposable
 
     public void Unregister(GlobalShortcutPayload payload)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         var shortcut = GlobalShortcut.FromPayload(payload);
         if (!_registrations.TryGetValue(shortcut, out var registration))
         {
@@ -89,13 +89,27 @@ internal sealed class GlobalShortcutManager : IDisposable
             return _backend;
         }
 
-        if (!OperatingSystem.IsMacOS())
+        if (OperatingSystem.IsMacOS())
+        {
+            _backend = new MacOsGlobalShortcutBackend();
+            return _backend;
+        }
+
+        if (OperatingSystem.IsWindowsVersionAtLeast(10))
+        {
+            _backend = new WindowsGlobalShortcutBackend(
+                _synchronizationContext
+                    ?? throw new InvalidOperationException(
+                        "Windows global shortcuts require Godot's main-thread synchronization context."));
+            return _backend;
+        }
+
+        if (!OperatingSystem.IsWindows())
         {
             throw new PlatformNotSupportedException(
                 "Global shortcuts have not been implemented for this desktop platform yet.");
         }
 
-        _backend = new MacOsGlobalShortcutBackend();
-        return _backend;
+        throw new PlatformNotSupportedException("Windows global shortcuts require Windows 10 or later.");
     }
 }

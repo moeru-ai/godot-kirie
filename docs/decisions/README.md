@@ -27,4 +27,6 @@ architecture documentation.
 - [ADR-0001: Adopt architecture decision records](0001-adopt-architecture-decision-records.md)
   — accepted, 2026-08-24
 - [ADR-0002: Add system-wide global shortcuts to the Platform layer](0002-add-system-wide-global-shortcuts.md)
-  — accepted, 2026-08-24
+  — superseded by ADR-0003, 2026-08-24
+- [ADR-0003: Use a low-level keyboard hook for Windows global shortcuts](0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md)
+  — accepted, 2026-08-31
