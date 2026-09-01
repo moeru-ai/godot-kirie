@@ -17,8 +17,9 @@ public sealed class GdKiriePlatformHost : IDisposable
     internal GdKiriePlatformHost(IEventContext context, Window window)
     {
         _window = window;
-        _globalShortcuts = new GlobalShortcutManager(payload =>
-            context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload));
+        _globalShortcuts = new GlobalShortcutManager(
+            payload => context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload),
+            SynchronizationContext.Current);
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>

@@ -3,8 +3,8 @@
 A compact desktop example for `@gd-kirie/platform` and `GdKirie.Platform`. It visualizes
 display, window, and pointer coordinates and exercises host-window controls, pointer passthrough, and global shortcuts.
 
-The Esc global-shortcut backend is currently available on macOS. On Windows or
-Linux, registration fails visibly and pointer passthrough is left disabled.
+The Esc global-shortcut backend is available on macOS and Windows. On Linux,
+registration fails visibly and pointer passthrough is left disabled.
 
 ```sh
 mise x -- corepack pnpm install

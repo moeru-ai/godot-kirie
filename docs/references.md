@@ -214,6 +214,18 @@ packaging, or platform WebView bridge details.
   windows.
 - [Microsoft CsWin32](https://github.com/microsoft/CsWin32)
   Source generator for the Windows APIs used by `GdKirie.Platform`.
+- [SetWindowsHookExW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw)
+  Reference for installing the Windows low-level keyboard hook.
+- [LowLevelKeyboardProc](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc)
+  Reference for low-level keyboard delivery, message-loop ownership, callback
+  timing, and timeout behavior.
+- [KBDLLHOOKSTRUCT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-kbdllhookstruct)
+  Reference for Windows virtual keys, scan codes, extended-key state, and
+  injected-event metadata.
+- [CallNextHookEx](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-callnexthookex)
+  Reference for forwarding observed keyboard events through the hook chain.
+- [UnhookWindowsHookEx](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unhookwindowshookex)
+  Reference for deterministic hook teardown and in-flight callback behavior.
 - [Electron preload scripts](https://www.electronjs.org/docs/latest/tutorial/tutorial-preload)
   Comparison point for renderer-side runtime injection before a page is loaded.
 - [Tauri WebviewWindowBuilder initialization scripts](https://docs.rs/tauri/latest/src/tauri/webview/webview_window.rs.html)

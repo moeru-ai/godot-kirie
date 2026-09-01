@@ -1,5 +1,5 @@
 ---
-status: "accepted"
+status: "superseded"
 date: 2026-08-24
 decision-makers: "LemonNeko"
 consulted: "Codex"
@@ -7,6 +7,10 @@ informed: "Kirie contributors"
 ---
 
 # Add system-wide global shortcuts to the Platform layer
+
+Superseded by [ADR-0003](0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md).
+The public Platform contract remains in use; ADR-0003 replaces the Windows
+backend and its conflict semantics.
 
 ## Context and Problem Statement
 

@@ -35,8 +35,8 @@ browser viewport. `getPointerPosition()` returns a single snapshot.
 
 ## Global shortcuts
 
-The macOS host can register a shortcut that remains active while the Godot
-window is hidden or unfocused:
+The macOS and Windows hosts can register a shortcut that remains active while
+the Godot window is hidden or unfocused:
 
 ```ts
 const shortcut = {
@@ -56,9 +56,6 @@ await platform.globalShortcuts.unregister(shortcut);
 ```
 
 `keycode` uses Godot's logical `Key` values. Every modifier field is required;
-`commandOrControlAutoremap` selects Command on macOS. One `onKeyEvent` handler
-receives both states; keyboard auto-repeat does not produce extra calls.
-
-The Windows and Linux backends are planned by
-[ADR-0002](../../docs/decisions/0002-add-system-wide-global-shortcuts.md) but
-have not been implemented yet.
+`commandOrControlAutoremap` selects Command on macOS and Control on Windows.
+One `onKeyEvent` handler receives both states; keyboard auto-repeat does not
+produce extra calls.

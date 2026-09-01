@@ -111,15 +111,18 @@ The implemented Platform capabilities are:
 - native move and resize gestures
 - always-on-top
 - centering on the current display
-- system-wide global shortcuts, with the macOS backend implemented first
+- system-wide global shortcuts on macOS and Windows
 
 Global shortcuts use Godot logical keys and explicit register/unregister
 operations. The browser receives pressed and released states through one
 `onKeyEvent` handler, including while the Godot window is hidden or unfocused.
-The registration lifetime belongs to `GdKiriePlatformHost`. Windows and Linux
-backends remain pending work under
-[ADR-0002](decisions/0002-add-system-wide-global-shortcuts.md), not excluded
-platforms.
+The registration lifetime belongs to `GdKiriePlatformHost`. macOS uses Carbon
+hot-key registration. Windows shares one lazy `WH_KEYBOARD_LL` hook across
+Platform hosts, filters it to host-owned registrations, and posts accepted
+state changes to Godot's main thread. The Windows choice and its non-exclusive
+conflict semantics are recorded in
+[ADR-0003](decisions/0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md).
+Linux backends remain pending work rather than excluded platforms.
 
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
