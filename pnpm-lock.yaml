@@ -150,14 +150,14 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
 
-  examples/basic-platform/src-web:
+  examples/basic-platform:
     dependencies:
       '@gd-kirie/ipc-eventa':
         specifier: workspace:*
-        version: link:../../../packages/ipc-eventa
+        version: link:../../packages/ipc-eventa
       '@gd-kirie/platform':
         specifier: workspace:*
-        version: link:../../../packages/platform
+        version: link:../../packages/platform
       '@proj-airi/ui':
         specifier: 0.11.3
         version: 0.11.3(typescript@6.0.3)
@@ -177,6 +177,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))(vue@3.5.41(typescript@6.0.3))
+      kirie:
+        specifier: workspace:*
+        version: link:../../packages/cli
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

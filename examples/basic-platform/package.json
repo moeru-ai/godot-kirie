@@ -1,12 +1,12 @@
 {
-  "name": "@gd-kirie/basic-platform-web",
+  "name": "@gd-kirie/basic-platform",
   "version": "0.2.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite --host 0.0.0.0",
-    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+    "build": "kirie build",
+    "dev": "kirie dev",
+    "typecheck": "vue-tsc -p src-web/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@gd-kirie/ipc-eventa": "workspace:*",
@@ -19,6 +19,7 @@
     "@proj-airi/unocss-preset-chromatic": "1.1.4",
     "@unocss/reset": "66.8.1",
     "@vitejs/plugin-vue": "6.0.8",
+    "kirie": "workspace:*",
     "typescript": "catalog:",
     "unocss": "66.8.1",
     "vite": "catalog:",
