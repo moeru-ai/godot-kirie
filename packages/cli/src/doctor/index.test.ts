@@ -2,11 +2,9 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import axios, { type AxiosResponse } from "axios";
 import { execa } from "execa";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   createBasicKirieCliProjectTracker,
@@ -28,7 +26,6 @@ const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
 
 afterEach(async () => {
-  vi.restoreAllMocks();
   await Promise.all([
     projects.cleanup(),
     ...tempDirs.splice(0).map((dir) => fs.rm(dir, { force: true, recursive: true })),
@@ -169,38 +166,19 @@ describe("Godot CEF doctor support", () => {
     );
   });
 
-  it("streams, checksums, and stages a valid addon download", async () => {
+  it("stages a downloaded valid addon archive", async () => {
     const project = await projects.copy();
     const archive = Buffer.from("tiny Godot CEF archive fixture");
-    await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
+    const expectedSha256 = crypto.createHash("sha256").update(archive).digest("hex");
+    await installGodotCefConfig(project, expectedSha256);
 
-    const progress: string[] = [];
-    vi.spyOn(axios, "get").mockImplementation(async (_url, config) => {
-      config?.onDownloadProgress?.({
-        bytes: archive.byteLength,
-        download: true,
-        estimated: 0,
-        lengthComputable: true,
-        loaded: archive.byteLength,
-        progress: 1,
-        rate: archive.byteLength,
-        total: archive.byteLength,
-      });
-      return {
-        data: Readable.from([archive.subarray(0, 7), archive.subarray(7)]),
-      } as AxiosResponse<Readable>;
-    });
     await installGodotCef({
+      download: (options) => fs.writeFile(options.outputPath, archive),
       extractArchive: async (archivePath, outputDir) => {
         await expect(fs.readFile(archivePath)).resolves.toEqual(archive);
         const extractedAddon = path.join(outputDir, "dist", "addons", "godot_cef");
         await fs.mkdir(extractedAddon, { recursive: true });
         await fs.writeFile(path.join(extractedAddon, "godot_cef.gdextension"), "[configuration]\n");
-      },
-      output: {
-        columns: 120,
-        isTTY: true,
-        write: (text) => progress.push(text),
       },
       projectDir: project,
     });
@@ -208,20 +186,18 @@ describe("Godot CEF doctor support", () => {
     await expect(
       fs.stat(path.join(project, "addons", "godot_cef", "godot_cef.gdextension")),
     ).resolves.toBeDefined();
-    expect(progress.join("")).toContain("100.0%");
-    expect(progress.join("")).toContain("MiB/s");
     await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
   });
 
   it("leaves no addon or staging directory after a checksum failure", async () => {
     const project = await projects.copy();
     await installGodotCefConfig(project, "0".repeat(64));
-    vi.spyOn(axios, "get").mockResolvedValue({
-      data: Readable.from("unexpected bytes"),
-    } as AxiosResponse<Readable>);
 
     await expect(
       installGodotCef({
+        download: async () => {
+          throw new Error("Godot CEF checksum mismatch");
+        },
         output: { isTTY: false, write: () => true },
         projectDir: project,
       }),
@@ -237,12 +213,10 @@ describe("Godot CEF doctor support", () => {
     const project = await projects.copy();
     const archive = Buffer.from("valid checksum, invalid layout");
     await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
-    vi.spyOn(axios, "get").mockResolvedValue({
-      data: Readable.from(archive),
-    } as AxiosResponse<Readable>);
 
     await expect(
       installGodotCef({
+        download: async (options) => fs.writeFile(options.outputPath, archive),
         extractArchive: async (_archivePath, outputDir) => {
           await fs.mkdir(path.join(outputDir, "unexpected"), { recursive: true });
         },

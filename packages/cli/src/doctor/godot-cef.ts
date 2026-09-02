@@ -1,13 +1,9 @@
-import crypto from "node:crypto";
-import { createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { type Readable, Transform } from "node:stream";
-import { pipeline } from "node:stream/promises";
 
-import axios from "axios";
 import { execa } from "execa";
+import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
 const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
@@ -33,6 +29,7 @@ export interface DownloadProgressOutput {
 }
 
 export interface InstallGodotCefOptions {
+  download?: (options: DownloadFileOptions) => Promise<void>;
   extractArchive?: (archivePath: string, outputDir: string) => Promise<void>;
   output?: DownloadProgressOutput;
   projectDir: string;
@@ -169,7 +166,7 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
 
   try {
     console.log(`Downloading Godot CEF ${config.version} from ${downloadUrl}`);
-    await downloadFile({
+    await (options.download ?? downloadFile)({
       expectedSha256: config.sha256,
       output: options.output ?? process.stderr,
       outputPath: archivePath,
@@ -207,12 +204,12 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
 
 function formatDownloadProgress(
   downloadedBytes: number,
-  totalBytes: number | undefined,
+  totalBytes: number,
   speed: number,
 ): string {
   const downloaded = formatBytes(downloadedBytes);
   const speedText = `${formatBytes(speed)}/s`;
-  if (!totalBytes || totalBytes <= 0) {
+  if (totalBytes === 0) {
     return `${downloaded} ${speedText}`;
   }
 
@@ -223,69 +220,84 @@ function formatDownloadProgress(
   return `[${bar}] ${percent} ${speedText} ${downloaded}/${formatBytes(totalBytes)}`;
 }
 
-// TODO: Replace Axios with takanawa-node after its cross-platform Node package is published.
 async function downloadFile(options: DownloadFileOptions): Promise<void> {
-  let downloadedBytes = 0;
-  let totalBytes: number | undefined;
+  // Load the native addon only for the fixer so unsupported hosts can still use other CLI commands.
+  const { DownloadTask, TakanawaError, TakanawaStatus } = await import("takanawa-node");
+  const task = new DownloadTask({
+    hash: {
+      expected: options.expectedSha256,
+      kind: "sha256",
+    },
+    targetPath: options.outputPath,
+    url: options.url,
+  });
+
   let speed = 0;
   let lastProgressLength = 0;
-  const response = await axios.get<Readable>(options.url, {
-    onDownloadProgress: (progress) => {
-      totalBytes = progress.total;
-      speed = progress.rate ?? 0;
-      lastProgressLength = writeDownloadProgress(
-        options.output,
-        progress.loaded,
-        totalBytes,
-        speed,
-        lastProgressLength,
-      );
-    },
-    responseType: "stream",
-  });
-  const hash = crypto.createHash("sha256");
-  const hashingStream = new Transform({
-    transform(chunk, _encoding, callback) {
-      hash.update(chunk);
-      downloadedBytes += chunk.byteLength;
-      callback(null, chunk);
-    },
+  let progressListener: DownloadListenerHandle | undefined;
+  let speedListener: DownloadListenerHandle | undefined;
+  let resolveCompletion!: (snapshot: DownloadSnapshot) => void;
+  let rejectCompletion!: (error: Error) => void;
+  const completion = new Promise<DownloadSnapshot>((resolve, reject) => {
+    resolveCompletion = resolve;
+    rejectCompletion = reject;
   });
 
   try {
-    await pipeline(
-      response.data,
-      hashingStream,
-      createWriteStream(options.outputPath, { flags: "wx" }),
+    progressListener = await task.addProgressListener((snapshot) => {
+      lastProgressLength = writeDownloadProgress(
+        options.output,
+        Number(snapshot.downloadedBytes),
+        Number(snapshot.contentLen),
+        speed,
+        lastProgressLength,
+      );
+
+      if (snapshot.phase === "completed") {
+        resolveCompletion(snapshot);
+      } else if (snapshot.phase === "failed") {
+        const message =
+          snapshot.lastErrorCode === TakanawaStatus.HashMismatch
+            ? `Godot CEF checksum mismatch: expected ${options.expectedSha256}`
+            : (snapshot.lastError ?? "Takanawa download failed");
+        rejectCompletion(new TakanawaError(message, snapshot.lastErrorCode));
+      }
+    });
+    speedListener = await task.addSpeedListener((snapshot) => {
+      speed = snapshot.bytesPerSecond;
+      lastProgressLength = writeDownloadProgress(
+        options.output,
+        Number(snapshot.receivedBytes),
+        Number(snapshot.contentLen),
+        speed,
+        lastProgressLength,
+      );
+    });
+
+    await task.start();
+    const snapshot = await completion;
+    writeDownloadProgress(
+      options.output,
+      Number(snapshot.downloadedBytes),
+      Number(snapshot.contentLen),
+      speed,
+      lastProgressLength,
+      true,
     );
   } catch (error) {
     if (options.output.isTTY && lastProgressLength > 0) {
       options.output.write("\n");
     }
     throw error;
-  }
-
-  writeDownloadProgress(
-    options.output,
-    downloadedBytes,
-    totalBytes,
-    speed,
-    lastProgressLength,
-    true,
-  );
-
-  const actualSha256 = hash.digest("hex");
-  if (actualSha256 !== options.expectedSha256) {
-    throw new Error(
-      `Godot CEF checksum mismatch: expected ${options.expectedSha256}, got ${actualSha256}`,
-    );
+  } finally {
+    await Promise.all([progressListener?.remove(), speedListener?.remove(), task.close()]);
   }
 }
 
 function writeDownloadProgress(
   output: DownloadProgressOutput,
   downloadedBytes: number,
-  totalBytes: number | undefined,
+  totalBytes: number,
   speed: number,
   previousLength: number,
   complete: boolean = false,

@@ -27,11 +27,11 @@
   },
   "dependencies": {
     "@gd-kirie/build": "workspace:*",
-    "axios": "1.18.1",
     "citty": "catalog:",
     "execa": "catalog:",
     "giget": "3.3.0",
     "jszip": "3.10.1",
+    "takanawa-node": "0.9.0",
     "vite": "catalog:"
   },
   "devDependencies": {
