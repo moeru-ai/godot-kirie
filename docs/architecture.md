@@ -559,8 +559,8 @@ addons/godot_cef/
 ```
 
 This lets Godot load the Godot CEF GDExtension normally. Project instances of
-that directory should be ignored and not committed. The CLI streams the pinned
-release to disk, reports download progress and speed, verifies its checksum and
+that directory should be ignored and not committed. The CLI downloads the
+pinned release with progress reporting and checksum verification, verifies the
 archive layout, and only then installs it. The public installer command is:
 
 ```sh
