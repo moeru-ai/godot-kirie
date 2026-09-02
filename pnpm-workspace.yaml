@@ -1,6 +1,6 @@
 packages:
   - "examples/basic-ipc/src-web"
-  - "examples/basic-platform/src-web"
+  - "examples/basic-platform"
   - "examples/basic-kirie-cli"
   - "examples/eventa-csharp/src-web"
   - "examples/basic-host-app-embedded"
