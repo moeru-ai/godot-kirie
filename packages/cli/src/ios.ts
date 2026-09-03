@@ -13,7 +13,6 @@ export interface ExportIosAppOptions {
   config?: ResolvedKirieConfig;
   cwd?: string;
   godotCommand?: string;
-  mode?: string;
   preset?: string;
   release?: boolean;
   device?: string;
@@ -27,7 +26,6 @@ export async function exportIosApp(options: ExportIosAppOptions): Promise<void> 
     (await loadKirieConfig({
       command: "build",
       cwd: options.cwd,
-      mode: options.mode,
     }));
   const appPath = path.resolve(config.cwd, options.appPath);
   const generatedXcodeProjectDir = options.xcodeProjectPath
@@ -36,9 +34,15 @@ export async function exportIosApp(options: ExportIosAppOptions): Promise<void> 
   const xcodeProjectPath = path.resolve(
     config.cwd,
     options.xcodeProjectPath ??
-      defaultIosXcodeProjectPath(config.godot.project, generatedXcodeProjectDir),
+      path.join(
+        generatedXcodeProjectDir ?? os.tmpdir(),
+        `${path.basename(config.godot.project)}.xcodeproj`,
+      ),
   );
-  const rawBuildDir = defaultIosRawBuildDir(appPath, options.target);
+  const rawBuildDir = path.join(
+    path.dirname(appPath),
+    options.target === "device" ? "ios_device_raw_build" : "ios_raw_build",
+  );
 
   validateIosAppOutputPath(appPath, options.target, config.godot.project);
 
@@ -48,9 +52,7 @@ export async function exportIosApp(options: ExportIosAppOptions): Promise<void> 
     await runExport({
       build: options.build,
       config,
-      cwd: config.cwd,
       godotCommand: options.godotCommand,
-      mode: options.mode,
       output: xcodeProjectPath,
       platform: "ios",
       preset: options.preset,
@@ -71,17 +73,6 @@ export async function exportIosApp(options: ExportIosAppOptions): Promise<void> 
       fs.rmSync(generatedXcodeProjectDir, { force: true, recursive: true });
     }
   }
-}
-
-function defaultIosXcodeProjectPath(projectDir: string, projectRoot: string | undefined): string {
-  return path.join(projectRoot ?? os.tmpdir(), `${path.basename(projectDir)}.xcodeproj`);
-}
-
-function defaultIosRawBuildDir(appPath: string, target: ExportIosAppOptions["target"]): string {
-  return path.join(
-    path.dirname(appPath),
-    target === "device" ? "ios_device_raw_build" : "ios_raw_build",
-  );
 }
 
 async function buildExportedIosApp(options: {

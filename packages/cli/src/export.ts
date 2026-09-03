@@ -10,7 +10,6 @@ export interface ExportOptions {
   config?: ResolvedKirieConfig;
   cwd?: string;
   godotCommand?: string;
-  mode?: string;
   output?: string;
   platform?: ExportPlatform;
   preset?: string;
@@ -29,10 +28,12 @@ export async function runExport(options: ExportOptions = {}): Promise<void> {
     (await loadKirieConfig({
       command: "build",
       cwd: options.cwd,
-      mode: options.mode,
     }));
-  const preset = options.preset ?? resolvePlatformPreset(options.platform);
-  const mode = resolveExportMode(options);
+  const preset = options.preset ?? (options.platform && DEFAULT_PLATFORM_PRESETS[options.platform]);
+  if (!preset) {
+    throw new Error("Missing export platform or preset.");
+  }
+  const mode = options.release ? "release" : "debug";
   const outputPath = resolveExportOutputPath({
     configCwd: config.cwd,
     mode,
@@ -58,22 +59,6 @@ export async function runExport(options: ExportOptions = {}): Promise<void> {
     projectDir: config.godot.project,
     userArgs: options.userArgs,
   });
-}
-
-function resolvePlatformPreset(platform: ExportPlatform | undefined): string {
-  if (!platform) {
-    throw new Error("Missing export platform or preset.");
-  }
-
-  return DEFAULT_PLATFORM_PRESETS[platform];
-}
-
-function resolveExportMode(options: ExportOptions): ExportMode {
-  if (options.release) {
-    return "release";
-  }
-
-  return "debug";
 }
 
 export function resolveExportOutputPath(options: {

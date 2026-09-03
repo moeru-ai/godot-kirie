@@ -32,14 +32,6 @@ export interface RunAndroidOptions {
   preset?: string;
 }
 
-export interface ReverseAndroidTcpOptions {
-  config?: ResolvedKirieConfig;
-  cwd?: string;
-  device?: string;
-  hostPort?: number;
-  port: number;
-}
-
 export interface RunIosSimulatorOptions {
   appPath?: string;
   bundleId?: string;
@@ -70,7 +62,8 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
       cwd: options.cwd,
     }));
   const adbArgs = options.device ? ["-s", options.device] : [];
-  const packageName = options.packageName ?? readAndroidPackageName(config.godot.project, options);
+  const packageName =
+    options.packageName ?? readAndroidPackageName(config.godot.project, options.preset);
 
   await execa(
     "adb",
@@ -147,22 +140,6 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
     cwd: config.cwd,
     packageName,
     pid,
-  });
-}
-
-export async function reverseAndroidTcp(options: ReverseAndroidTcpOptions): Promise<void> {
-  const config =
-    options.config ??
-    (await loadKirieConfig({
-      command: "build",
-      cwd: options.cwd,
-    }));
-  const adbArgs = options.device ? ["-s", options.device] : [];
-  const hostPort = options.hostPort ?? options.port;
-
-  await execa("adb", [...adbArgs, "reverse", `tcp:${options.port}`, `tcp:${hostPort}`], {
-    cwd: config.cwd,
-    stdio: "inherit",
   });
 }
 
@@ -314,13 +291,10 @@ export async function isIosSimulatorDevice(device: string, cwd?: string): Promis
   }
 }
 
-function readAndroidPackageName(
-  projectDir: string,
-  options: Pick<RunAndroidOptions, "preset">,
-): string {
+function readAndroidPackageName(projectDir: string, preset = "Android"): string {
   const packageName = readExportPresetValue({
     optionName: "package/unique_name",
-    presetName: options.preset ?? "Android",
+    presetName: preset,
     projectDir,
   });
 
@@ -452,8 +426,6 @@ async function waitForAndroidPackagePid(options: {
   throw new Error(`Timed out waiting for Android package PID: ${options.packageName}`);
 }
 
-// TODO: Replace command-specific polling loops with a shared helper that accepts
-// the command, success predicate, timeout, and polling interval.
 async function waitForIosSimulatorAppInstall(options: {
   bundleId: string;
   cwd: string;

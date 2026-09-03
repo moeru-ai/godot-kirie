@@ -1,11 +1,10 @@
-import { type Options as ExecaOptions, execa } from "execa";
+import { execa } from "execa";
 
 const DOTNET_NO_PROJECT_ERROR = "MSB1003";
 
 export interface BuildDotnetOptions {
   projectDir: string;
   skipMissingProject?: boolean;
-  stdio?: ExecaOptions["stdio"];
 }
 
 export async function buildDotnet(options: BuildDotnetOptions): Promise<void> {
@@ -13,14 +12,11 @@ export async function buildDotnet(options: BuildDotnetOptions): Promise<void> {
     all: true,
     cwd: options.projectDir,
     reject: false,
-    stdio: options.stdio,
   });
-  const output = typeof result.all === "string" ? result.all : "";
+  const output = result.all ?? "";
 
   if (result.exitCode === 0) {
-    if (options.stdio === undefined) {
-      process.stdout.write(output);
-    }
+    process.stdout.write(output);
     return;
   }
 
@@ -29,8 +25,6 @@ export async function buildDotnet(options: BuildDotnetOptions): Promise<void> {
     return;
   }
 
-  if (options.stdio === undefined) {
-    process.stdout.write(output);
-  }
+  process.stdout.write(output);
   throw new Error("dotnet build failed.");
 }

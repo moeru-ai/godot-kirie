@@ -1,17 +1,11 @@
 import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
+import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 import { assertGodotCefInstalled } from "./doctor/godot-cef.ts";
 import { runExport } from "./export.ts";
-import { launchGodot, prepareGodotProject } from "./godot.ts";
 import { exportIosApp } from "./ios.ts";
-import {
-  createKirieDevLaunchOptions,
-  isIosSimulatorDevice,
-  reverseAndroidTcp,
-  runAndroid,
-  runIos,
-} from "./run.ts";
+import { createKirieDevLaunchOptions, isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
 import { type StartViteDevServerOptions, startViteDevServer } from "./vite.ts";
 
 export type DevTarget = "desktop" | "android" | "ios";
@@ -45,7 +39,7 @@ export async function runDev(options: DevOptions = {}): Promise<void> {
     assertIosDevExportProjectOnly(config);
   }
   if (target === "desktop") {
-    await assertGodotCefInstalled(config.godot.project, "kirie dev desktop");
+    await assertGodotCefInstalled(config.godot.project);
   }
 
   const vite = await startViteDevServer(config, {
@@ -81,22 +75,33 @@ async function runDesktopDev(
   webUrl: string,
   options: DevOptions,
 ): Promise<void> {
-  const godotConfig = {
-    ...config,
-    godot: {
-      ...config.godot,
-      command: options.godotCommand ?? config.godot.command,
-    },
-  };
-  let godot: ReturnType<typeof launchGodot> | undefined;
+  const godotCommand = options.godotCommand ?? config.godot.command;
 
-  try {
-    await prepareGodotProject(godotConfig);
-    godot = launchGodot(godotConfig, [...devLaunchUserArgs(webUrl), ...(options.godotArgs ?? [])]);
-    await godot;
-  } finally {
-    godot?.kill("SIGTERM");
-  }
+  await execa(
+    godotCommand,
+    [...config.godot.args, "--headless", "--path", config.godot.project, "--import"],
+    {
+      cwd: config.godot.project,
+      stdio: "inherit",
+    },
+  );
+  await execa(
+    godotCommand,
+    [
+      ...config.godot.args,
+      "--path",
+      config.godot.project,
+      "--",
+      ...Object.entries(createKirieDevLaunchOptions(webUrl)).map(
+        ([key, value]) => `--${key}=${value}`,
+      ),
+      ...(options.godotArgs ?? []),
+    ],
+    {
+      cwd: config.godot.project,
+      stdio: "inherit",
+    },
+  );
 }
 
 async function runAndroidDev(
@@ -113,23 +118,27 @@ async function runAndroidDev(
   await runExport({
     build: false,
     config,
-    cwd: config.cwd,
     godotCommand: options.godotCommand,
-    mode: options.mode,
     platform: "android",
     userArgs: ["--kirie-android-aar=debug"],
   });
-  await reverseAndroidTcp({
-    config,
-    cwd: config.cwd,
-    device: options.device,
-    port: reverseWeb.port,
-  });
+  await execa(
+    "adb",
+    [
+      ...(options.device ? ["-s", options.device] : []),
+      "reverse",
+      `tcp:${reverseWeb.port}`,
+      `tcp:${reverseWeb.port}`,
+    ],
+    {
+      cwd: config.cwd,
+      stdio: "inherit",
+    },
+  );
   await runAndroid({
     clearData: options.clearData,
     clearLogcat: options.clearLogcat,
     config,
-    cwd: config.cwd,
     device: options.device,
     forceStop: options.forceStop ?? true,
     launchOptions: createKirieDevLaunchOptions(reverseWeb.url),
@@ -151,32 +160,21 @@ async function runIosDev(
     projectDir: config.godot.project,
     skipMissingProject: true,
   });
-  const exportOptions = {
-    appPath,
-    config,
-    cwd: config.cwd,
-    godotCommand: options.godotCommand,
-    mode: options.mode,
-  };
   await exportIosApp({
-    ...exportOptions,
+    appPath,
     build: false,
+    config,
     device: options.device,
+    godotCommand: options.godotCommand,
     target: physicalDevice ? "device" : "simulator",
   });
   await runIos({
     appPath,
     config,
-    cwd: config.cwd,
     device: options.device,
     launchOptions: createKirieDevLaunchOptions(webUrl),
     terminateExisting: options.terminateExisting ?? true,
   });
-}
-
-function devLaunchUserArgs(webUrl: string): string[] {
-  const launchOptions = createKirieDevLaunchOptions(webUrl);
-  return Object.entries(launchOptions).map(([key, value]) => `--${key}=${value}`);
 }
 
 export function resolveAndroidReverseWebUrl(webUrl: string): { port: number; url: string } {
