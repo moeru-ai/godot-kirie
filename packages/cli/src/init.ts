@@ -122,8 +122,6 @@ export async function applyProjectName(project: string, projectName: string): Pr
     indexPath,
     indexHtml.replace(/<title>.*?<\/title>/s, `<title>${escapedProjectName}</title>`),
   );
-
-  // TODO: Add further targeted template rewrites when a real template requires them.
 }
 
 function assertTemplateName(template: string): void {

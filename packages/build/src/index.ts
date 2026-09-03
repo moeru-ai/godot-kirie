@@ -3,9 +3,6 @@ export {
   type ExportGodotPresetOptions,
   type ExportMode,
   exportGodotPreset,
-  type GodotCommandOptions,
-  type PrepareGodotProjectOptions,
-  prepareGodotProject,
 } from "./godot.ts";
 export {
   type ReadExportPresetValueOptions,

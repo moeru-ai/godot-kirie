@@ -1,35 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import { type Options as ExecaOptions, execa } from "execa";
+import { execa } from "execa";
 
 export type ExportMode = "debug" | "release";
 
-export interface GodotCommandOptions {
+export interface ExportGodotPresetOptions {
   godotArgs?: string[];
   godotCommand: string;
-  projectDir: string;
-  stdio?: ExecaOptions["stdio"];
-}
-
-export interface PrepareGodotProjectOptions extends GodotCommandOptions {}
-
-export interface ExportGodotPresetOptions extends GodotCommandOptions {
   installAndroidBuildTemplate?: boolean;
   mode: ExportMode;
   outputPath: string;
   preset: string;
+  projectDir: string;
   userArgs?: string[];
-}
-
-export async function prepareGodotProject(options: PrepareGodotProjectOptions): Promise<void> {
-  await execa(
-    options.godotCommand,
-    [...(options.godotArgs ?? []), "--headless", "--path", options.projectDir, "--import"],
-    {
-      cwd: options.projectDir,
-      stdio: options.stdio ?? "inherit",
-    },
-  );
 }
 
 export async function exportGodotPreset(options: ExportGodotPresetOptions): Promise<void> {
@@ -47,12 +30,12 @@ export async function exportGodotPreset(options: ExportGodotPresetOptions): Prom
     options.outputPath,
   );
 
-  if (options.userArgs && options.userArgs.length > 0) {
+  if (options.userArgs?.length) {
     args.push("--", ...options.userArgs);
   }
 
   await execa(options.godotCommand, args, {
     cwd: options.projectDir,
-    stdio: options.stdio ?? "inherit",
+    stdio: "inherit",
   });
 }

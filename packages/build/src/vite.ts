@@ -13,7 +13,10 @@ export interface BuildViteWebOptions {
 }
 
 export async function buildViteWeb(options: BuildViteWebOptions): Promise<void> {
-  assertWebEntryExists(options.webRoot, "Kirie build web");
+  const indexPath = path.join(options.webRoot, "index.html");
+  if (!fs.existsSync(indexPath)) {
+    throw new Error(`Kirie build web requires ${indexPath}.`);
+  }
 
   await build(createViteBuildConfig(options));
 }
@@ -30,16 +33,6 @@ export function createViteBuildConfig(options: BuildViteWebOptions): InlineConfi
     mode: options.mode,
     root: options.webRoot,
   }) as InlineConfig;
-}
-
-function assertWebEntryExists(webRoot: string, commandName: string): void {
-  const indexPath = path.join(webRoot, "index.html");
-
-  if (fs.existsSync(indexPath)) {
-    return;
-  }
-
-  throw new Error(`${commandName} requires ${indexPath}.`);
 }
 
 function assertNoKirieOwnedViteOptions(viteConfig: Record<string, unknown>): void {

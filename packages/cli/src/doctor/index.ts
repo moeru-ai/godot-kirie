@@ -35,10 +35,6 @@ export interface DoctorOptions {
   target?: DoctorTarget;
 }
 
-export interface CheckAndroidSdkOptions {
-  env?: NodeJS.ProcessEnv;
-}
-
 export interface CheckGodotCommandOptions {
   godotArgs: string[];
   godotCommand: string;
@@ -78,11 +74,11 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
     }));
 
   if (options.fix) {
-    await runDoctorFixes(config, options.target);
+    await installGodotCef({ projectDir: config.godot.project });
   }
 
   const checks = options.target
-    ? [await runTargetedDoctorCheck(config, options.target)]
+    ? [await checkGodotCefPrerequisite(config.godot.project)]
     : await runDoctorChecks({
         config,
         env: options.env,
@@ -96,10 +92,10 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
 
   const failures = checks.filter((check) => check.status === DoctorCheckStatus.Fail);
   if (failures.length > 0) {
-    const errors = failures.map(
-      (failure) => failure.error ?? new Error(`${failure.name}: ${failure.message}`),
+    throw new AggregateError(
+      failures.map((failure) => failure.error ?? new Error(`${failure.name}: ${failure.message}`)),
+      `kirie doctor found ${failures.length} problem(s).`,
     );
-    throw new AggregateError(errors, `kirie doctor found ${failures.length} problem(s).`);
   }
 }
 
@@ -131,9 +127,7 @@ export async function runDoctorChecks(options: {
   return [
     godotCommand.check,
     exportTemplates,
-    await checkAndroidSdk({
-      env: options.env,
-    }),
+    await checkAndroidSdk(options.env),
     await checkGodotCefPrerequisite(options.config.godot.project),
   ];
 }
@@ -212,15 +206,15 @@ export async function checkGodotExportTemplates(
     platform: options.platform ?? process.platform,
     version: options.version,
   });
+  const missingMessage = `missing templates for Godot ${options.version} at ${templatesDir}`;
 
   let templates: string[];
   try {
     templates = await fs.readdir(templatesDir);
   } catch (error) {
-    const message = `missing templates for Godot ${options.version} at ${templatesDir}`;
     return {
-      error: new Error(message, { cause: error }),
-      message,
+      error: new Error(missingMessage, { cause: error }),
+      message: missingMessage,
       name: "Godot export templates",
       status: DoctorCheckStatus.Fail,
     };
@@ -228,7 +222,7 @@ export async function checkGodotExportTemplates(
 
   if (templates.length === 0) {
     return {
-      message: `missing templates for Godot ${options.version} at ${templatesDir}`,
+      message: missingMessage,
       name: "Godot export templates",
       status: DoctorCheckStatus.Fail,
     };
@@ -242,9 +236,8 @@ export async function checkGodotExportTemplates(
 }
 
 export async function checkAndroidSdk(
-  options: CheckAndroidSdkOptions = {},
+  env: NodeJS.ProcessEnv = process.env,
 ): Promise<DoctorCheckResult> {
-  const env = options.env ?? process.env;
   const sdk = env.ANDROID_HOME ?? env.ANDROID_SDK_ROOT;
   if (!sdk) {
     return {
@@ -253,15 +246,15 @@ export async function checkAndroidSdk(
       status: DoctorCheckStatus.Fail,
     };
   }
+  const invalidSdkMessage = `${sdk} does not exist or is not a directory`;
 
   let sdkStat: Awaited<ReturnType<typeof fs.stat>>;
   try {
     sdkStat = await fs.stat(sdk);
   } catch (error) {
-    const message = `${sdk} does not exist or is not a directory`;
     return {
-      error: new Error(message, { cause: error }),
-      message,
+      error: new Error(invalidSdkMessage, { cause: error }),
+      message: invalidSdkMessage,
       name: "Android SDK",
       status: DoctorCheckStatus.Fail,
     };
@@ -269,7 +262,7 @@ export async function checkAndroidSdk(
 
   if (!sdkStat.isDirectory()) {
     return {
-      message: `${sdk} does not exist or is not a directory`,
+      message: invalidSdkMessage,
       name: "Android SDK",
       status: DoctorCheckStatus.Fail,
     };
@@ -329,23 +322,4 @@ function resolveGodotExportTemplatesDir(options: TemplatePathOptions): string {
     "export_templates",
     options.version,
   );
-}
-
-async function runDoctorFixes(
-  config: ResolvedKirieConfig,
-  target: DoctorTarget | undefined,
-): Promise<void> {
-  if (!target || target === DoctorTarget.GodotCef) {
-    await installGodotCef({ projectDir: config.godot.project });
-  }
-}
-
-async function runTargetedDoctorCheck(
-  config: ResolvedKirieConfig,
-  target: DoctorTarget,
-): Promise<DoctorCheckResult> {
-  switch (target) {
-    case DoctorTarget.GodotCef:
-      return checkGodotCefPrerequisite(config.godot.project);
-  }
 }

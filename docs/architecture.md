@@ -302,8 +302,14 @@ may use a development export path. `dev` may still build the Godot C#/.NET
 project when one is configured.
 
 `@gd-kirie/build` owns explicit-input programmatic build and export primitives.
+The package exports the .NET builder, Vite builder, Vite configuration
+factory, Godot exporter, and export-preset reader. The CLI owns the Godot
+import step that prepares a fresh project.
 Development sessions, mobile device selection, install, launch, launch-option
 injection, log streaming, and watch policy stay in `kirie`.
+
+The `kirie` package exports `defineKirieConfig` and `KirieConfig` for
+configuration files. Command implementations are internal to the CLI.
 
 `kirie dev` starts a Vite development server and reads the actual resolved URL
 after Vite listens. Desktop development launches Godot as a child process and

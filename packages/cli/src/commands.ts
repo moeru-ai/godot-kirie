@@ -1,18 +1,13 @@
-import { type CommandDef, defineCommand } from "citty";
+import { type CommandContext, type CommandDef, defineCommand, type ParsedArgs } from "citty";
 
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
 import { DoctorTarget, runDoctor } from "./doctor/index.ts";
-import { type ExportPlatform, runExport } from "./export.ts";
+import { runExport } from "./export.ts";
 import { runInit } from "./init.ts";
 import { exportIosApp } from "./ios.ts";
 import { isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
-
-type CommandArgSchema = Record<string, { readonly type: "boolean" | "positional" | "string" }>;
-type CommandArgs<T extends CommandArgSchema> = {
-  [K in keyof T]?: T[K]["type"] extends "boolean" ? boolean : string;
-};
 
 const exportArgs = {
   build: { description: "Build local inputs before export.", type: "boolean" },
@@ -111,12 +106,7 @@ const iosDevArgs = {
   app: { description: "iOS simulator .app output path.", type: "string" },
 } as const;
 
-type ExportCommandArgs = CommandArgs<typeof exportArgs> & CommandArgs<typeof iosExportArgs>;
-type DevCommandArgs = CommandArgs<typeof devArgs> &
-  CommandArgs<typeof androidDevArgs> &
-  CommandArgs<typeof iosDevArgs>;
-type InitCommandArgs = CommandArgs<typeof initArgs>;
-type RunCommandArgs = CommandArgs<typeof androidRunArgs> & CommandArgs<typeof iosRunArgs>;
+type DevCommandArgs = Partial<ParsedArgs<typeof androidDevArgs> & ParsedArgs<typeof iosDevArgs>>;
 
 function parseUserArgs(rawArgs: string[]): string[] {
   const separatorIndex = rawArgs.indexOf("--");
@@ -127,40 +117,38 @@ function parseUserArgs(rawArgs: string[]): string[] {
   return rawArgs.slice(separatorIndex + 1);
 }
 
-function runExportCommand(platform: ExportPlatform) {
-  return async ({ args, rawArgs }: { args: ExportCommandArgs; rawArgs: string[] }) => {
-    if (platform === "ios") {
-      const targetIsSimulator =
-        !args.device || (await isIosSimulatorDevice(args.device, args.project));
-      const configuration = args.release ? "release" : "debug";
-      const target = targetIsSimulator ? "simulator" : "device";
+function runAndroidExportCommand({
+  args,
+  rawArgs,
+}: CommandContext<typeof exportArgs>): Promise<void> {
+  return runExport({
+    build: args.build !== false,
+    cwd: args.project,
+    output: args.output,
+    platform: "android",
+    preset: args.preset,
+    release: args.release,
+    userArgs: parseUserArgs(rawArgs),
+  });
+}
 
-      await exportIosApp({
-        appPath:
-          args.output ??
-          (targetIsSimulator
-            ? `dist/kirie/ios/${configuration}.app`
-            : `dist/kirie/ios/device_${configuration}.app`),
-        build: args.build !== false,
-        cwd: args.project,
-        device: args.device,
-        preset: args.preset,
-        release: args.release,
-        target,
-      });
-      return;
-    }
+async function runIosExportCommand({ args }: CommandContext<typeof iosExportArgs>): Promise<void> {
+  const targetIsSimulator = !args.device || (await isIosSimulatorDevice(args.device, args.project));
+  const configuration = args.release ? "release" : "debug";
 
-    await runExport({
-      build: args.build !== false,
-      cwd: args.project,
-      output: args.output,
-      platform,
-      preset: args.preset,
-      release: args.release,
-      userArgs: parseUserArgs(rawArgs),
-    });
-  };
+  await exportIosApp({
+    appPath:
+      args.output ??
+      (targetIsSimulator
+        ? `dist/kirie/ios/${configuration}.app`
+        : `dist/kirie/ios/device_${configuration}.app`),
+    build: args.build !== false,
+    cwd: args.project,
+    device: args.device,
+    preset: args.preset,
+    release: args.release,
+    target: targetIsSimulator ? "simulator" : "device",
+  });
 }
 
 function runDevCommand(target: DevTarget) {
@@ -328,7 +316,7 @@ export const mainCommand: CommandDef = defineCommand({
     init: defineCommand({
       args: initArgs,
       meta: { description: "Initialize a Kirie project from an official template.", name: "init" },
-      run: ({ args }: { args: InitCommandArgs }) => {
+      run: ({ args }) => {
         if (!args.target || !args.template) {
           throw new Error("Kirie init requires a target directory and template folder name.");
         }
@@ -346,12 +334,12 @@ export const mainCommand: CommandDef = defineCommand({
         android: defineCommand({
           args: exportArgs,
           meta: { description: "Export the Android Godot preset.", name: "android" },
-          run: runExportCommand("android"),
+          run: runAndroidExportCommand,
         }),
         ios: defineCommand({
           args: iosExportArgs,
           meta: { description: "Build an installable iOS app.", name: "ios" },
-          run: runExportCommand("ios"),
+          run: runIosExportCommand,
         }),
       },
     }),
@@ -361,7 +349,7 @@ export const mainCommand: CommandDef = defineCommand({
         android: defineCommand({
           args: androidRunArgs,
           meta: { description: "Install and launch an Android export.", name: "android" },
-          run: ({ args }: { args: RunCommandArgs }) =>
+          run: ({ args }) =>
             runAndroid({
               attachLogcat: !args["no-logcat"],
               clearData: args["clear-data"],
@@ -375,7 +363,7 @@ export const mainCommand: CommandDef = defineCommand({
         ios: defineCommand({
           args: iosRunArgs,
           meta: { description: "Install and launch an iOS export.", name: "ios" },
-          run: ({ args }: { args: RunCommandArgs }) =>
+          run: ({ args }) =>
             runIos({
               appPath: args.app,
               cwd: args.project,

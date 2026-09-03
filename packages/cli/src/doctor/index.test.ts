@@ -236,9 +236,7 @@ describe("checkAndroidSdk", () => {
   it("passes when ANDROID_HOME points at an existing SDK directory", async () => {
     const sdk = await createTempDir("kirie-android-sdk-");
 
-    const check = await checkAndroidSdk({
-      env: { ANDROID_HOME: sdk },
-    });
+    const check = await checkAndroidSdk({ ANDROID_HOME: sdk });
 
     expect(check).toMatchObject({
       message: `ANDROID_HOME=${sdk}`,
@@ -248,9 +246,7 @@ describe("checkAndroidSdk", () => {
   });
 
   it("fails when no Android SDK environment variable is configured", async () => {
-    const check = await checkAndroidSdk({
-      env: {},
-    });
+    const check = await checkAndroidSdk({});
 
     expect(check).toMatchObject({
       name: "Android SDK",

@@ -123,14 +123,14 @@ export async function checkGodotCef(projectDir: string): Promise<GodotCefCheckRe
   };
 }
 
-export async function assertGodotCefInstalled(projectDir: string, command: string): Promise<void> {
+export async function assertGodotCefInstalled(projectDir: string): Promise<void> {
   const result = await checkGodotCef(projectDir);
   if (result.installed && result.valid) {
     return;
   }
 
   throw new Error(
-    `${command} requires Godot CEF for desktop. ${result.message}. Run: pnpm kirie doctor --fix godot-cef`,
+    `kirie dev desktop requires Godot CEF for desktop. ${result.message}. Run: pnpm kirie doctor --fix godot-cef`,
   );
 }
 
