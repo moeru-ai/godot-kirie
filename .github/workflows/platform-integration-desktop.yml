@@ -39,20 +39,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Node and Godot
+      - name: Install Node, pnpm, and Godot
         if: matrix.os != 'windows-latest'
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node godot
+          install_args: node pnpm godot
           cache: true
 
-      - name: Install Node
+      - name: Install Node and pnpm
         if: matrix.os == 'windows-latest'
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node
+          install_args: node pnpm
           cache: true
 
       - name: Setup Godot
@@ -69,12 +69,9 @@ jobs:
           test -f "$godot_exe"
           echo "GODOT=$(cygpath -w "$godot_exe")" >> "$GITHUB_ENV"
 
-      - name: Enable Corepack
-        run: mise x -- corepack enable pnpm
-
       - name: Get pnpm store path
         id: pnpm-store
-        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(mise x -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
         uses: actions/cache@v5
@@ -85,7 +82,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
 
       - name: Install pnpm dependencies
-        run: mise x -- corepack pnpm install --frozen-lockfile
+        run: mise x -- pnpm install --frozen-lockfile
 
       - name: Install Godot CEF addon
         run: mise run install:godot-cef tests/integration

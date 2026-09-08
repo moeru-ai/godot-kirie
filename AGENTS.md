@@ -141,7 +141,6 @@ Do not duplicate those documents here.
 - Run repository tools through mise: `mise x -- <command>` or an existing
   `mise run <task>` entry point.
 - Install or refresh project tools with `mise install`.
-- pnpm is managed by Corepack. Prefer `mise x -- corepack pnpm <command>`.
 - Use `mise x -- godot <command>` for Godot and `mise which godot` only when a
   direct executable path is required.
 - Do not replace the configured Godot mise backend with an ad hoc download or

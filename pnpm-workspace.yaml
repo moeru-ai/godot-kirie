@@ -9,6 +9,12 @@ packages:
   - "scripts"
   - "tests/integration/src-web"
 
+allowBuilds:
+  tree-sitter: true
+  tree-sitter-gdscript: true
+  tree-sitter-godot-resource: true
+  vue-demi: false
+
 catalog:
   "@alint-js/cli": ^0.0.38
   "@alint-js/core": ^0.0.38

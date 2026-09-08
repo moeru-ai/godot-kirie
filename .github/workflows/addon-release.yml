@@ -83,11 +83,11 @@ jobs:
             exit 1
           fi
 
-      - name: Install Node and Java
+      - name: Install Node, pnpm, and Java
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node java
+          install_args: node pnpm java
           cache: true
 
       - name: Setup Android SDK
@@ -126,12 +126,9 @@ jobs:
             core/extension/gdextension_interface.gen.h \
             core/object/gdvirtual.gen.h
 
-      - name: Enable Corepack
-        run: mise x -- corepack enable pnpm
-
       - name: Get pnpm store path
         id: pnpm-store
-        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(mise x -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
         uses: actions/cache@v5
@@ -142,7 +139,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
 
       - name: Install pnpm dependencies
-        run: mise x -- corepack pnpm install --frozen-lockfile
+        run: mise x -- pnpm install --frozen-lockfile
 
       - name: Build addon pack
         run: mise run build:addon-pack

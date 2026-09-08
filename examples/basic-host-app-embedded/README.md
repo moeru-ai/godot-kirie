@@ -26,7 +26,7 @@ Dependencies and versions come from the repository workspace and catalog. Instal
 them once from the repository root:
 
 ```sh
-mise x -- corepack pnpm install --frozen-lockfile
+mise x -- pnpm install --frozen-lockfile
 ```
 
 No example-specific tasks are registered in the repository's root `mise.toml`.
@@ -43,7 +43,7 @@ below.
 For web-only iteration, keep Vite running in a separate terminal:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/basic-host-app-embedded-web exec vite --host 0.0.0.0
+mise x -- pnpm -F @gd-kirie/basic-host-app-embedded-web exec vite --host 0.0.0.0
 ```
 
 iOS Simulator can use `http://127.0.0.1:5173/`. Android Emulator uses
@@ -82,7 +82,7 @@ template, and local Godot NuGet packages prepared as described by that branch:
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
 IOS_BUNDLE_ID=your.owned.bundle.identifier \
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded prepare:ios
+mise x -- pnpm --dir examples/basic-host-app-embedded prepare:ios
 ```
 
 This builds the web page, stages a read-only copy of the project and addon under
@@ -193,7 +193,7 @@ With the matching Godot Android Mono template built, prepare the APK once:
 GODOT_EMBED_SOURCE_ROOT=/path/to/nekomeowww/godot \
 ANDROID_HOME="$HOME/Library/Android/sdk" \
 DOTNET_BIN=/path/to/dotnet-10.0.201/dotnet \
-mise x -- corepack pnpm --dir examples/basic-host-app-embedded prepare:android
+mise x -- pnpm --dir examples/basic-host-app-embedded prepare:android
 ```
 
 The output is

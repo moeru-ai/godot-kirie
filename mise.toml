@@ -15,10 +15,11 @@ dotnet = "10.0.300"
 ktlint = "1.8.0"
 swiftlint = "0.62.2"
 "pipx:gdtoolkit" = "4.5.0"
+pnpm = "12"
 
 [tasks.build]
 description = "Build all workspace packages"
-run = "corepack pnpm run build"
+run = "pnpm run build"
 
 [tasks."build:addon-pack"]
 description = "Build native artifacts and package the Godot addon"
@@ -61,7 +62,7 @@ depends = ["build:packages"]
 usage = '''
 arg "<godot_project_dir>" help="Godot project directory to install the addon into"
 '''
-run = 'corepack pnpm exec kirie doctor --fix godot-cef --project "${usage_godot_project_dir?}"'
+run = 'pnpm exec kirie doctor --fix godot-cef --project "${usage_godot_project_dir?}"'
 
 [tasks."build:native-artifacts"]
 description = "Build all native artifacts"
@@ -70,7 +71,7 @@ run = "true"
 
 [tasks."build:packages"]
 description = "Build publishable packages"
-run = "corepack pnpm run build:packages"
+run = "pnpm run build:packages"
 
 [tasks."check:addon-pack"]
 description = "Check staged addon package contents"
@@ -78,11 +79,11 @@ run = "./scripts/run-build-task.js checkAddonPack"
 
 [tasks.format]
 description = "Format all covered source files"
-run = "corepack pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift && mise format:csharp"
+run = "pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift && mise format:csharp"
 
 [tasks."format:biome"]
 description = "Format TypeScript, JSON, CSS, and HTML files"
-run = "corepack pnpm run format:biome"
+run = "pnpm run format:biome"
 
 [tasks."format:gdscript"]
 description = "Format GDScript files"
@@ -102,11 +103,11 @@ run = "dotnet format style -v diag"
 
 [tasks.lint]
 description = "Run all linters"
-run = "corepack pnpm -C examples/basic-kirie-cli run generate:godot && corepack pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
+run = "pnpm -C examples/basic-kirie-cli run generate:godot && pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
 
 [tasks."lint:biome"]
 description = "Lint TypeScript, JSON, CSS, and HTML files"
-run = "corepack pnpm run lint:biome"
+run = "pnpm run lint:biome"
 
 [tasks."lint:gdscript"]
 description = "Lint GDScript files"
@@ -133,7 +134,7 @@ run = [
 
 [tasks.release]
 description = "Run the package release flow"
-run = "corepack pnpm run release"
+run = "pnpm run release"
 
 [tasks."run:example"]
 description = "Build, install, and launch an example on Android or iOS"
@@ -153,7 +154,7 @@ run = "dotnet test --solution GdKirie.slnx --configuration Release"
 
 [tasks."test:swift"]
 description = "Run Swift unit tests"
-run = "corepack pnpm run test:swift"
+run = "pnpm run test:swift"
 
 [tasks."test:integration-android"]
 description = "Run one Android platform integration test"
@@ -180,8 +181,8 @@ run = './scripts/run-build-task.js runIntegrationDesktopTest "${usage_test_name?
 
 [tasks."test:unit"]
 description = "Run package unit tests"
-run = "corepack pnpm run test:unit"
+run = "pnpm run test:unit"
 
 [tasks.typecheck]
 description = "Typecheck publishable packages"
-run = "corepack pnpm run typecheck"
+run = "pnpm run typecheck"

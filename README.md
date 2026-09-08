@@ -20,6 +20,16 @@ After copying the files, enable Kirie from Godot's Project Settings Plugins tab.
 This follows Godot's plugin installation flow. Release packaging details live in
 [docs/addon-release.md](docs/addon-release.md).
 
+## Repository Development
+
+Install the workspace tools and dependencies from the repository root:
+
+```sh
+mise install
+mise x -- pnpm install --frozen-lockfile
+mise run build:packages
+```
+
 ## Export Options
 
 Kirie adds Godot export preset options under `kirie/debug`:

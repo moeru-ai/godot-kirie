@@ -18,10 +18,18 @@ tests. It demonstrates the first Eventa adapter path:
 
 ## Running
 
-Build the web page first:
+Install dependencies and build the example from the repository root:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/eventa-csharp-web run build
+mise x -- pnpm install --frozen-lockfile
+mise x -- pnpm -F @gd-kirie/eventa-csharp-web run build
+mise x -- dotnet build examples/eventa-csharp/KirieEventaCSharp.csproj
+```
+
+For desktop runs, install the Godot CEF addon:
+
+```sh
+mise run install:godot-cef examples/eventa-csharp
 ```
 
 Open the Godot project:

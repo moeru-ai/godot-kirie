@@ -34,23 +34,15 @@ jobs:
             exit 1
           fi
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          run_install: false
-
-      - name: Install Node
+      - name: Install Node and pnpm
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node
+          install_args: node pnpm
           cache: true
 
-      - name: Enable Corepack
-        run: mise x -- corepack enable pnpm
-
       - name: Install pnpm dependencies
-        run: mise x -- corepack pnpm install --frozen-lockfile
+        run: mise x -- pnpm install --frozen-lockfile
 
       - name: Typecheck packages
         run: mise run typecheck
@@ -59,8 +51,8 @@ jobs:
         run: mise run build:packages
 
       - name: Dry-run publish npm packages
-        run: mise x -- corepack pnpm publish -r --access public --no-git-checks --dry-run
+        run: mise x -- pnpm publish -r --access public --no-git-checks --dry-run
 
       - name: Publish npm packages
         if: github.event_name == 'push'
-        run: mise x -- corepack pnpm publish -r --access public --no-git-checks
+        run: mise x -- pnpm publish -r --access public --no-git-checks

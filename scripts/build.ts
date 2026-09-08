@@ -57,7 +57,7 @@ export async function runExample(
   const projectDir = `examples/${exampleName}`;
 
   if (exampleName === "basic-kirie-cli") {
-    await execa("corepack", ["pnpm", "-C", projectDir, "run", "build:godot"], {
+    await execa("pnpm", ["-C", projectDir, "run", "build:godot"], {
       cwd: rootDir,
       stdio: "inherit",
     });

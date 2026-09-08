@@ -16,7 +16,7 @@ interface AndroidDebugExportOptions {
 }
 
 export async function buildWebPackage(filter: string): Promise<void> {
-  await execa("corepack", ["pnpm", "-F", filter, "run", "build"], {
+  await execa("pnpm", ["-F", filter, "run", "build"], {
     cwd: rootDir,
     stdio: "inherit",
   });
