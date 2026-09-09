@@ -27,12 +27,18 @@ The example now supports two ways to exercise that path:
 
 ## Running the web side
 
+Install workspace dependencies from the repository root:
+
+```sh
+mise x -- pnpm install --frozen-lockfile
+```
+
 Run the Vite dev server and use that URL in the project UI.
 
 Example:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/basic-ipc-web run dev
+mise x -- pnpm -F @gd-kirie/basic-ipc-web run dev
 ```
 
 Then open the Godot project and use:
@@ -46,7 +52,7 @@ for an Android emulator, or an appropriate LAN/local address for a device.
 Build the web app first:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/basic-ipc-web run build
+mise x -- pnpm -F @gd-kirie/basic-ipc-web run build
 ```
 
 Open the Godot project and press `Run Probe`.

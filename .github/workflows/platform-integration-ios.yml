@@ -28,11 +28,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Node
+      - name: Install Node and pnpm
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node
+          install_args: node pnpm
           cache: true
 
       - name: Setup Godot
@@ -81,12 +81,9 @@ jobs:
           path: godot/bin/libgodot.ios.template_debug.arm64.simulator.a
           key: ${{ runner.os }}-${{ runner.arch }}-godot-${{ env.GODOT_VERSION }}-${{ steps.xcode.outputs.version }}-ios-template_debug-arm64-simulator
 
-      - name: Enable Corepack
-        run: mise x -- corepack enable pnpm
-
       - name: Get pnpm store path
         id: pnpm-store
-        run: echo "path=$(mise x -- corepack pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: echo "path=$(mise x -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm store
         uses: actions/cache@v5
@@ -97,7 +94,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
 
       - name: Install pnpm dependencies
-        run: mise x -- corepack pnpm install --frozen-lockfile
+        run: mise x -- pnpm install --frozen-lockfile
 
       - name: Build iOS debug XCFramework
         run: mise run build:ios-debug-xcframework

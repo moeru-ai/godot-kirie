@@ -38,19 +38,28 @@ TypeScript for the current Kirie addon or the hyphenated `src-godot` scene path.
 The source declares only the small Kirie API surface it uses; Kirie's native
 GDScript remains unchanged.
 
+## Setup
+
+Install dependencies and build the workspace CLI from the repository root:
+
+```sh
+mise x -- pnpm install --frozen-lockfile
+mise run build:packages
+```
+
 ## Running desktop dev
 
 Desktop runs use the pinned Godot CEF addon. Install it into this example before
 running on macOS, Windows, or Linux:
 
 ```sh
-mise x -- corepack pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
+mise x -- pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
 ```
 
 Start the CLI-managed Vite server and Godot project:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run dev
+mise x -- pnpm -F @gd-kirie/basic-kirie-cli run dev
 ```
 
 The CLI passes the resolved Vite URL to Godot through the `kirie-web-url` launch
@@ -63,7 +72,7 @@ WebView with that URL when the project starts.
 Build the web app first:
 
 ```sh
-mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run build
+mise x -- pnpm -F @gd-kirie/basic-kirie-cli run build
 ```
 
 Open or run the Godot project. The example creates a WebView with
@@ -81,7 +90,7 @@ After changing the TypeScript controller, regenerate the scene-attached
 GDScript:
 
 ```bash
-mise x -- corepack pnpm -F @gd-kirie/basic-kirie-cli run build:godot
+mise x -- pnpm -F @gd-kirie/basic-kirie-cli run build:godot
 ```
 
 `src-godot/generated/` is ignored. Run the generator before opening the Godot
