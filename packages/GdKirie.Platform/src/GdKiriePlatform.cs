@@ -42,6 +42,10 @@ public static class GdKiriePlatform
                 PlatformJsonContext.Default.PointerPositionPayload,
                 PlatformJsonContext.Default.EmptyPayload)
             .RegisterInvoke(
+                PlatformEvents.GetState,
+                PlatformJsonContext.Default.WindowStatePayload,
+                PlatformJsonContext.Default.EmptyPayload)
+            .RegisterInvoke(
                 PlatformEvents.SetAlwaysOnTop,
                 PlatformJsonContext.Default.EmptyPayload,
                 PlatformJsonContext.Default.Boolean)
@@ -59,7 +63,10 @@ public static class GdKiriePlatform
                 PlatformJsonContext.Default.GlobalShortcutPayload)
             .RegisterEvent(
                 PlatformEvents.GlobalShortcutStateChanged,
-                PlatformJsonContext.Default.GlobalShortcutKeyEventPayload);
+                PlatformJsonContext.Default.GlobalShortcutKeyEventPayload)
+            .RegisterEvent(
+                PlatformEvents.StateChanged,
+                PlatformJsonContext.Default.WindowStatePayload);
     }
 
     /// <summary>

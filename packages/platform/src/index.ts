@@ -24,6 +24,12 @@ export interface PlatformBounds {
   height: number;
 }
 
+export interface HostWindowState {
+  focused: boolean;
+  minimized: boolean;
+  visible: boolean;
+}
+
 export interface HostWindowClient {
   getBounds: () => Promise<PlatformBounds>;
   getCurrentDisplayBounds: () => Promise<PlatformBounds>;
@@ -33,6 +39,8 @@ export interface HostWindowClient {
   beginResize: (edge: ResizeEdge) => Promise<void>;
   setAlwaysOnTop: (enabled: boolean) => Promise<void>;
   centerOnCurrentDisplay: () => Promise<void>;
+  getState: () => Promise<HostWindowState>;
+  onStateChanged: (listener: (state: HostWindowState) => void) => () => void;
 }
 
 export interface GlobalShortcut {
@@ -85,6 +93,9 @@ const events = {
   getPointerPosition: defineInvokeEventa<HostWindowPointerPosition, EmptyPayload>(
     "kirie:platform:host-window:get-pointer-position",
   ),
+  getState: defineInvokeEventa<HostWindowState, EmptyPayload>(
+    "kirie:platform:host-window:get-state",
+  ),
   setAlwaysOnTop: defineInvokeEventa<EmptyPayload, boolean>(
     "kirie:platform:host-window:set-always-on-top",
   ),
@@ -98,6 +109,10 @@ const events = {
     "kirie:platform:global-shortcut:unregister",
   ),
 };
+
+const hostWindowStateChanged = defineInboundEventa<HostWindowState>(
+  "kirie:platform:host-window:state-changed",
+);
 
 const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChanged>(
   "kirie:platform:global-shortcut:state-changed",
@@ -117,6 +132,17 @@ function globalShortcutKey(shortcut: GlobalShortcut): string {
 export function createPlatformClient(context: KirieEventaContext): PlatformClient {
   const invokes = defineInvokes(context, events);
   const globalShortcutRegistrations = new Map<string, (event: GlobalShortcutKeyEvent) => void>();
+  const hostWindowStateListeners = new Set<(state: HostWindowState) => void>();
+
+  context.on(hostWindowStateChanged, ({ body }) => {
+    if (!body) {
+      return;
+    }
+
+    for (const listener of hostWindowStateListeners) {
+      listener(body);
+    }
+  });
 
   context.on(globalShortcutStateChanged, ({ body }) => {
     if (!body) {
@@ -138,6 +164,13 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
       },
       getPointerPosition() {
         return invokes.getPointerPosition({});
+      },
+      getState() {
+        return invokes.getState({});
+      },
+      onStateChanged(listener) {
+        hostWindowStateListeners.add(listener);
+        return () => hostWindowStateListeners.delete(listener);
       },
       async setPointerPassthrough(enabled) {
         await invokes.setPointerPassthrough(enabled);

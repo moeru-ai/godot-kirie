@@ -9,14 +9,19 @@ namespace GdKirie.Platform;
 public sealed class GdKiriePlatformHost : IDisposable
 {
     private readonly Window _window;
+    private readonly SceneTree _sceneTree;
+    private readonly Action<WindowStatePayload> _emitWindowStateChanged;
     private readonly GlobalShortcutManager _globalShortcuts;
     private readonly List<IDisposable> _registrations = [];
+    private WindowStatePayload? _lastWindowState;
     private bool _windowsPointerPassthrough;
     private bool _disposed;
 
     internal GdKiriePlatformHost(IEventContext context, Window window)
     {
         _window = window;
+        _sceneTree = window.GetTree();
+        _emitWindowStateChanged = state => context.Emit(PlatformEvents.StateChanged, state);
         _globalShortcuts = new GlobalShortcutManager(
             payload => context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload),
             SynchronizationContext.Current);
@@ -62,6 +67,9 @@ public sealed class GdKiriePlatformHost : IDisposable
             PlatformEvents.GetPointerPosition,
             (EmptyPayload _, CancellationToken _) => Task.FromResult(GetPointerPosition())));
         _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.GetState,
+            (EmptyPayload _, CancellationToken _) => Task.FromResult(SnapshotWindowState())));
+        _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.SetAlwaysOnTop,
             (enabled, _) =>
             {
@@ -90,6 +98,11 @@ public sealed class GdKiriePlatformHost : IDisposable
                 return Task.FromResult(new EmptyPayload());
             }));
 
+        _window.FocusEntered += RefreshWindowState;
+        _window.FocusExited += RefreshWindowState;
+        _window.SizeChanged += RefreshWindowState;
+        _window.VisibilityChanged += RefreshWindowState;
+        _sceneTree.ProcessFrame += RefreshWindowState;
         _window.TreeExiting += Dispose;
     }
 
@@ -107,6 +120,11 @@ public sealed class GdKiriePlatformHost : IDisposable
         }
 
         _disposed = true;
+        _window.FocusEntered -= RefreshWindowState;
+        _window.FocusExited -= RefreshWindowState;
+        _window.SizeChanged -= RefreshWindowState;
+        _window.VisibilityChanged -= RefreshWindowState;
+        _sceneTree.ProcessFrame -= RefreshWindowState;
         _window.TreeExiting -= Dispose;
 
         List<Exception> cleanupErrors = [];
@@ -166,6 +184,37 @@ public sealed class GdKiriePlatformHost : IDisposable
                 && relativePosition.Y >= 0
                 && relativePosition.X < size.X
                 && relativePosition.Y < size.Y);
+    }
+
+    private WindowStatePayload CaptureWindowState()
+    {
+        return new WindowStatePayload(
+            _window.HasFocus(),
+            _window.Mode == Window.ModeEnum.Minimized,
+            _window.Visible);
+    }
+
+    private WindowStatePayload SnapshotWindowState()
+    {
+        _lastWindowState = CaptureWindowState();
+        return _lastWindowState;
+    }
+
+    private void RefreshWindowState()
+    {
+        if (_lastWindowState is null)
+        {
+            return;
+        }
+
+        var state = CaptureWindowState();
+        if (state == _lastWindowState)
+        {
+            return;
+        }
+
+        _lastWindowState = state;
+        _emitWindowStateChanged(state);
     }
 
     private void SetPointerPassthrough(bool enabled)
