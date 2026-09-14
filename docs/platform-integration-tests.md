@@ -263,6 +263,7 @@ Run the desktop CI smoke set:
 
 ```bash
 mise run test:integration-desktop ipc_round_trip_probe
+mise run test:integration-desktop webview_lifecycle_probe
 mise run test:integration-desktop res_asset_loading_probe
 ```
 
@@ -283,9 +284,8 @@ Android and iOS build the native staging artifacts before exporting the
 integration project.
 
 Desktop CI runs the same Godot CEF smoke set on macOS, Windows, and Linux:
-`ipc_round_trip_probe` and `res_asset_loading_probe`. Keep
-`webview_lifecycle_probe` out of desktop CI until Godot CEF's browser and CEF
-runtime lifecycles are stable enough for destroy/recreate coverage.
+`ipc_round_trip_probe`, `webview_lifecycle_probe`, and
+`res_asset_loading_probe`.
 
 CI should reuse the same marker contract and app-session isolation used
 locally.
