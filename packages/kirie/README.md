@@ -91,3 +91,34 @@ kirie.CreateWebView();
 The direct platform-singleton `KirieClient()` constructor has no scene owner to
 receive synthetic input, so its `PointerInputForwardingEnabled` property is not
 available. Use `FromNode` when pointer forwarding is required.
+
+## WebView permission requests
+
+Desktop Godot CEF projects can set
+`godot_cef/security/default_permission_policy` to `Signal` (`2`). Kirie then
+forwards each WebView request through `permission_requested`. The application
+must check the exact origin and permission type before it resolves the request:
+
+```csharp
+var kirie = KirieClient.FromNode(GetNode<Node>("Kirie"));
+kirie.PermissionRequested += (permissionType, origin, requestId) =>
+{
+    var trusted = permissionType == "microphone" && origin == "https://app.example";
+    if (trusted)
+    {
+        kirie.GrantPermission(requestId);
+        return;
+    }
+
+    kirie.DenyPermission(requestId);
+};
+```
+
+Each request ID is single-use. Resolve every emitted request, including unknown
+permission types. Kirie does not select trusted origins, show operating-system
+prompts, or grant permissions automatically. Android and iOS do not yet emit
+this signal; their application manifests and operating-system permission flows
+remain separate requirements.
+
+The [Godot CEF 1.15.3 permission API](https://github.com/dsh0416/godot-cef/blob/v1.15.3/docs/api/methods.md#permission-handling)
+defines the underlying desktop request lifetime and resolver behavior.
