@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { GlobalShortcut, GlobalShortcutKeyEvent } from "@gd-kirie/platform";
+import type { GlobalShortcut, GlobalShortcutKeyEvent, HostWindowState } from "@gd-kirie/platform";
 import { createContext } from "@gd-kirie/ipc-eventa";
 import { createPlatformClient } from "@gd-kirie/platform";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
 import { useRafFn } from "@vueuse/core";
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 const escapeShortcut: GlobalShortcut = {
   keycode: 4_194_305,
@@ -37,8 +37,14 @@ const windowBounds = ref({
 });
 const alwaysOnTop = ref(false);
 const pointerPassthrough = ref(false);
+const windowState = ref<HostWindowState>({
+  focused: true,
+  minimized: false,
+  visible: true,
+});
 const busy = ref("");
 let escapeRegistered = false;
+let stopWindowState: (() => void) | undefined;
 
 const pointerStyle = computed(() => ({
   left: `${Math.max(0, Math.min(100, ((windowBounds.value.x + pointer.value.x - displayBounds.value.x) / displayBounds.value.width) * 100))}%`,
@@ -65,6 +71,21 @@ async function refreshTelemetry(): Promise<void> {
 }
 
 useRafFn(refreshTelemetry);
+
+onMounted(async () => {
+  if (!platform) {
+    return;
+  }
+
+  try {
+    stopWindowState = platform.hostWindow.onStateChanged((state) => {
+      windowState.value = state;
+    });
+    windowState.value = await platform.hostWindow.getState();
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 async function toggleAlwaysOnTop(): Promise<void> {
   if (!platform) {
@@ -126,6 +147,7 @@ function centerWindow(): Promise<void> {
 
 onBeforeUnmount(async () => {
   try {
+    stopWindowState?.();
     if (pointerPassthrough.value || escapeRegistered) {
       await disablePointerPassthrough();
     }
@@ -145,6 +167,11 @@ onBeforeUnmount(async () => {
           <h1 class="text-2xl font-semibold tracking-tight">Kirie Platform</h1>
           <p class="mt-1 text-sm text-neutral-500">Host window controls and live pointer telemetry</p>
         </div>
+        <p class="font-mono text-xs text-neutral-500">
+          {{ windowState.visible ? "visible" : "hidden" }} ·
+          {{ windowState.focused ? "focused" : "unfocused" }} ·
+          {{ windowState.minimized ? "minimized" : "restored" }}
+        </p>
       </header>
 
       <section class="rounded-2xl border-2 border-neutral-200 bg-white/70 p-5 shadow-sm md:p-6">

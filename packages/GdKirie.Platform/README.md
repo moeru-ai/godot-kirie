@@ -18,6 +18,12 @@ context or window. Attach and disposal run on Godot's main thread, and the
 bound window must be a native, non-embedded window already inside the scene
 tree. The host disposes automatically when the bound window exits the tree.
 
+Host-window state uses Godot's `Window.Visible`, `Window.HasFocus()`, and
+`Window.Mode`. Platform emits a state event when the bound window reports a
+focus, visibility, or size change. The browser must request the first state
+snapshot before the host emits changes. This prevents state events before the
+WebView is ready. Duplicate snapshots are not emitted.
+
 ## Global shortcuts
 
 Global shortcuts are implemented on macOS and Windows. macOS uses Carbon

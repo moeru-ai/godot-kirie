@@ -15,7 +15,8 @@ await platform.hostWindow.setAlwaysOnTop(true);
 const windowBounds = await platform.hostWindow.getBounds();
 const displayBounds = await platform.hostWindow.getCurrentDisplayBounds();
 const pointer = await platform.hostWindow.getPointerPosition();
-console.log(windowBounds, displayBounds, pointer);
+const windowState = await platform.hostWindow.getState();
+console.log(windowBounds, displayBounds, pointer, windowState);
 eventa.dispose();
 ```
 
@@ -29,9 +30,14 @@ eventa.dispose();
 - native move and resize gestures
 - always-on-top
 - centering on the current display
+- visibility, focus, and minimized-state snapshots and change events
 
 Pointer coordinates use host-window pixels and are not normalized to the
 browser viewport. `getPointerPosition()` returns a single snapshot.
+
+`getState()` returns one lifecycle snapshot and starts native state observation.
+Call it once during setup. `onStateChanged()` subscribes to later changes and
+returns a function that removes the listener.
 
 ## Global shortcuts
 

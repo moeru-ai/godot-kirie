@@ -16,6 +16,11 @@ internal sealed record BoundsPayload(
     int Width,
     int Height);
 
+internal sealed record WindowStatePayload(
+    bool Focused,
+    bool Minimized,
+    bool Visible);
+
 internal sealed record GlobalShortcutPayload(
     long Keycode,
     bool ShiftPressed,
@@ -51,6 +56,12 @@ internal static class PlatformEvents
     public static readonly InvokeEventDefinition<PointerPositionPayload, EmptyPayload> GetPointerPosition =
         new($"{HostWindowPrefix}:get-pointer-position");
 
+    public static readonly InvokeEventDefinition<WindowStatePayload, EmptyPayload> GetState =
+        new($"{HostWindowPrefix}:get-state");
+
+    public static readonly EventDefinition<WindowStatePayload> StateChanged =
+        new($"{HostWindowPrefix}:state-changed");
+
     public static readonly InvokeEventDefinition<EmptyPayload, bool> SetAlwaysOnTop =
         new($"{HostWindowPrefix}:set-always-on-top");
 
@@ -73,6 +84,7 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(PointerPositionPayload))]
 [JsonSerializable(typeof(BoundsPayload))]
+[JsonSerializable(typeof(WindowStatePayload))]
 [JsonSerializable(typeof(GlobalShortcutPayload))]
 [JsonSerializable(typeof(GlobalShortcutKeyEventPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;
