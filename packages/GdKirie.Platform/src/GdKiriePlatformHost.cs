@@ -97,6 +97,12 @@ public sealed class GdKiriePlatformHost : IDisposable
                 _globalShortcuts.Unregister(shortcut);
                 return Task.FromResult(new EmptyPayload());
             }));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.OpenExternalUrl,
+            (url, _) => Task.FromResult(OpenExternalUrl(url))));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.OpenApplicationDataDirectory,
+            (EmptyPayload _, CancellationToken _) => Task.FromResult(OpenApplicationDataDirectory())));
 
         _window.FocusEntered += RefreshWindowState;
         _window.FocusExited += RefreshWindowState;
@@ -227,6 +233,36 @@ public sealed class GdKiriePlatformHost : IDisposable
         }
 
         _window.MousePassthrough = enabled;
+    }
+
+    private static EmptyPayload OpenExternalUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new ArgumentException("External URLs must use an absolute HTTP or HTTPS URL.", nameof(url));
+        }
+
+        var result = OS.ShellOpen(uri.AbsoluteUri);
+        if (result != Error.Ok)
+        {
+            throw new InvalidOperationException($"The operating system could not open the external URL: {result}.");
+        }
+
+        return new EmptyPayload();
+    }
+
+    private static string OpenApplicationDataDirectory()
+    {
+        var path = OS.GetUserDataDir();
+        var result = OS.ShellOpen(path);
+        if (result != Error.Ok)
+        {
+            throw new InvalidOperationException(
+                $"The operating system could not open the application data directory: {result}.");
+        }
+
+        return path;
     }
 
     private static DisplayServer.WindowResizeEdge ToGodotEdge(string edge)

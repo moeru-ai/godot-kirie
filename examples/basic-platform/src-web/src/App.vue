@@ -43,6 +43,7 @@ const windowState = ref<HostWindowState>({
   visible: true,
 });
 const busy = ref("");
+const actionResult = ref("");
 let escapeRegistered = false;
 let stopWindowState: (() => void) | undefined;
 
@@ -145,6 +146,40 @@ function centerWindow(): Promise<void> {
   return platform.hostWindow.centerOnCurrentDisplay();
 }
 
+async function openKirieWebsite(): Promise<void> {
+  if (!platform) {
+    return;
+  }
+
+  busy.value = "external-url";
+  try {
+    await platform.openExternalUrl("https://github.com/moeru-ai/godot-kirie");
+    actionResult.value = "Opened the Kirie website in the system browser.";
+  } catch (error) {
+    console.error(error);
+    actionResult.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    busy.value = "";
+  }
+}
+
+async function openApplicationDataDirectory(): Promise<void> {
+  if (!platform) {
+    return;
+  }
+
+  busy.value = "application-data";
+  try {
+    const path = await platform.openApplicationDataDirectory();
+    actionResult.value = `Opened ${path}`;
+  } catch (error) {
+    console.error(error);
+    actionResult.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    busy.value = "";
+  }
+}
+
 onBeforeUnmount(async () => {
   try {
     stopWindowState?.();
@@ -213,7 +248,14 @@ onBeforeUnmount(async () => {
             :toggled="pointerPassthrough" variant="secondary-muted" @click="togglePointerPassthrough" />
           <Button block :disabled="!platform || Boolean(busy)" label="Center window" size="sm" variant="primary"
             @click="centerWindow" />
+          <Button block :disabled="!platform || Boolean(busy)" label="Open Kirie website" size="sm"
+            variant="secondary-muted" @click="openKirieWebsite" />
+          <Button block :disabled="!platform || Boolean(busy)" label="Open app data directory" size="sm"
+            variant="secondary-muted" @click="openApplicationDataDirectory" />
         </div>
+        <p v-if="actionResult" class="mt-3 font-mono text-xs text-neutral-500">
+          {{ actionResult }}
+        </p>
       </section>
     </div>
   </main>

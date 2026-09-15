@@ -61,6 +61,14 @@ public static class GdKiriePlatform
                 PlatformEvents.UnregisterGlobalShortcut,
                 PlatformJsonContext.Default.EmptyPayload,
                 PlatformJsonContext.Default.GlobalShortcutPayload)
+            .RegisterInvoke(
+                PlatformEvents.OpenExternalUrl,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.String)
+            .RegisterInvoke(
+                PlatformEvents.OpenApplicationDataDirectory,
+                PlatformJsonContext.Default.String,
+                PlatformJsonContext.Default.EmptyPayload)
             .RegisterEvent(
                 PlatformEvents.GlobalShortcutStateChanged,
                 PlatformJsonContext.Default.GlobalShortcutKeyEventPayload)

@@ -47,6 +47,8 @@ Current public Godot-facing names should stay close to that low-level role:
 - `send_binary(bytes)`
 - `send_data(value)`
 - `get_launch_option(key)`
+- `grant_permission(request_id)`
+- `deny_permission(request_id)`
 
 These names describe the current low-level transport API. Android implements
 the lane shape with AndroidX WebKit ArrayBuffer message channels and CBOR
@@ -71,7 +73,14 @@ Current signals should also stay narrow:
 - `text_received`
 - `binary_received`
 - `data_received`
+- `permission_requested`
 - `ipc_error`
+
+Desktop permission requests remain pending until the application grants or
+denies each request ID. Kirie only forwards the permission type, requesting
+origin, and request ID. The application owns the trust policy and must resolve
+unknown permission types and untrusted origins by denying them. This keeps the
+low-level API independent of Godot CEF while avoiding a global allow policy.
 
 Higher-level invocation APIs do not enter Kirie core. Confirmed application
 capabilities are implemented above it through `@gd-kirie/platform` and
@@ -104,6 +113,8 @@ IPC owner.
 
 The implemented Platform capabilities are:
 
+- opening absolute HTTP and HTTPS URLs with the system browser
+- opening the current application's data directory
 - host-window bounds snapshots in screen coordinates
 - current-display bounds snapshots in screen coordinates
 - unscaled pixel position snapshots relative to the host window
@@ -127,8 +138,9 @@ Linux backends remain pending work rather than excluded platforms.
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
 Uninvoke repository's Kirie adapter. Application lifecycle, display
-enumeration, shell, permissions, updater behavior, multi-window factories, and
-general capability discovery remain outside this milestone.
+enumeration, arbitrary shell or process execution, operating-system permission
+prompts, updater behavior, multi-window factories, and general capability
+discovery remain outside this milestone.
 
 `@gd-kirie/platform` is the application capability SDK. It must not be confused
 with the existing `window.kirie.platform` value and TypeScript

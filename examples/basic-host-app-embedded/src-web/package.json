@@ -10,7 +10,7 @@
   "dependencies": {
     "@gd-kirie/ipc": "workspace:*",
     "@gd-kirie/ipc-eventa": "workspace:*",
-    "@moeru/eventa": "^1.0.0-beta.4"
+    "@moeru/eventa": "catalog:"
   },
   "devDependencies": {
     "@unocss/reset": "66.7.5",

@@ -20,6 +20,28 @@ console.log(windowBounds, displayBounds, pointer, windowState);
 eventa.dispose();
 ```
 
+## External URLs
+
+Use `openExternalUrl()` to open an absolute HTTP or HTTPS URL with the system
+browser:
+
+```ts
+await platform.openExternalUrl("https://example.com");
+```
+
+The Godot host rejects relative URLs and other URI schemes. It uses
+[`OS.shell_open()`](https://docs.godotengine.org/en/4.7/classes/class_os.html#class-os-method-shell-open)
+to select the system browser.
+
+Use `openApplicationDataDirectory()` to open the current Godot application's
+data directory and receive its absolute path:
+
+```ts
+const path = await platform.openApplicationDataDirectory();
+```
+
+This capability does not accept an arbitrary path.
+
 ## Host window
 
 - window position and size in screen coordinates
