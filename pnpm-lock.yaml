@@ -99,8 +99,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/ipc-eventa
       '@moeru/eventa':
-        specifier: ^1.0.0-beta.4
-        version: 1.0.0-beta.4
+        specifier: 'catalog:'
+        version: 1.0.0
     devDependencies:
       '@unocss/reset':
         specifier: 66.7.5
@@ -595,20 +595,6 @@ packages:
       h3:
         optional: true
       hono:
-        optional: true
-      web-worker:
-        optional: true
-
-  '@moeru/eventa@1.0.0-beta.4':
-    resolution: {integrity: sha512-Pnpufz3Pbqrx7Ea+UgoF2C7U8y2vq3larEcsUhHtO91GZHSKptdSSHiqlIkq1pZBDxbsJO4LUU1Kplvx32mj/Q==}
-    peerDependencies:
-      electron: '>=39'
-      h3: '>=2.0.1-rc.17'
-      web-worker: ^1.5.0
-    peerDependenciesMeta:
-      electron:
-        optional: true
-      h3:
         optional: true
       web-worker:
         optional: true
@@ -2020,11 +2006,6 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.11:
-    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
-    engines: {node: ^18 || >=20}
-    hasBin: true
-
   nanoid@6.0.1:
     resolution: {integrity: sha512-3wVS3i51pE2pi1k5FFL/95BGfVS0kSsvDVuGXHOtxox/TywUmtgq+3qiTOTbs9J7KfHaXPiN171k/A6dBnaXFw==}
     engines: {node: ^22 || ^24 || >=26}
@@ -2949,11 +2930,6 @@ snapshots:
   '@moeru/eventa@1.0.0':
     dependencies:
       nanoid: 6.0.1
-      picomatch: 4.0.4
-
-  '@moeru/eventa@1.0.0-beta.4':
-    dependencies:
-      nanoid: 5.1.11
       picomatch: 4.0.4
 
   '@moeru/std@0.1.0-beta.17': {}
@@ -4181,8 +4157,6 @@ snapshots:
   nanoid@3.3.12: {}
 
   nanoid@3.3.18: {}
-
-  nanoid@5.1.11: {}
 
   nanoid@6.0.1: {}
 
