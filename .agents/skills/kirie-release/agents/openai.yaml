@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kirie Release"
+  short_description: "Release Kirie with synchronized templates"
+  default_prompt: "Use $kirie-release to prepare and publish the next Kirie version."

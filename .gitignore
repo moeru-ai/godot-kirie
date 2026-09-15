@@ -7,7 +7,9 @@
 node_modules/
 # APM resolves these directories from apm.yml and apm.lock.yaml.
 apm_modules/
-/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/kirie-release/
+!/.agents/skills/kirie-release/**
 dist/
 build/
 !packages/build/
