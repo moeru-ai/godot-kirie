@@ -18,6 +18,14 @@ context or window. Attach and disposal run on Godot's main thread, and the
 bound window must be a native, non-embedded window already inside the scene
 tree. The host disposes automatically when the bound window exits the tree.
 
+`openExternalUrl()` accepts only absolute HTTP and HTTPS URLs. The host passes
+accepted URLs to
+[`OS.shell_open()`](https://docs.godotengine.org/en/4.7/classes/class_os.html#class-os-method-shell-open).
+
+`openApplicationDataDirectory()` opens and returns the current project's
+[`OS.get_user_data_dir()`](https://docs.godotengine.org/en/4.7/classes/class_os.html#class-os-method-get-user-data-dir).
+It does not accept an arbitrary path.
+
 Host-window state uses Godot's `Window.Visible`, `Window.HasFocus()`, and
 `Window.Mode`. Platform emits a state event when the bound window reports a
 focus, visibility, or size change. The browser must request the first state

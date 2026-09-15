@@ -67,6 +67,8 @@ export interface GlobalShortcutsClient {
 export interface PlatformClient {
   hostWindow: HostWindowClient;
   globalShortcuts: GlobalShortcutsClient;
+  openExternalUrl: (url: string) => Promise<void>;
+  openApplicationDataDirectory: () => Promise<string>;
 }
 
 type EmptyPayload = Record<string, never>;
@@ -107,6 +109,10 @@ const events = {
   ),
   unregisterGlobalShortcut: defineInvokeEventa<EmptyPayload, GlobalShortcut>(
     "kirie:platform:global-shortcut:unregister",
+  ),
+  openExternalUrl: defineInvokeEventa<EmptyPayload, string>("kirie:platform:open-external-url"),
+  openApplicationDataDirectory: defineInvokeEventa<string, EmptyPayload>(
+    "kirie:platform:open-application-data-directory",
   ),
 };
 
@@ -155,6 +161,12 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
   });
 
   return {
+    async openExternalUrl(url) {
+      await invokes.openExternalUrl(url);
+    },
+    openApplicationDataDirectory() {
+      return invokes.openApplicationDataDirectory({});
+    },
     hostWindow: {
       getBounds() {
         return invokes.getBounds({});

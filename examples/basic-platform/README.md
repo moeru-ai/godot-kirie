@@ -1,7 +1,9 @@
 # basic-platform
 
-A compact desktop example for `@gd-kirie/platform` and `GdKirie.Platform`. It visualizes
-display, window, and pointer coordinates and exercises host-window controls, pointer passthrough, and global shortcuts.
+A compact desktop example for `@gd-kirie/platform` and `GdKirie.Platform`. It
+visualizes display, window, and pointer coordinates. It also exercises window
+controls, pointer passthrough, global shortcuts, external URLs, and the
+application data directory.
 
 The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.

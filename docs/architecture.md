@@ -113,6 +113,8 @@ IPC owner.
 
 The implemented Platform capabilities are:
 
+- opening absolute HTTP and HTTPS URLs with the system browser
+- opening the current application's data directory
 - host-window bounds snapshots in screen coordinates
 - current-display bounds snapshots in screen coordinates
 - unscaled pixel position snapshots relative to the host window
@@ -136,9 +138,9 @@ Linux backends remain pending work rather than excluded platforms.
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
 Uninvoke repository's Kirie adapter. Application lifecycle, display
-enumeration, shell, operating-system permission prompts, updater behavior,
-multi-window factories, and general capability discovery remain outside this
-milestone.
+enumeration, arbitrary shell or process execution, operating-system permission
+prompts, updater behavior, multi-window factories, and general capability
+discovery remain outside this milestone.
 
 `@gd-kirie/platform` is the application capability SDK. It must not be confused
 with the existing `window.kirie.platform` value and TypeScript

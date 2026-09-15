@@ -76,6 +76,12 @@ internal static class PlatformEvents
 
     public static readonly EventDefinition<GlobalShortcutKeyEventPayload> GlobalShortcutStateChanged =
         new($"{GlobalShortcutPrefix}:state-changed");
+
+    public static readonly InvokeEventDefinition<EmptyPayload, string> OpenExternalUrl =
+        new("kirie:platform:open-external-url");
+
+    public static readonly InvokeEventDefinition<string, EmptyPayload> OpenApplicationDataDirectory =
+        new("kirie:platform:open-application-data-directory");
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
