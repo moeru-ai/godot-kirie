@@ -45,3 +45,21 @@ auto-repeat. Native events are delivered on Godot's main thread, and disposing
 the host removes its registrations. The Windows hook stops after the final
 Windows registration is removed. Linux global-shortcut backends are not yet
 implemented.
+
+## Desktop notifications
+
+Desktop notifications are implemented on macOS 10.14 or later with the
+UserNotifications framework. The first notification asks macOS for alert
+authorization when needed. Notifications remain visible while the app is in
+the foreground.
+
+The browser supplies a non-empty notification ID and title. When the user
+clicks a notification, the host emits the same ID through the borrowed Eventa
+context. Disposing the Platform host removes its activation callbacks. Kirie
+does not retain an activation across a cold app launch.
+
+UserNotifications has one delegate. If another native integration already owns
+it, the first notification call fails instead of replacing that delegate.
+
+Windows and Linux notification backends are not implemented. Calls on those
+platforms fail with `PlatformNotSupportedException`.

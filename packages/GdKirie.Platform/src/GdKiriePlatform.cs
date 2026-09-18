@@ -69,9 +69,16 @@ public static class GdKiriePlatform
                 PlatformEvents.OpenApplicationDataDirectory,
                 PlatformJsonContext.Default.String,
                 PlatformJsonContext.Default.EmptyPayload)
+            .RegisterInvoke(
+                PlatformEvents.ShowNotification,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.NotificationPayload)
             .RegisterEvent(
                 PlatformEvents.GlobalShortcutStateChanged,
                 PlatformJsonContext.Default.GlobalShortcutKeyEventPayload)
+            .RegisterEvent(
+                PlatformEvents.NotificationActivated,
+                PlatformJsonContext.Default.NotificationActivatedPayload)
             .RegisterEvent(
                 PlatformEvents.StateChanged,
                 PlatformJsonContext.Default.WindowStatePayload);

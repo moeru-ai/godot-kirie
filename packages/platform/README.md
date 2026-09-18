@@ -87,3 +87,31 @@ await platform.globalShortcuts.unregister(shortcut);
 `commandOrControlAutoremap` selects Command on macOS and Control on Windows.
 One `onKeyEvent` handler receives both states; keyboard auto-repeat does not
 produce extra calls.
+
+## Desktop notifications
+
+Desktop notifications are available on macOS 10.14 or later. The first call to
+`show()` requests notification permission from macOS when needed:
+
+```ts
+const stop = platform.notifications.onActivated(({ id }) => {
+  console.log(`The user clicked ${id}`);
+});
+
+await platform.notifications.show({
+  id: "assistant-answer-42",
+  title: "AIRI",
+  body: "The answer is ready.",
+});
+
+stop();
+```
+
+The caller supplies `id`. Kirie returns the same value when the user clicks the
+notification. IDs and titles must not be empty. The body can be empty.
+
+Activation events belong to the attached Platform host. Kirie does not retain
+them after the host is disposed, and it does not deliver activation after a
+cold app launch. If another native integration already owns the macOS
+notification-center delegate, `show()` fails instead of replacing it. Windows
+and Linux notification backends are not implemented.

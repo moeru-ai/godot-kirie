@@ -33,10 +33,18 @@ internal sealed record GlobalShortcutKeyEventPayload(
     GlobalShortcutPayload Shortcut,
     string State);
 
+internal sealed record NotificationPayload(
+    string Id,
+    string Title,
+    string Body);
+
+internal sealed record NotificationActivatedPayload(string Id);
+
 internal static class PlatformEvents
 {
     private const string HostWindowPrefix = "kirie:platform:host-window";
     private const string GlobalShortcutPrefix = "kirie:platform:global-shortcut";
+    private const string NotificationPrefix = "kirie:platform:notification";
 
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> BeginMove =
         new($"{HostWindowPrefix}:begin-move");
@@ -77,6 +85,12 @@ internal static class PlatformEvents
     public static readonly EventDefinition<GlobalShortcutKeyEventPayload> GlobalShortcutStateChanged =
         new($"{GlobalShortcutPrefix}:state-changed");
 
+    public static readonly InvokeEventDefinition<EmptyPayload, NotificationPayload> ShowNotification =
+        new($"{NotificationPrefix}:show");
+
+    public static readonly EventDefinition<NotificationActivatedPayload> NotificationActivated =
+        new($"{NotificationPrefix}:activated");
+
     public static readonly InvokeEventDefinition<EmptyPayload, string> OpenExternalUrl =
         new("kirie:platform:open-external-url");
 
@@ -93,4 +107,6 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(WindowStatePayload))]
 [JsonSerializable(typeof(GlobalShortcutPayload))]
 [JsonSerializable(typeof(GlobalShortcutKeyEventPayload))]
+[JsonSerializable(typeof(NotificationPayload))]
+[JsonSerializable(typeof(NotificationActivatedPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;

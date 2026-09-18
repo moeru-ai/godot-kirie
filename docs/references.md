@@ -119,6 +119,11 @@ packaging, or platform WebView bridge details.
 - [Tauri global-hotkey macOS backend](https://github.com/tauri-apps/global-hotkey/blob/dev/src/platform_impl/macos/mod.rs)
   Upstream implementation reference for Carbon hot-key registration and
   pressed/released event dispatch on the application event target.
+- [Asking permission to use notifications](https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications)
+  Apple reference for requesting authorization before posting local
+  notifications.
+- [UNUserNotificationCenterDelegate](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate)
+  Apple reference for foreground presentation and user activation callbacks.
 
 ## IPC formats and compatibility targets
 

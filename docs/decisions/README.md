@@ -30,3 +30,5 @@ architecture documentation.
   — superseded by ADR-0003, 2026-08-24
 - [ADR-0003: Use a low-level keyboard hook for Windows global shortcuts](0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md)
   — accepted, 2026-08-31
+- [ADR-0004: Add macOS desktop notifications to the Platform layer](0004-add-macos-desktop-notifications.md)
+  — proposed, 2026-09-18
