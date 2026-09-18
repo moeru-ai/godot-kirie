@@ -222,6 +222,9 @@ packaging, or platform WebView bridge details.
   windows.
 - [Microsoft CsWin32](https://github.com/microsoft/CsWin32)
   Source generator for the Windows APIs used by `GdKirie.Platform`.
+- [RumpSharp](https://github.com/duplicati/rumpsharp)
+  .NET interface for the macOS UserNotifications APIs used by
+  `GdKirie.Platform`.
 - [SetWindowsHookExW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw)
   Reference for installing the Windows low-level keyboard hook.
 - [LowLevelKeyboardProc](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc)

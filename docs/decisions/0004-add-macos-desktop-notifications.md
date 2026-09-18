@@ -24,12 +24,18 @@ browser calls `notifications.show()` with a caller-owned ID, title, and body.
 The host emits `notifications.onActivated()` with the same ID after a click.
 The application decides what the ID means and which page or window to open.
 
-The initial native backend supports macOS 10.14 or later through Apple's
-UserNotifications framework. The first `show()` call requests alert
-authorization. The backend presents notifications while the application is in
-the foreground and installs its delegate before it sends a Kirie notification.
-It fails if another native integration already owns the UserNotifications
-delegate. It does not replace that owner.
+The initial native backend supports macOS 11 or later. It uses RumpSharp as a
+typed .NET interface to Apple's UserNotifications framework. The first
+`show()` call requests notification authorization. The backend presents silent
+notifications while the application is in the foreground.
+
+RumpSharp requests alert, sound, and badge authorization. Kirie sends silent
+notifications and does not set the application badge.
+
+Kirie forces RumpSharp to use its in-process transport. RumpSharp does not
+create or start its optional helper application. RumpSharp owns the one
+UserNotifications delegate for the process. Applications must not install a
+second delegate while the Platform host is active.
 
 Notification activation is a runtime event. It belongs to the attached
 `GdKiriePlatformHost`, stops when that host is disposed, and is not persisted
@@ -48,7 +54,12 @@ decision before Kirie adds a Windows backend.
 - Permission refusal and native setup failures are returned to the original
   `show()` call.
 - The host owns callback cleanup and does not deliver stale activation events.
+- Kirie does not maintain a private Objective-C runtime binding for
+  UserNotifications.
+- The dependency requests sound and badge authorization although Kirie does
+  not use those capabilities.
 - macOS is the only supported notification platform in this revision.
+- The macOS backend requires macOS 11 or later.
 - A terminated application cannot recover the notification ID from a click.
 - Windows support requires a later dependency and packaging decision.
 
@@ -56,4 +67,5 @@ decision before Kirie adds a Windows backend.
 
 - [Asking permission to use notifications](https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications)
 - [UNUserNotificationCenterDelegate](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate)
+- [RumpSharp](https://github.com/duplicati/rumpsharp)
 - [Windows app notifications overview](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/)

@@ -7,7 +7,7 @@ data directory, and desktop notifications.
 
 The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.
-Desktop notifications are available on macOS 10.14 or later. The example shows
+Desktop notifications are available on macOS 11 or later. The example shows
 the notification ID after the user clicks the notification.
 
 macOS grants notification permission to the running application bundle. A

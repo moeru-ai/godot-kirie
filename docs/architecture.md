@@ -123,7 +123,7 @@ The implemented Platform capabilities are:
 - always-on-top
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
-- desktop notifications with click activation on macOS 10.14 or later
+- desktop notifications with click activation on macOS 11 or later
 
 Global shortcuts use Godot logical keys and explicit register/unregister
 operations. The browser receives pressed and released states through one
@@ -140,9 +140,9 @@ Desktop notification calls contain a caller-owned ID, title, and body. The
 host returns the same ID when the user clicks the notification. This keeps
 product routing in the application instead of the Platform package. The
 activation lifetime belongs to `GdKiriePlatformHost`. Cold-launch activation
-is not part of the contract. The macOS backend requests alert authorization on
-the first call and uses UserNotifications for delivery and
-activation. [ADR-0004](decisions/0004-add-macos-desktop-notifications.md)
+is not part of the contract. The macOS backend requests notification
+authorization on the first call. It uses RumpSharp and UserNotifications for
+delivery and activation. [ADR-0004](decisions/0004-add-macos-desktop-notifications.md)
 records the initial platform scope.
 
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event

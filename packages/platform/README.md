@@ -90,7 +90,7 @@ produce extra calls.
 
 ## Desktop notifications
 
-Desktop notifications are available on macOS 10.14 or later. The first call to
+Desktop notifications are available on macOS 11 or later. The first call to
 `show()` requests notification permission from macOS when needed:
 
 ```ts
@@ -112,6 +112,6 @@ notification. IDs and titles must not be empty. The body can be empty.
 
 Activation events belong to the attached Platform host. Kirie does not retain
 them after the host is disposed, and it does not deliver activation after a
-cold app launch. If another native integration already owns the macOS
-notification-center delegate, `show()` fails instead of replacing it. Windows
-and Linux notification backends are not implemented.
+cold app launch. RumpSharp owns the macOS notification-center delegate while a
+Platform host is active. Do not install another notification integration in
+the same process. Windows and Linux notification backends are not implemented.

@@ -6,7 +6,7 @@ internal sealed class NotificationManager(
 {
     private readonly Action<NotificationActivatedPayload> _onActivated = onActivated;
     private readonly SynchronizationContext? _synchronizationContext = synchronizationContext;
-    private MacOsNotificationBackend? _backend;
+    private INotificationBackend? _backend;
     private bool _disposed;
 
     public async Task<EmptyPayload> ShowAsync(
@@ -33,21 +33,21 @@ internal sealed class NotificationManager(
         _backend?.Dispose();
     }
 
-    private MacOsNotificationBackend GetBackend()
+    private INotificationBackend GetBackend()
     {
         if (_backend is not null)
         {
             return _backend;
         }
 
-        if (OperatingSystem.IsMacOSVersionAtLeast(10, 14))
+        if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
             _backend = new MacOsNotificationBackend(DispatchActivation);
             return _backend;
         }
 
         throw new PlatformNotSupportedException(
-            "Desktop notifications are currently implemented only on macOS 10.14 or later.");
+            "Desktop notifications are currently implemented only on macOS 11 or later.");
     }
 
     private void DispatchActivation(string id)
