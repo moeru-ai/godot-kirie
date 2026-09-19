@@ -9,7 +9,7 @@ import packageJson from "../package.json" with { type: "json" };
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
 const KIRIE_REPOSITORY = "moeru-ai/godot-kirie";
-export const KIRIE_TEMPLATES_COMMIT = "268f20d148619a59688b5f6d848f43ad1a782a8f";
+export const KIRIE_TEMPLATES_COMMIT = "0c005b6062b390406cf51b5e9c33a2b4d7925799";
 
 export interface InitOptions {
   cwd?: string;
