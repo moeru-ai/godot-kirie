@@ -27,8 +27,7 @@ public sealed class GdKiriePlatformHost : IDisposable
             payload => context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload),
             SynchronizationContext.Current);
         _notifications = new NotificationManager(
-            payload => context.Emit(PlatformEvents.NotificationActivated, payload),
-            SynchronizationContext.Current);
+            id => context.Emit(PlatformEvents.NotificationActivated, new NotificationActivatedPayload(id)));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>

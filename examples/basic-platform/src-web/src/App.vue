@@ -190,14 +190,13 @@ async function showNotification(): Promise<void> {
   }
 
   busy.value = "notification";
-  const id = crypto.randomUUID();
   try {
     await platform.notifications.show({
-      id,
+      id: "basic-platform",
       title: "Kirie Platform",
       body: "Click this notification to send its ID back to the WebView.",
     });
-    actionResult.value = `Sent notification ${id}`;
+    actionResult.value = "Sent notification";
   } catch (error) {
     console.error(error);
     actionResult.value = error instanceof Error ? error.message : String(error);

@@ -7,9 +7,9 @@ namespace GdKirie.Platform;
 internal sealed class MacOsNotificationBackend : INotificationBackend
 {
     private static readonly object RuntimeLock = new();
-    private static SharedRuntime? _runtime;
+    private static readonly Dictionary<string, Action<string>> Owners = [];
+    private static NotificationCenter? _center;
 
-    private readonly SharedRuntime _sharedRuntime;
     private readonly string _ownerId = Guid.NewGuid().ToString("N");
     private bool _disposed;
 
@@ -17,16 +17,42 @@ internal sealed class MacOsNotificationBackend : INotificationBackend
     {
         lock (RuntimeLock)
         {
-            _runtime ??= new SharedRuntime();
-            _sharedRuntime = _runtime;
-            _sharedRuntime.AddOwner(_ownerId, onActivated);
+            if (_center is null)
+            {
+                _center = new NotificationCenter(new NotificationCenterOptions
+                {
+                    Transport = NotificationTransport.InProcess,
+                    BecomeAccessoryApplication = false,
+                    PresentWhenForeground = true,
+                    RequestAuthorizationOnDemand = false,
+                });
+                _center.Activated += OnActivated;
+            }
+
+            Owners.Add(_ownerId, onActivated);
         }
     }
 
-    public Task ShowAsync(NotificationPayload notification, CancellationToken cancellationToken)
+    public async Task ShowAsync(NotificationPayload notification, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _sharedRuntime.ShowAsync(_ownerId, notification, cancellationToken);
+
+        var center = _center!;
+        var authorized = await Task.Run(
+            () => center.RequestAuthorization(TimeSpan.FromMinutes(2)))
+            .WaitAsync(cancellationToken);
+        if (!authorized)
+        {
+            throw new UnauthorizedAccessException(
+                center.LastAuthorizationError
+                ?? "macOS notification permission is not granted for this application.");
+        }
+
+        await center.ShowAsync(new Notification(notification.Title, body: notification.Body)
+        {
+            Identifier = $"{_ownerId}:{notification.Id}",
+            PlaySound = false,
+        }, cancellationToken);
     }
 
     public void Dispose()
@@ -38,102 +64,37 @@ internal sealed class MacOsNotificationBackend : INotificationBackend
 
         lock (RuntimeLock)
         {
-            if (_sharedRuntime.RemoveOwner(_ownerId))
+            Owners.Remove(_ownerId);
+            if (Owners.Count == 0)
             {
-                _sharedRuntime.Dispose();
-                _runtime = null;
+                _center!.Activated -= OnActivated;
+                _center.Dispose();
+                _center = null;
             }
 
             _disposed = true;
         }
     }
 
-    private sealed class SharedRuntime : IDisposable
+    private static void OnActivated(object? sender, NotificationResponse response)
     {
-        private readonly Dictionary<string, Action<string>> _owners = [];
-        private readonly NotificationCenter _center;
-
-        public SharedRuntime()
+        if (response.Activation != NotificationActivation.Default)
         {
-            _center = new NotificationCenter(new NotificationCenterOptions
-            {
-                Transport = NotificationTransport.InProcess,
-                BecomeAccessoryApplication = false,
-                PresentWhenForeground = true,
-                RequestAuthorizationOnDemand = false,
-            });
-            _center.Activated += OnActivated;
+            return;
         }
 
-        public void AddOwner(string ownerId, Action<string> onActivated)
+        var separator = response.Identifier.IndexOf(':', StringComparison.Ordinal);
+        if (separator < 1)
         {
-            _owners.Add(ownerId, onActivated);
+            return;
         }
 
-        public bool RemoveOwner(string ownerId)
+        Action<string>? onActivated;
+        lock (RuntimeLock)
         {
-            _owners.Remove(ownerId);
-            return _owners.Count == 0;
+            onActivated = Owners.GetValueOrDefault(response.Identifier[..separator]);
         }
 
-        public async Task ShowAsync(
-            string ownerId,
-            NotificationPayload notification,
-            CancellationToken cancellationToken)
-        {
-            lock (RuntimeLock)
-            {
-                if (!_owners.ContainsKey(ownerId))
-                {
-                    throw new ObjectDisposedException(nameof(MacOsNotificationBackend));
-                }
-            }
-
-            var authorized = await Task.Run(
-                () => _center.RequestAuthorization(TimeSpan.FromMinutes(2)))
-                .WaitAsync(cancellationToken);
-            if (!authorized)
-            {
-                throw new UnauthorizedAccessException(
-                    _center.LastAuthorizationError
-                    ?? "macOS notification permission is not granted for this application.");
-            }
-
-            var nativeId = $"{ownerId}:{notification.Id}";
-            await _center.ShowAsync(new Notification(notification.Title, body: notification.Body)
-            {
-                Identifier = nativeId,
-                PlaySound = false,
-            }, cancellationToken);
-        }
-
-        public void Dispose()
-        {
-            _owners.Clear();
-            _center.Activated -= OnActivated;
-            _center.Dispose();
-        }
-
-        private void OnActivated(object? sender, NotificationResponse response)
-        {
-            if (response.Activation != NotificationActivation.Default)
-            {
-                return;
-            }
-
-            var separator = response.Identifier.IndexOf(':', StringComparison.Ordinal);
-            if (separator < 1)
-            {
-                return;
-            }
-
-            Action<string>? onActivated;
-            lock (RuntimeLock)
-            {
-                onActivated = _owners.GetValueOrDefault(response.Identifier[..separator]);
-            }
-
-            onActivated?.Invoke(response.Identifier[(separator + 1)..]);
-        }
+        onActivated?.Invoke(response.Identifier[(separator + 1)..]);
     }
 }

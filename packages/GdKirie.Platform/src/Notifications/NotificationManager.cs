@@ -1,11 +1,8 @@
 namespace GdKirie.Platform;
 
-internal sealed class NotificationManager(
-    Action<NotificationActivatedPayload> onActivated,
-    SynchronizationContext? synchronizationContext) : IDisposable
+internal sealed class NotificationManager(Action<string> onActivated) : IDisposable
 {
-    private readonly Action<NotificationActivatedPayload> _onActivated = onActivated;
-    private readonly SynchronizationContext? _synchronizationContext = synchronizationContext;
+    private readonly Action<string> _onActivated = onActivated;
     private INotificationBackend? _backend;
     private bool _disposed;
 
@@ -18,7 +15,7 @@ internal sealed class NotificationManager(
         ArgumentException.ThrowIfNullOrWhiteSpace(notification.Title);
         ArgumentNullException.ThrowIfNull(notification.Body);
 
-        await GetBackend().ShowAsync(notification, cancellationToken);
+        await Backend.ShowAsync(notification, cancellationToken);
         return new EmptyPayload();
     }
 
@@ -33,33 +30,14 @@ internal sealed class NotificationManager(
         _backend?.Dispose();
     }
 
-    private INotificationBackend GetBackend()
-    {
-        if (_backend is not null)
-        {
-            return _backend;
-        }
+    private INotificationBackend Backend => _backend ??=
+        OperatingSystem.IsMacOSVersionAtLeast(11)
+            ? new MacOsNotificationBackend(_onActivated)
+            : throw new PlatformNotSupportedException(
+                "Desktop notifications are currently implemented only on macOS 11 or later.");
+}
 
-        if (OperatingSystem.IsMacOSVersionAtLeast(11))
-        {
-            _backend = new MacOsNotificationBackend(DispatchActivation);
-            return _backend;
-        }
-
-        throw new PlatformNotSupportedException(
-            "Desktop notifications are currently implemented only on macOS 11 or later.");
-    }
-
-    private void DispatchActivation(string id)
-    {
-        if (_synchronizationContext is null || SynchronizationContext.Current == _synchronizationContext)
-        {
-            _onActivated(new NotificationActivatedPayload(id));
-            return;
-        }
-
-        _synchronizationContext.Post(
-            _ => _onActivated(new NotificationActivatedPayload(id)),
-            null);
-    }
+internal interface INotificationBackend : IDisposable
+{
+    Task ShowAsync(NotificationPayload notification, CancellationToken cancellationToken);
 }

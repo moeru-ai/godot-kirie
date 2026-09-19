@@ -90,8 +90,7 @@ produce extra calls.
 
 ## Desktop notifications
 
-Desktop notifications are available on macOS 11 or later. The first call to
-`show()` requests notification permission from macOS when needed:
+Desktop notifications are available on macOS 11 or later:
 
 ```ts
 const stop = platform.notifications.onActivated(({ id }) => {
@@ -107,11 +106,6 @@ await platform.notifications.show({
 stop();
 ```
 
-The caller supplies `id`. Kirie returns the same value when the user clicks the
-notification. IDs and titles must not be empty. The body can be empty.
-
-Activation events belong to the attached Platform host. Kirie does not retain
-them after the host is disposed, and it does not deliver activation after a
-cold app launch. RumpSharp owns the macOS notification-center delegate while a
-Platform host is active. Do not install another notification integration in
-the same process. Windows and Linux notification backends are not implemented.
+The first `show()` requests permission. IDs and titles must not be empty. Click
+events end when the Platform host is disposed and do not survive a cold launch.
+Windows and Linux backends are not implemented.

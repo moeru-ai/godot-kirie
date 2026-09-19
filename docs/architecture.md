@@ -123,7 +123,7 @@ The implemented Platform capabilities are:
 - always-on-top
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
-- desktop notifications with click activation on macOS 11 or later
+- [desktop notifications with click activation on macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
 operations. The browser receives pressed and released states through one
@@ -136,22 +136,12 @@ conflict semantics are recorded in
 [ADR-0003](decisions/0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md).
 Linux backends remain pending work rather than excluded platforms.
 
-Desktop notification calls contain a caller-owned ID, title, and body. The
-host returns the same ID when the user clicks the notification. This keeps
-product routing in the application instead of the Platform package. The
-activation lifetime belongs to `GdKiriePlatformHost`. Cold-launch activation
-is not part of the contract. The macOS backend requests notification
-authorization on the first call. It uses RumpSharp and UserNotifications for
-delivery and activation. [ADR-0004](decisions/0004-add-macos-desktop-notifications.md)
-records the initial platform scope.
-
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
 Uninvoke repository's Kirie adapter. Application lifecycle, display
 enumeration, arbitrary shell or process execution, a general operating-system
 permission API, updater behavior, multi-window factories, and general
-capability discovery remain outside this milestone. The notification API owns
-only the notification authorization that its macOS backend requires.
+capability discovery remain outside this milestone.
 
 `@gd-kirie/platform` is the application capability SDK. It must not be confused
 with the existing `window.kirie.platform` value and TypeScript

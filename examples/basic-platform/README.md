@@ -10,13 +10,10 @@ registration fails visibly and pointer passthrough is left disabled.
 Desktop notifications are available on macOS 11 or later. The example shows
 the notification ID after the user clicks the notification.
 
-macOS grants notification permission to the running application bundle. A
-project started through the Godot editor uses the Godot host identity. Export
-the example with its own bundle identifier, then copy it to `/Applications` or
-`~/Applications` before the first launch. Apps launched from temporary
-directories can be rejected with `UNErrorDomain 1` before macOS registers their
-notification permission. Use the installed copy to test the product permission,
-banner, and click activation.
+To test macOS notifications under the example's identity, export it and copy
+the app to `/Applications` or `~/Applications` before its first launch. A run
+from the editor uses Godot's identity; a temporary app path can fail with
+`UNErrorDomain 1`.
 
 Run these setup commands from the repository root:
 

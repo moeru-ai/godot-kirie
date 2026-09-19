@@ -48,22 +48,10 @@ implemented.
 
 ## Desktop notifications
 
-Desktop notifications are implemented on macOS 11 or later with RumpSharp and
-the UserNotifications framework. The first notification asks macOS for
-notification authorization. Notifications remain visible while the app is in
-the foreground and do not play a sound.
+On macOS 11 or later, RumpSharp requests permission, posts silent notifications,
+and reports their caller-owned IDs when clicked. Callbacks end when the host is
+disposed and do not survive a cold launch.
 
-RumpSharp requests alert, sound, and badge authorization. Kirie sends silent
-notifications and does not set the application badge.
-
-The browser supplies a non-empty notification ID and title. When the user
-clicks a notification, the host emits the same ID through the borrowed Eventa
-context. Disposing the Platform host removes its activation callbacks. Kirie
-does not retain an activation across a cold app launch.
-
-RumpSharp uses the one UserNotifications delegate for the process. Do not
-install a second delegate while a Platform host is active. Kirie forces the
-in-process transport, so RumpSharp does not start its optional helper.
-
-Windows and Linux notification backends are not implemented. Calls on those
-platforms fail with `PlatformNotSupportedException`.
+RumpSharp owns the process UserNotifications delegate and runs in-process; do
+not install a second delegate while a Platform host is active. Windows and
+Linux calls fail with `PlatformNotSupportedException`.

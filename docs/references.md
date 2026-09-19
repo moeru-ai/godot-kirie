@@ -119,11 +119,6 @@ packaging, or platform WebView bridge details.
 - [Tauri global-hotkey macOS backend](https://github.com/tauri-apps/global-hotkey/blob/dev/src/platform_impl/macos/mod.rs)
   Upstream implementation reference for Carbon hot-key registration and
   pressed/released event dispatch on the application event target.
-- [Asking permission to use notifications](https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications)
-  Apple reference for requesting authorization before posting local
-  notifications.
-- [UNUserNotificationCenterDelegate](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate)
-  Apple reference for foreground presentation and user activation callbacks.
 
 ## IPC formats and compatibility targets
 
@@ -222,9 +217,6 @@ packaging, or platform WebView bridge details.
   windows.
 - [Microsoft CsWin32](https://github.com/microsoft/CsWin32)
   Source generator for the Windows APIs used by `GdKirie.Platform`.
-- [RumpSharp](https://github.com/duplicati/rumpsharp)
-  .NET interface for the macOS UserNotifications APIs used by
-  `GdKirie.Platform`.
 - [SetWindowsHookExW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexw)
   Reference for installing the Windows low-level keyboard hook.
 - [LowLevelKeyboardProc](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc)
