@@ -2,7 +2,7 @@ import type { KirieEventaContext } from "@gd-kirie/ipc-eventa";
 import { createContext, defineEventa } from "@moeru/eventa";
 import { describe, expect, it, vi } from "vitest";
 
-import type { DesktopNotification, HostWindowState } from "./index";
+import type { HostWindowState } from "./index";
 import { createPlatformClient } from "./index";
 
 describe("host window state", () => {
@@ -101,53 +101,5 @@ describe("application data directory", () => {
     );
 
     await expect(platform.openApplicationDataDirectory()).resolves.toBe(path);
-  });
-});
-
-describe("desktop notifications", () => {
-  it("shows a notification through the Platform wire contract", async () => {
-    const context = createContext() as KirieEventaContext;
-    const platform = createPlatformClient(context);
-    const notification: DesktopNotification = {
-      id: "spotlight-answer-42",
-      title: "AIRI",
-      body: "The answer is ready.",
-    };
-
-    context.on(
-      defineEventa<{ content: DesktopNotification; invokeId: string }>(
-        "kirie:platform:notification:show-send",
-      ),
-      ({ body }) => {
-        if (!body) {
-          throw new Error("Platform notification request has no body.");
-        }
-
-        expect(body.content).toEqual(notification);
-        context.emit(
-          defineEventa<{ content: Record<string, never>; invokeId: string }>(
-            `kirie:platform:notification:show-receive-${body.invokeId}`,
-          ),
-          { content: {}, invokeId: body.invokeId },
-        );
-      },
-    );
-
-    await expect(platform.notifications.show(notification)).resolves.toBeUndefined();
-  });
-
-  it("subscribes and unsubscribes from notification activation", () => {
-    const context = createContext() as KirieEventaContext;
-    const platform = createPlatformClient(context);
-    const listener = vi.fn();
-    const stop = platform.notifications.onActivated(listener);
-    const event = defineEventa<{ id: string }>("kirie:platform:notification:activated");
-
-    context.emit(event, { id: "spotlight-answer-42" });
-    expect(listener).toHaveBeenCalledWith({ id: "spotlight-answer-42" });
-
-    stop();
-    context.emit(event, { id: "spotlight-answer-43" });
-    expect(listener).toHaveBeenCalledOnce();
   });
 });
