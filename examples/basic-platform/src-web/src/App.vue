@@ -46,6 +46,7 @@ const busy = ref("");
 const actionResult = ref("");
 let escapeRegistered = false;
 let stopWindowState: (() => void) | undefined;
+let stopNotificationActivation: (() => void) | undefined;
 
 const pointerStyle = computed(() => ({
   left: `${Math.max(0, Math.min(100, ((windowBounds.value.x + pointer.value.x - displayBounds.value.x) / displayBounds.value.width) * 100))}%`,
@@ -79,6 +80,9 @@ onMounted(async () => {
   }
 
   try {
+    stopNotificationActivation = platform.notifications.onActivated(({ id }) => {
+      actionResult.value = `Activated notification ${id}`;
+    });
     stopWindowState = platform.hostWindow.onStateChanged((state) => {
       windowState.value = state;
     });
@@ -180,8 +184,30 @@ async function openApplicationDataDirectory(): Promise<void> {
   }
 }
 
+async function showNotification(): Promise<void> {
+  if (!platform) {
+    return;
+  }
+
+  busy.value = "notification";
+  try {
+    await platform.notifications.show({
+      id: "basic-platform",
+      title: "Kirie Platform",
+      body: "Click this notification to send its ID back to the WebView.",
+    });
+    actionResult.value = "Sent notification";
+  } catch (error) {
+    console.error(error);
+    actionResult.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    busy.value = "";
+  }
+}
+
 onBeforeUnmount(async () => {
   try {
+    stopNotificationActivation?.();
     stopWindowState?.();
     if (pointerPassthrough.value || escapeRegistered) {
       await disablePointerPassthrough();
@@ -252,6 +278,8 @@ onBeforeUnmount(async () => {
             variant="secondary-muted" @click="openKirieWebsite" />
           <Button block :disabled="!platform || Boolean(busy)" label="Open app data directory" size="sm"
             variant="secondary-muted" @click="openApplicationDataDirectory" />
+          <Button block :disabled="!platform || Boolean(busy)" label="Show desktop notification" size="sm"
+            variant="secondary-muted" @click="showNotification" />
         </div>
         <p v-if="actionResult" class="mt-3 font-mono text-xs text-neutral-500">
           {{ actionResult }}

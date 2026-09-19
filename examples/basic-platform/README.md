@@ -2,11 +2,18 @@
 
 A compact desktop example for `@gd-kirie/platform` and `GdKirie.Platform`. It
 visualizes display, window, and pointer coordinates. It also exercises window
-controls, pointer passthrough, global shortcuts, external URLs, and the
-application data directory.
+controls, pointer passthrough, global shortcuts, external URLs, the application
+data directory, and desktop notifications.
 
 The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.
+Desktop notifications are available on macOS 11 or later. The example shows
+the notification ID after the user clicks the notification.
+
+To test macOS notifications under the example's identity, export it and copy
+the app to `/Applications` or `~/Applications` before its first launch. A run
+from the editor uses Godot's identity; a temporary app path can fail with
+`UNErrorDomain 1`.
 
 Run these setup commands from the repository root:
 

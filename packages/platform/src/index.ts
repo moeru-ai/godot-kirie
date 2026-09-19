@@ -64,9 +64,25 @@ export interface GlobalShortcutsClient {
   unregister: (shortcut: GlobalShortcut) => Promise<void>;
 }
 
+export interface DesktopNotification {
+  id: string;
+  title: string;
+  body: string;
+}
+
+export interface DesktopNotificationActivated {
+  id: string;
+}
+
+export interface NotificationsClient {
+  show: (notification: DesktopNotification) => Promise<void>;
+  onActivated: (listener: (event: DesktopNotificationActivated) => void) => () => void;
+}
+
 export interface PlatformClient {
   hostWindow: HostWindowClient;
   globalShortcuts: GlobalShortcutsClient;
+  notifications: NotificationsClient;
   openExternalUrl: (url: string) => Promise<void>;
   openApplicationDataDirectory: () => Promise<string>;
 }
@@ -110,6 +126,9 @@ const events = {
   unregisterGlobalShortcut: defineInvokeEventa<EmptyPayload, GlobalShortcut>(
     "kirie:platform:global-shortcut:unregister",
   ),
+  showNotification: defineInvokeEventa<EmptyPayload, DesktopNotification>(
+    "kirie:platform:notification:show",
+  ),
   openExternalUrl: defineInvokeEventa<EmptyPayload, string>("kirie:platform:open-external-url"),
   openApplicationDataDirectory: defineInvokeEventa<string, EmptyPayload>(
     "kirie:platform:open-application-data-directory",
@@ -122,6 +141,10 @@ const hostWindowStateChanged = defineInboundEventa<HostWindowState>(
 
 const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChanged>(
   "kirie:platform:global-shortcut:state-changed",
+);
+
+const notificationActivated = defineInboundEventa<DesktopNotificationActivated>(
+  "kirie:platform:notification:activated",
 );
 
 function globalShortcutKey(shortcut: GlobalShortcut): string {
@@ -139,6 +162,7 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
   const invokes = defineInvokes(context, events);
   const globalShortcutRegistrations = new Map<string, (event: GlobalShortcutKeyEvent) => void>();
   const hostWindowStateListeners = new Set<(state: HostWindowState) => void>();
+  const notificationActivatedListeners = new Set<(event: DesktopNotificationActivated) => void>();
 
   context.on(hostWindowStateChanged, ({ body }) => {
     if (!body) {
@@ -158,6 +182,16 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
     globalShortcutRegistrations.get(globalShortcutKey(body.shortcut))?.({
       state: body.state,
     });
+  });
+
+  context.on(notificationActivated, ({ body }) => {
+    if (!body) {
+      return;
+    }
+
+    for (const listener of notificationActivatedListeners) {
+      listener(body);
+    }
   });
 
   return {
@@ -232,6 +266,15 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
         if (globalShortcutRegistrations.get(key) === onKeyEvent) {
           globalShortcutRegistrations.delete(key);
         }
+      },
+    },
+    notifications: {
+      async show(notification) {
+        await invokes.showNotification(notification);
+      },
+      onActivated(listener) {
+        notificationActivatedListeners.add(listener);
+        return () => notificationActivatedListeners.delete(listener);
       },
     },
   };

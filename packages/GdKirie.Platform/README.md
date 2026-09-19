@@ -45,3 +45,13 @@ auto-repeat. Native events are delivered on Godot's main thread, and disposing
 the host removes its registrations. The Windows hook stops after the final
 Windows registration is removed. Linux global-shortcut backends are not yet
 implemented.
+
+## Desktop notifications
+
+On macOS 11 or later, RumpSharp requests permission, posts silent notifications,
+and reports their caller-owned IDs when clicked. Callbacks end when the host is
+disposed and do not survive a cold launch.
+
+RumpSharp owns the process UserNotifications delegate and runs in-process; do
+not install a second delegate while a Platform host is active. Windows and
+Linux calls fail with `PlatformNotSupportedException`.

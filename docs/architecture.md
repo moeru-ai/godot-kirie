@@ -123,6 +123,7 @@ The implemented Platform capabilities are:
 - always-on-top
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
+- [desktop notifications with click activation on macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
 operations. The browser receives pressed and released states through one
@@ -138,9 +139,9 @@ Linux backends remain pending work rather than excluded platforms.
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
 Uninvoke repository's Kirie adapter. Application lifecycle, display
-enumeration, arbitrary shell or process execution, operating-system permission
-prompts, updater behavior, multi-window factories, and general capability
-discovery remain outside this milestone.
+enumeration, arbitrary shell or process execution, a general operating-system
+permission API, updater behavior, multi-window factories, and general
+capability discovery remain outside this milestone.
 
 `@gd-kirie/platform` is the application capability SDK. It must not be confused
 with the existing `window.kirie.platform` value and TypeScript

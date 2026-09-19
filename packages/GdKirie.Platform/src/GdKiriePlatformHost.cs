@@ -12,6 +12,7 @@ public sealed class GdKiriePlatformHost : IDisposable
     private readonly SceneTree _sceneTree;
     private readonly Action<WindowStatePayload> _emitWindowStateChanged;
     private readonly GlobalShortcutManager _globalShortcuts;
+    private readonly NotificationManager _notifications;
     private readonly List<IDisposable> _registrations = [];
     private WindowStatePayload? _lastWindowState;
     private bool _windowsPointerPassthrough;
@@ -25,6 +26,8 @@ public sealed class GdKiriePlatformHost : IDisposable
         _globalShortcuts = new GlobalShortcutManager(
             payload => context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload),
             SynchronizationContext.Current);
+        _notifications = new NotificationManager(
+            id => context.Emit(PlatformEvents.NotificationActivated, new NotificationActivatedPayload(id)));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>
@@ -103,6 +106,9 @@ public sealed class GdKiriePlatformHost : IDisposable
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.OpenApplicationDataDirectory,
             (EmptyPayload _, CancellationToken _) => Task.FromResult(OpenApplicationDataDirectory())));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.ShowNotification,
+            _notifications.ShowAsync));
 
         _window.FocusEntered += RefreshWindowState;
         _window.FocusExited += RefreshWindowState;
@@ -149,6 +155,15 @@ public sealed class GdKiriePlatformHost : IDisposable
         try
         {
             _globalShortcuts.Dispose();
+        }
+        catch (Exception error)
+        {
+            cleanupErrors.Add(error);
+        }
+
+        try
+        {
+            _notifications.Dispose();
         }
         catch (Exception error)
         {

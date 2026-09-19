@@ -87,3 +87,25 @@ await platform.globalShortcuts.unregister(shortcut);
 `commandOrControlAutoremap` selects Command on macOS and Control on Windows.
 One `onKeyEvent` handler receives both states; keyboard auto-repeat does not
 produce extra calls.
+
+## Desktop notifications
+
+Desktop notifications are available on macOS 11 or later:
+
+```ts
+const stop = platform.notifications.onActivated(({ id }) => {
+  console.log(`The user clicked ${id}`);
+});
+
+await platform.notifications.show({
+  id: "assistant-answer-42",
+  title: "AIRI",
+  body: "The answer is ready.",
+});
+
+stop();
+```
+
+The first `show()` requests permission. IDs and titles must not be empty. Click
+events end when the Platform host is disposed and do not survive a cold launch.
+Windows and Linux backends are not implemented.
