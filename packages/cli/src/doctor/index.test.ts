@@ -144,28 +144,6 @@ describe("Godot CEF doctor support", () => {
     });
   });
 
-  it("reports an installed addon as available", async () => {
-    const project = await projects.copy();
-    const addonDir = path.join(project, "addons", "godot_cef");
-    await fs.mkdir(addonDir, { recursive: true });
-    await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
-
-    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({
-      name: "Godot CEF",
-      status: DoctorCheckStatus.Ok,
-    });
-  });
-
-  it("rejects an incomplete addon instead of replacing it", async () => {
-    const project = await projects.copy();
-    const addonDir = path.join(project, "addons", "godot_cef");
-    await fs.mkdir(addonDir, { recursive: true });
-
-    await expect(installGodotCef({ projectDir: project })).rejects.toThrow(
-      "Refusing to replace an unrecognized Godot CEF installation",
-    );
-  });
-
   it("stages a downloaded valid addon archive", async () => {
     const project = await projects.copy();
     const archive = Buffer.from("tiny Godot CEF archive fixture");

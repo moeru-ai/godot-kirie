@@ -6,6 +6,7 @@ import { execa } from "execa";
 import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
+const GODOT_CEF_CHECKSUM_PATH = ".godot/kirie/godot-cef.sha256";
 const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
 const PROGRESS_BAR_WIDTH = 24;
 
@@ -82,14 +83,7 @@ export async function checkGodotCef(projectDir: string): Promise<GodotCefCheckRe
   const extensionPath = path.join(installDir, `${path.basename(installDir)}.gdextension`);
 
   try {
-    const installStat = await fs.lstat(installDir);
-    if (installStat.isSymbolicLink() || !installStat.isDirectory()) {
-      return {
-        installed: true,
-        message: `${installDir} is not a regular addon directory`,
-        valid: false,
-      };
-    }
+    await fs.lstat(installDir);
   } catch (error) {
     if (isNodeError(error) && error.code === "ENOENT") {
       return {
@@ -103,7 +97,11 @@ export async function checkGodotCef(projectDir: string): Promise<GodotCefCheckRe
 
   try {
     const extensionStat = await fs.stat(extensionPath);
-    if (extensionStat.isFile()) {
+    const installedSha256 = await fs.readFile(
+      path.join(projectDir, GODOT_CEF_CHECKSUM_PATH),
+      "utf8",
+    );
+    if (extensionStat.isFile() && installedSha256.trim() === config.sha256) {
       return {
         installed: true,
         message: `${config.version} at ${installDir}`,
@@ -111,14 +109,14 @@ export async function checkGodotCef(projectDir: string): Promise<GodotCefCheckRe
       };
     }
   } catch (error) {
-    if (!isNodeError(error) || error.code !== "ENOENT") {
+    if (!isNodeError(error) || (error.code !== "ENOENT" && error.code !== "ENOTDIR")) {
       throw error;
     }
   }
 
   return {
     installed: true,
-    message: `incomplete addon at ${installDir}; missing ${path.basename(extensionPath)}`,
+    message: `installation at ${installDir} does not match ${config.version}`,
     valid: false,
   };
 }
@@ -144,12 +142,6 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
     console.log(`Godot CEF is already installed: ${current.message}`);
     return;
   }
-  if (current.installed) {
-    throw new Error(
-      `Refusing to replace an unrecognized Godot CEF installation: ${current.message}`,
-    );
-  }
-
   const installDir = resolveResourcePath(projectDir, config.addonPath);
   const installParent = path.dirname(installDir);
   await fs.mkdir(installParent, { recursive: true });
@@ -191,7 +183,11 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
     stagingRoot = await fs.mkdtemp(path.join(path.dirname(projectDir), ".kirie-godot-cef-stage-"));
     const stagedAddon = path.join(stagingRoot, path.basename(installDir));
     await fs.cp(extractedAddon, stagedAddon, { recursive: true });
+    await fs.rm(installDir, { force: true, recursive: true });
     await fs.rename(stagedAddon, installDir);
+    const checksumPath = path.join(projectDir, GODOT_CEF_CHECKSUM_PATH);
+    await fs.mkdir(path.dirname(checksumPath), { recursive: true });
+    await fs.writeFile(checksumPath, `${config.sha256}\n`);
   } finally {
     await Promise.all([
       fs.rm(temporaryRoot, { force: true, recursive: true }),
