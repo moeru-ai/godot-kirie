@@ -56,6 +56,13 @@ export async function installGodotCefFixture(project: string): Promise<void> {
   const addonDir = path.join(project, "addons", "godot_cef");
   await fs.mkdir(addonDir, { recursive: true });
   await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
+
+  const config = JSON.parse(
+    await fs.readFile(path.join(project, "addons", "kirie", "godot_cef.json"), "utf8"),
+  ) as { sha256: string };
+  const cacheDir = path.join(project, ".godot", "kirie");
+  await fs.mkdir(cacheDir, { recursive: true });
+  await fs.writeFile(path.join(cacheDir, "godot-cef.sha256"), `${config.sha256}\n`);
 }
 
 export async function installProjectFixture(

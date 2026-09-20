@@ -423,7 +423,7 @@ The initial `kirie doctor` check matrix is:
 | Android SDK | Confirm Android export prerequisites can find an SDK. | Prefer `ANDROID_HOME`, accept compatible existing environments, and report whether the SDK directory exists. |
 | Android Java path | Confirm Godot's Android editor settings point at a usable Java/JDK. | Read Godot `EditorSettings`, check the Android Java SDK path, and report missing, invalid, or non-executable Java configuration. |
 | Android export preset | Confirm the project export preset contains required Android options for Kirie workflows. | Inspect `export_presets.cfg` through a structured parser and report missing presets or required option mismatches without rewriting the file. |
-| Godot CEF | Confirm the optional desktop backend addon is installed and complete. | Warn when absent, fail when the addon directory is malformed, and offer `kirie doctor --fix godot-cef` as the explicit download and installation path. |
+| Godot CEF | Confirm the optional desktop backend addon came from the configured release archive. | Warn when absent, fail when the installation does not match the configured checksum, and offer `kirie doctor --fix godot-cef` as the installation path. |
 
 Later doctor checks may cover the iOS toolchain and Godot C#/.NET setup. Add
 those checks only when the corresponding Kirie workflow is implemented enough
@@ -580,7 +580,11 @@ addons/godot_cef/
 This lets Godot load the Godot CEF GDExtension normally. Project instances of
 that directory should be ignored and not committed. The CLI downloads the
 pinned release with progress reporting and checksum verification, verifies the
-archive layout, and only then installs it. The public installer command is:
+archive layout, and only then installs it. After installation, the CLI writes
+the verified archive checksum to `.godot/kirie/godot-cef.sha256`. This cache is
+local to the Godot project. `kirie doctor` compares it with the configured
+checksum without another download. The fixer replaces the installation target
+when the checksum is missing or different. The public installer command is:
 
 ```sh
 pnpm kirie doctor --fix godot-cef
