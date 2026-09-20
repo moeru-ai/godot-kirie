@@ -28,3 +28,8 @@ NuGet `contentFiles`:
 Eventa messages are serialized as JSON text over Kirie's text IPC lane. Kirie
 core remains a low-level WebView and IPC bridge and does not learn Eventa
 semantics.
+
+An inbound invoke request that reaches a context without a registered handler
+is rejected immediately. The adapter answers with the matching
+`-receive-error` response so the remote caller fails fast instead of pending
+forever, and raises `Error` locally with the rejected wire message.

@@ -13,6 +13,14 @@ public sealed class KirieEventaAdapter : IEventaAdapter
     private IEventContext? _context;
     private bool _disposed;
 
+    // Eventa dispatches an emitted event synchronously and calls OnReceived once
+    // per direct listener, so these two fields observe whether the invoke request
+    // currently being dispatched inbound reached a registered handler. Dispatching
+    // to zero listeners is a silent no-op in Eventa, which would leave the remote
+    // caller pending forever without this detection.
+    private string? _dispatchingInvokeSendEventId;
+    private bool _dispatchingInvokeHandled;
+
     internal KirieEventaAdapter(
         IKirieTextTransport transport,
         KirieEventaJsonRegistry registry,
@@ -25,7 +33,8 @@ public sealed class KirieEventaAdapter : IEventaAdapter
     }
 
     /// <summary>
-    /// Raised when the adapter drops malformed, unknown, or unserializable traffic.
+    /// Raised when the adapter drops malformed, unknown, or unserializable traffic,
+    /// or rejects an inbound invoke request that no local handler answers.
     /// </summary>
     public event Action<KirieEventaError>? Error;
 
@@ -67,6 +76,11 @@ public sealed class KirieEventaAdapter : IEventaAdapter
     /// <inheritdoc />
     public void OnReceived(string eventId, object? envelope)
     {
+        if (_dispatchingInvokeSendEventId is not null
+            && StringComparer.Ordinal.Equals(eventId, _dispatchingInvokeSendEventId))
+        {
+            _dispatchingInvokeHandled = true;
+        }
     }
 
     /// <inheritdoc />
@@ -108,14 +122,61 @@ public sealed class KirieEventaAdapter : IEventaAdapter
                 return;
             }
 
-            if (!_registry.TryDispatchInbound(type, body, _context, out var error))
+            var isInvokeRequest = _registry.IsInvokeRequest(type);
+            if (isInvokeRequest)
             {
-                ReportError($"Dropped unregistered or invalid Kirie Eventa message '{type}'.", error, message);
+                _dispatchingInvokeSendEventId = type;
+                _dispatchingInvokeHandled = false;
+            }
+
+            try
+            {
+                if (!_registry.TryDispatchInbound(type, body, _context, out var error))
+                {
+                    ReportError($"Dropped unregistered or invalid Kirie Eventa message '{type}'.", error, message);
+                    return;
+                }
+
+                if (isInvokeRequest && !_dispatchingInvokeHandled)
+                {
+                    RejectUnhandledInvokeRequest(type, body, message);
+                }
+            }
+            finally
+            {
+                _dispatchingInvokeSendEventId = null;
             }
         }
         catch (Exception exception)
         {
             ReportError("Failed to parse Kirie Eventa message.", exception, message);
+        }
+    }
+
+    private void RejectUnhandledInvokeRequest(
+        string sendEventId,
+        System.Text.Json.JsonElement body,
+        string rawMessage)
+    {
+        ReportError(
+            $"Rejected Kirie Eventa invoke '{sendEventId}' because this context has no registered handler.",
+            rawMessage: rawMessage);
+
+        if (!_registry.TryCreateUnhandledInvokeErrorMessage(sendEventId, body, out var response))
+        {
+            return;
+        }
+
+        try
+        {
+            _transport.SendText(response.ToJson());
+        }
+        catch (Exception exception)
+        {
+            ReportError(
+                $"Failed to send the unhandled-invoke rejection for '{sendEventId}' over Kirie text IPC.",
+                exception,
+                rawMessage);
         }
     }
 

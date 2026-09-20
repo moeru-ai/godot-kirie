@@ -200,6 +200,103 @@ public sealed partial class KirieEventaAdapterTests
     }
 
     [Fact]
+    public void InboundInvokeRequest_WithoutHandler_SendsErrorResponse()
+    {
+        using var fixture = CreateFixture();
+        var lookup = new InvokeEventDefinition<UserResponse, UserRequest>("user:lookup");
+        fixture.Registry.RegisterInvoke(
+            lookup,
+            TestJsonContext.Default.UserResponse,
+            TestJsonContext.Default.UserRequest);
+
+        fixture.Transport.Receive(
+            """
+            {"type":"user:lookup-send","payload":{"body":{"invokeId":"invoke-1","content":{"name":"alice"}}}}
+            """);
+
+        var error = Assert.Single(fixture.Errors);
+        Assert.Contains("no registered handler", error.Message, StringComparison.Ordinal);
+
+        using var response = ReadLastMessage(fixture.Transport);
+        Assert.Equal("user:lookup-receive-error-invoke-1", response.RootElement.GetProperty("type").GetString());
+        Assert.Contains(
+            "No invoke handler is registered for 'user:lookup'",
+            response.RootElement
+                .GetProperty("payload")
+                .GetProperty("body")
+                .GetProperty("content")
+                .GetProperty("error")
+                .GetProperty("message")
+                .GetString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RejectsWhenRemoteContextHasNoHandler()
+    {
+        using var caller = CreateFixture();
+        using var responder = CreateFixture();
+        var lookup = new InvokeEventDefinition<UserResponse, UserRequest>("user:lookup");
+        caller.Registry.RegisterInvoke(
+            lookup,
+            TestJsonContext.Default.UserResponse,
+            TestJsonContext.Default.UserRequest);
+        responder.Registry.RegisterInvoke(
+            lookup,
+            TestJsonContext.Default.UserResponse,
+            TestJsonContext.Default.UserRequest);
+
+        var client = caller.Handle.Context.CreateInvokeClient(lookup);
+        var pending = client.InvokeAsync(new UserRequest("alice"), TestContext.Current.CancellationToken);
+        responder.Transport.Receive(Assert.Single(caller.Transport.SentMessages));
+        caller.Transport.Receive(Assert.Single(responder.Transport.SentMessages));
+
+        var error = await Assert.ThrowsAsync<KirieEventaRemoteException>(async () => await pending);
+        Assert.Contains("No invoke handler is registered for 'user:lookup'", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InboundInvokeRequest_WithHandler_DoesNotReportError()
+    {
+        using var fixture = CreateFixture();
+        var lookup = new InvokeEventDefinition<UserResponse, UserRequest>("user:lookup");
+        fixture.Registry.RegisterInvoke(
+            lookup,
+            TestJsonContext.Default.UserResponse,
+            TestJsonContext.Default.UserRequest);
+
+        using var _ = fixture.Handle.Context.RegisterInvokeHandler(
+            lookup,
+            (request, _) => Task.FromResult(new UserResponse($"{request.Name}-id")));
+
+        fixture.Transport.Receive(
+            """
+            {"type":"user:lookup-send","payload":{"body":{"invokeId":"invoke-1","content":{"name":"alice"}}}}
+            """);
+
+        await WaitForSentMessage(fixture.Transport, TestContext.Current.CancellationToken);
+        Assert.Empty(fixture.Errors);
+        using var response = ReadLastMessage(fixture.Transport);
+        Assert.Equal("user:lookup-receive-invoke-1", response.RootElement.GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public void InboundEvent_WithoutListener_DoesNotReportError()
+    {
+        using var fixture = CreateFixture();
+        var moved = new EventDefinition<MovePayload>("player:move");
+        fixture.Registry.RegisterEvent(moved, TestJsonContext.Default.MovePayload);
+
+        fixture.Transport.Receive(
+            """
+            {"type":"player:move","payload":{"body":{"x":7,"y":9}}}
+            """);
+
+        Assert.Empty(fixture.Errors);
+        Assert.Empty(fixture.Transport.SentMessages);
+    }
+
+    [Fact]
     public void InboundText_ReportsMalformedJson()
     {
         using var fixture = CreateFixture();

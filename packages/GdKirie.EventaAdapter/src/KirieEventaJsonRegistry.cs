@@ -11,6 +11,7 @@ public sealed class KirieEventaJsonRegistry
 {
     private readonly Dictionary<string, Registration> _registrations = new(StringComparer.Ordinal);
     private readonly List<string> _invokeResponseEventIds = [];
+    private readonly Dictionary<string, InvokeRequestRoute> _invokeRequestRoutes = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Registers a normal Eventa event for Kirie text transport.
@@ -51,8 +52,38 @@ public sealed class KirieEventaJsonRegistry
 
         _invokeResponseEventIds.Add(eventDefinition.ReceiveEventId);
         _invokeResponseEventIds.Add(eventDefinition.ReceiveErrorId);
+        _invokeRequestRoutes.Add(
+            eventDefinition.SendEventId,
+            new InvokeRequestRoute(eventDefinition.Tag, eventDefinition.ReceiveErrorId));
 
         return this;
+    }
+
+    internal bool IsInvokeRequest(string wireType)
+    {
+        return _invokeRequestRoutes.ContainsKey(wireType);
+    }
+
+    internal bool TryCreateUnhandledInvokeErrorMessage(
+        string sendEventId,
+        JsonElement body,
+        out KirieEventaWireMessage message)
+    {
+        message = null!;
+
+        if (!_invokeRequestRoutes.TryGetValue(sendEventId, out var route)
+            || !TryReadInvokeId(body, out var invokeId))
+        {
+            return false;
+        }
+
+        message = new KirieEventaWireMessage(
+            $"{route.ReceiveErrorEventId}-{invokeId}",
+            WriteInvokeError(
+                invokeId,
+                new InvalidOperationException(
+                    $"No invoke handler is registered for '{route.InvokeTag}' in this context.")));
+        return true;
     }
 
     internal bool TryCreateOutboundMessage(
@@ -154,6 +185,8 @@ public sealed class KirieEventaJsonRegistry
     {
         return JsonSerializer.SerializeToElement(value, typeInfo);
     }
+
+    private sealed record InvokeRequestRoute(string InvokeTag, string ReceiveErrorEventId);
 
     private abstract class Registration(string eventId)
     {
