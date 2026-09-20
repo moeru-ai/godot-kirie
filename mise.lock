@@ -157,16 +157,16 @@ url = "https://github.com/pnpm/pnpm/releases/download/v12.3.4/pnpm-linux-x64-mus
 url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/544431957"
 provenance = "github-attestations"
 
-[tools.pnpm."platforms.macos-x64"]
-checksum = "sha256:b1d4e02cd2f9a37c42dbb82d2f93e80675f417bd4d5f3be8b999a84db673040e"
-url = "https://github.com/pnpm/pnpm/releases/download/v12.3.4/pnpm-darwin-x64.tar.gz"
-url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/544431958"
-provenance = "github-attestations"
-
 [tools.pnpm."platforms.macos-arm64"]
 checksum = "sha256:9560243d4e92780c4466bac2ee6aac4166c8bb601ad3c63f070cdd701b28f360"
 url = "https://github.com/pnpm/pnpm/releases/download/v12.3.4/pnpm-darwin-arm64.tar.gz"
 url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/544431956"
+provenance = "github-attestations"
+
+[tools.pnpm."platforms.macos-x64"]
+checksum = "sha256:b1d4e02cd2f9a37c42dbb82d2f93e80675f417bd4d5f3be8b999a84db673040e"
+url = "https://github.com/pnpm/pnpm/releases/download/v12.3.4/pnpm-darwin-x64.tar.gz"
+url_api = "https://api.github.com/repos/pnpm/pnpm/releases/assets/544431958"
 provenance = "github-attestations"
 
 [tools.pnpm."platforms.windows-x64"]
