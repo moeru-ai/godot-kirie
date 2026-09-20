@@ -188,6 +188,10 @@ The Android package defaults to:
 ai.moeru.kirie.integrationtests
 ```
 
+The GitHub Android emulator cannot present Vulkan with the Mobile renderer.
+The Android export preset therefore adds `--rendering-method gl_compatibility`.
+This override does not change the iOS or desktop runners.
+
 The Android launcher component defaults to:
 
 ```text

@@ -77,7 +77,7 @@ packaging, or platform WebView bridge details.
 - [InputEventKey (Godot 4.7)](https://docs.godotengine.org/en/4.7/classes/class_inputeventkey.html)
   Reference for logical keycodes, physical keycodes, modifiers, pressed state,
   and keyboard echo behavior.
-- [Godot 4.7.1 macOS key mapping](https://github.com/godotengine/godot/blob/4.7.1-stable/platform/macos/key_mapping_macos.mm)
+- [Godot 4.7.2 macOS key mapping](https://github.com/godotengine/godot/blob/4.7.2-stable/platform/macos/key_mapping_macos.mm)
   Upstream mapping between Godot keys and macOS virtual keycodes.
 
 ## Android
