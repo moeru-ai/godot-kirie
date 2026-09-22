@@ -1,5 +1,5 @@
 ---
-status: "proposed"
+status: "accepted"
 date: 2026-09-22
 decision-makers: "LemonNeko"
 consulted: "Doji"
@@ -19,7 +19,7 @@ handler)` stores handlers in its own listener set and returns an unsubscribe
 function, so the wrapper added a second registry without adding policy. Eventa's
 documented pattern defines each event once, exports it, and subscribes where it
 is consumed. The application already owns the Eventa context, so it can subscribe
-directly; ADR-0005 already moved `back.onRequested()` to this shape.
+directly; the Back event added in ADR-0005 uses this shape.
 
 ## Decision
 
