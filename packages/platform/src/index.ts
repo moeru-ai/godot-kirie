@@ -79,10 +79,15 @@ export interface NotificationsClient {
   onActivated: (listener: (event: DesktopNotificationActivated) => void) => () => void;
 }
 
+export interface BackClient {
+  onRequested: (listener: () => void) => () => void;
+}
+
 export interface PlatformClient {
   hostWindow: HostWindowClient;
   globalShortcuts: GlobalShortcutsClient;
   notifications: NotificationsClient;
+  back: BackClient;
   openExternalUrl: (url: string) => Promise<void>;
   openApplicationDataDirectory: () => Promise<string>;
 }
@@ -147,6 +152,8 @@ const notificationActivated = defineInboundEventa<DesktopNotificationActivated>(
   "kirie:platform:notification:activated",
 );
 
+const backRequested = defineInboundEventa<EmptyPayload>("kirie:platform:back:requested");
+
 function globalShortcutKey(shortcut: GlobalShortcut): string {
   return [
     shortcut.keycode,
@@ -163,6 +170,7 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
   const globalShortcutRegistrations = new Map<string, (event: GlobalShortcutKeyEvent) => void>();
   const hostWindowStateListeners = new Set<(state: HostWindowState) => void>();
   const notificationActivatedListeners = new Set<(event: DesktopNotificationActivated) => void>();
+  const backRequestedListeners = new Set<() => void>();
 
   context.on(hostWindowStateChanged, ({ body }) => {
     if (!body) {
@@ -191,6 +199,16 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
 
     for (const listener of notificationActivatedListeners) {
       listener(body);
+    }
+  });
+
+  context.on(backRequested, ({ body }) => {
+    if (!body) {
+      return;
+    }
+
+    for (const listener of backRequestedListeners) {
+      listener();
     }
   });
 
@@ -275,6 +293,12 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
       onActivated(listener) {
         notificationActivatedListeners.add(listener);
         return () => notificationActivatedListeners.delete(listener);
+      },
+    },
+    back: {
+      onRequested(listener) {
+        backRequestedListeners.add(listener);
+        return () => backRequestedListeners.delete(listener);
       },
     },
   };

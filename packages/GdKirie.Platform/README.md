@@ -55,3 +55,15 @@ disposed and do not survive a cold launch.
 RumpSharp owns the process UserNotifications delegate and runs in-process; do
 not install a second delegate while a Platform host is active. Windows and
 Linux calls fail with `PlatformNotSupportedException`.
+
+## System back
+
+Android forwards the system Back button through the bound window's
+`Window.GoBackRequested` signal. The host re-emits it as the Platform
+`kirie:platform:back:requested` event. The application subscribes in the
+browser through `@gd-kirie/platform`.
+
+The host does not quit the application. Set
+[`SceneTree.quit_on_go_back`](https://docs.godotengine.org/en/4.7/classes/class_scenetree.html#class-scenetree-property-quit-on-go-back)
+to `false` when the application handles Back. The signal is emitted only on
+platforms with a system Back button.

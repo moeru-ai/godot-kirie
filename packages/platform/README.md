@@ -109,3 +109,21 @@ stop();
 The first `show()` requests permission. IDs and titles must not be empty. Click
 events end when the Platform host is disposed and do not survive a cold launch.
 Windows and Linux backends are not implemented.
+
+## System back
+
+Android delivers the system Back button as a Platform event. The application
+decides what Back means. `onRequested()` subscribes and returns a function that
+removes the listener:
+
+```ts
+const stop = platform.back.onRequested(() => {
+  console.log("The system Back button was pressed.");
+});
+
+stop();
+```
+
+To handle Back instead of letting Android close the application, set
+[`SceneTree.quit_on_go_back`](https://docs.godotengine.org/en/4.7/classes/class_scenetree.html#class-scenetree-property-quit-on-go-back)
+to `false`. The event is not emitted on platforms without a system Back button.

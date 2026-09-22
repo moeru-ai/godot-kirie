@@ -45,6 +45,7 @@ internal static class PlatformEvents
     private const string HostWindowPrefix = "kirie:platform:host-window";
     private const string GlobalShortcutPrefix = "kirie:platform:global-shortcut";
     private const string NotificationPrefix = "kirie:platform:notification";
+    private const string BackPrefix = "kirie:platform:back";
 
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> BeginMove =
         new($"{HostWindowPrefix}:begin-move");
@@ -90,6 +91,9 @@ internal static class PlatformEvents
 
     public static readonly EventDefinition<NotificationActivatedPayload> NotificationActivated =
         new($"{NotificationPrefix}:activated");
+
+    public static readonly EventDefinition<EmptyPayload> BackRequested =
+        new($"{BackPrefix}:requested");
 
     public static readonly InvokeEventDefinition<EmptyPayload, string> OpenExternalUrl =
         new("kirie:platform:open-external-url");

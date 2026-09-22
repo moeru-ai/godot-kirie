@@ -47,6 +47,7 @@ const actionResult = ref("");
 let escapeRegistered = false;
 let stopWindowState: (() => void) | undefined;
 let stopNotificationActivation: (() => void) | undefined;
+let stopBackRequest: (() => void) | undefined;
 
 const pointerStyle = computed(() => ({
   left: `${Math.max(0, Math.min(100, ((windowBounds.value.x + pointer.value.x - displayBounds.value.x) / displayBounds.value.width) * 100))}%`,
@@ -82,6 +83,9 @@ onMounted(async () => {
   try {
     stopNotificationActivation = platform.notifications.onActivated(({ id }) => {
       actionResult.value = `Activated notification ${id}`;
+    });
+    stopBackRequest = platform.back.onRequested(() => {
+      actionResult.value = "System Back requested";
     });
     stopWindowState = platform.hostWindow.onStateChanged((state) => {
       windowState.value = state;
@@ -208,6 +212,7 @@ async function showNotification(): Promise<void> {
 onBeforeUnmount(async () => {
   try {
     stopNotificationActivation?.();
+    stopBackRequest?.();
     stopWindowState?.();
     if (pointerPassthrough.value || escapeRegistered) {
       await disablePointerPassthrough();

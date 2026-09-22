@@ -32,3 +32,5 @@ architecture documentation.
   — accepted, 2026-08-31
 - [ADR-0004: Add macOS desktop notifications to the Platform layer](0004-add-macos-desktop-notifications.md)
   — proposed, 2026-09-18
+- [ADR-0005: Add Android system Back to the Platform layer](0005-add-android-system-back-to-the-platform-layer.md)
+  — proposed, 2026-09-22

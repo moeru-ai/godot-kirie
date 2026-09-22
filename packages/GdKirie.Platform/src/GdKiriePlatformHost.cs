@@ -11,6 +11,7 @@ public sealed class GdKiriePlatformHost : IDisposable
     private readonly Window _window;
     private readonly SceneTree _sceneTree;
     private readonly Action<WindowStatePayload> _emitWindowStateChanged;
+    private readonly Action _emitBackRequested;
     private readonly GlobalShortcutManager _globalShortcuts;
     private readonly NotificationManager _notifications;
     private readonly List<IDisposable> _registrations = [];
@@ -23,6 +24,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _window = window;
         _sceneTree = window.GetTree();
         _emitWindowStateChanged = state => context.Emit(PlatformEvents.StateChanged, state);
+        _emitBackRequested = () => context.Emit(PlatformEvents.BackRequested, new EmptyPayload());
         _globalShortcuts = new GlobalShortcutManager(
             payload => context.Emit(PlatformEvents.GlobalShortcutStateChanged, payload),
             SynchronizationContext.Current);
@@ -114,6 +116,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _window.FocusExited += RefreshWindowState;
         _window.SizeChanged += RefreshWindowState;
         _window.VisibilityChanged += RefreshWindowState;
+        _window.GoBackRequested += OnGoBackRequested;
         _sceneTree.ProcessFrame += RefreshWindowState;
         _window.TreeExiting += Dispose;
     }
@@ -136,6 +139,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _window.FocusExited -= RefreshWindowState;
         _window.SizeChanged -= RefreshWindowState;
         _window.VisibilityChanged -= RefreshWindowState;
+        _window.GoBackRequested -= OnGoBackRequested;
         _sceneTree.ProcessFrame -= RefreshWindowState;
         _window.TreeExiting -= Dispose;
 
@@ -236,6 +240,11 @@ public sealed class GdKiriePlatformHost : IDisposable
 
         _lastWindowState = state;
         _emitWindowStateChanged(state);
+    }
+
+    private void OnGoBackRequested()
+    {
+        _emitBackRequested();
     }
 
     private void SetPointerPassthrough(bool enabled)

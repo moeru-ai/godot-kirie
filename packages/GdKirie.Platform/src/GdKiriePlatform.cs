@@ -80,6 +80,9 @@ public static class GdKiriePlatform
                 PlatformEvents.NotificationActivated,
                 PlatformJsonContext.Default.NotificationActivatedPayload)
             .RegisterEvent(
+                PlatformEvents.BackRequested,
+                PlatformJsonContext.Default.EmptyPayload)
+            .RegisterEvent(
                 PlatformEvents.StateChanged,
                 PlatformJsonContext.Default.WindowStatePayload);
     }
