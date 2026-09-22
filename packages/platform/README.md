@@ -20,6 +20,10 @@ console.log(windowBounds, displayBounds, pointer, windowState);
 eventa.dispose();
 ```
 
+Request/response capabilities are methods on the returned client. Host-initiated
+events are exported `@moeru/eventa` contracts; subscribe to them on the same
+context and the returned function unsubscribes.
+
 ## External URLs
 
 Use `openExternalUrl()` to open an absolute HTTP or HTTPS URL with the system
@@ -58,8 +62,9 @@ Pointer coordinates use host-window pixels and are not normalized to the
 browser viewport. `getPointerPosition()` returns a single snapshot.
 
 `getState()` returns one lifecycle snapshot and starts native state observation.
-Call it once during setup. `onStateChanged()` subscribes to later changes and
-returns a function that removes the listener.
+Call it once during setup. Later changes arrive as `hostWindowStateChanged`
+events; subscribe with `context.on(hostWindowStateChanged, ({ body }) => ...)`
+and call the returned function to unsubscribe.
 
 ## Global shortcuts
 
@@ -93,8 +98,11 @@ produce extra calls.
 Desktop notifications are available on macOS 11 or later:
 
 ```ts
-const stop = platform.notifications.onActivated(({ id }) => {
-  console.log(`The user clicked ${id}`);
+import { notificationActivated } from "@gd-kirie/platform";
+
+const stop = context.on(notificationActivated, ({ body }) => {
+  if (body)
+    console.log(`The user clicked ${body.id}`);
 });
 
 await platform.notifications.show({
@@ -109,3 +117,22 @@ stop();
 The first `show()` requests permission. IDs and titles must not be empty. Click
 events end when the Platform host is disposed and do not survive a cold launch.
 Windows and Linux backends are not implemented.
+
+## System back
+
+Android delivers the system Back button as a Platform event. The application
+decides what Back means:
+
+```ts
+import { backRequested } from "@gd-kirie/platform";
+
+const stop = context.on(backRequested, () => {
+  console.log("The system Back button was pressed.");
+});
+
+stop();
+```
+
+To handle Back instead of letting Android close the application, set
+[`SceneTree.quit_on_go_back`](https://docs.godotengine.org/en/4.7/classes/class_scenetree.html#class-scenetree-property-quit-on-go-back)
+to `false`. The event is not emitted on platforms without a system Back button.

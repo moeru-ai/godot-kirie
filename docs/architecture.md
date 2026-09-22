@@ -124,6 +124,7 @@ The implemented Platform capabilities are:
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
 - [desktop notifications with click activation on macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md)
+- [Android system Back requests](decisions/0005-add-android-system-back-to-the-platform-layer.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
 operations. The browser receives pressed and released states through one
@@ -135,6 +136,14 @@ state changes to Godot's main thread. The Windows choice and its non-exclusive
 conflict semantics are recorded in
 [ADR-0003](decisions/0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md).
 Linux backends remain pending work rather than excluded platforms.
+
+Android system Back is forwarded from the bound window's
+`Window.GoBackRequested` signal. The browser subscribes to the exported
+`backRequested` contract and decides whether it changes the route or closes the
+application. The application keeps Godot's `SceneTree.quit_on_go_back`
+disabled while it handles Back; the Platform host does not change that setting.
+The choice is recorded in
+[ADR-0005](decisions/0005-add-android-system-back-to-the-platform-layer.md).
 
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the

@@ -32,3 +32,7 @@ architecture documentation.
   — accepted, 2026-08-31
 - [ADR-0004: Add macOS desktop notifications to the Platform layer](0004-add-macos-desktop-notifications.md)
   — proposed, 2026-09-18
+- [ADR-0005: Add Android system Back to the Platform layer](0005-add-android-system-back-to-the-platform-layer.md)
+  — accepted, 2026-09-22
+- [ADR-0006: Export Platform inbound events as Eventa contracts](0006-export-platform-inbound-events-as-eventa-contracts.md)
+  — accepted, 2026-09-22

@@ -1,4 +1,5 @@
 import type { KirieEventaContext } from "@gd-kirie/ipc-eventa";
+import type { InboundEventa } from "@moeru/eventa";
 import { defineInboundEventa, defineInvokeEventa, defineInvokes } from "@moeru/eventa";
 
 export type ResizeEdge =
@@ -40,7 +41,6 @@ export interface HostWindowClient {
   setAlwaysOnTop: (enabled: boolean) => Promise<void>;
   centerOnCurrentDisplay: () => Promise<void>;
   getState: () => Promise<HostWindowState>;
-  onStateChanged: (listener: (state: HostWindowState) => void) => () => void;
 }
 
 export interface GlobalShortcut {
@@ -76,7 +76,6 @@ export interface DesktopNotificationActivated {
 
 export interface NotificationsClient {
   show: (notification: DesktopNotification) => Promise<void>;
-  onActivated: (listener: (event: DesktopNotificationActivated) => void) => () => void;
 }
 
 export interface PlatformClient {
@@ -135,16 +134,30 @@ const events = {
   ),
 };
 
-const hostWindowStateChanged = defineInboundEventa<HostWindowState>(
-  "kirie:platform:host-window:state-changed",
-);
+/**
+ * Host-window visibility, focus, and minimized-state changes.
+ * Subscribe with `context.on(hostWindowStateChanged, ({ body }) => ...)`.
+ */
+export const hostWindowStateChanged: InboundEventa<HostWindowState> =
+  defineInboundEventa<HostWindowState>("kirie:platform:host-window:state-changed");
 
 const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChanged>(
   "kirie:platform:global-shortcut:state-changed",
 );
 
-const notificationActivated = defineInboundEventa<DesktopNotificationActivated>(
-  "kirie:platform:notification:activated",
+/**
+ * Notification activations reported by the host.
+ * Subscribe with `context.on(notificationActivated, ({ body }) => ...)`.
+ */
+export const notificationActivated: InboundEventa<DesktopNotificationActivated> =
+  defineInboundEventa<DesktopNotificationActivated>("kirie:platform:notification:activated");
+
+/**
+ * System Back requests forwarded by the host.
+ * Subscribe with `context.on(backRequested, () => ...)`.
+ */
+export const backRequested: InboundEventa<EmptyPayload> = defineInboundEventa<EmptyPayload>(
+  "kirie:platform:back:requested",
 );
 
 function globalShortcutKey(shortcut: GlobalShortcut): string {
@@ -161,18 +174,6 @@ function globalShortcutKey(shortcut: GlobalShortcut): string {
 export function createPlatformClient(context: KirieEventaContext): PlatformClient {
   const invokes = defineInvokes(context, events);
   const globalShortcutRegistrations = new Map<string, (event: GlobalShortcutKeyEvent) => void>();
-  const hostWindowStateListeners = new Set<(state: HostWindowState) => void>();
-  const notificationActivatedListeners = new Set<(event: DesktopNotificationActivated) => void>();
-
-  context.on(hostWindowStateChanged, ({ body }) => {
-    if (!body) {
-      return;
-    }
-
-    for (const listener of hostWindowStateListeners) {
-      listener(body);
-    }
-  });
 
   context.on(globalShortcutStateChanged, ({ body }) => {
     if (!body) {
@@ -182,16 +183,6 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
     globalShortcutRegistrations.get(globalShortcutKey(body.shortcut))?.({
       state: body.state,
     });
-  });
-
-  context.on(notificationActivated, ({ body }) => {
-    if (!body) {
-      return;
-    }
-
-    for (const listener of notificationActivatedListeners) {
-      listener(body);
-    }
   });
 
   return {
@@ -213,10 +204,6 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
       },
       getState() {
         return invokes.getState({});
-      },
-      onStateChanged(listener) {
-        hostWindowStateListeners.add(listener);
-        return () => hostWindowStateListeners.delete(listener);
       },
       async setPointerPassthrough(enabled) {
         await invokes.setPointerPassthrough(enabled);
@@ -271,10 +258,6 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
     notifications: {
       async show(notification) {
         await invokes.showNotification(notification);
-      },
-      onActivated(listener) {
-        notificationActivatedListeners.add(listener);
-        return () => notificationActivatedListeners.delete(listener);
       },
     },
   };
