@@ -95,7 +95,8 @@ produce extra calls.
 
 ## Desktop notifications
 
-Desktop notifications are available on macOS 11 or later:
+Desktop notifications are available on macOS 11 or later and on Windows 10
+version 1607 or later:
 
 ```ts
 import { notificationActivated } from "@gd-kirie/platform";
@@ -114,9 +115,11 @@ await platform.notifications.show({
 stop();
 ```
 
-The first `show()` requests permission. IDs and titles must not be empty. Click
-events end when the Platform host is disposed and do not survive a cold launch.
-Windows and Linux backends are not implemented.
+The first macOS `show()` requests permission. Windows does not show a
+permission prompt; `show()` fails when notifications are turned off. IDs and
+titles must not be empty. Click events end when the Platform host is disposed
+and do not survive a cold launch. The Windows identity follows the running
+executable. Linux backends are not implemented.
 
 ## System back
 

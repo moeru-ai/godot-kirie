@@ -123,7 +123,7 @@ The implemented Platform capabilities are:
 - always-on-top
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
-- [desktop notifications with click activation on macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md)
+- desktop notifications with click activation on [macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md) and [Windows 10 version 1607 or later](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md)
 - [Android system Back requests](decisions/0005-add-android-system-back-to-the-platform-layer.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
@@ -135,7 +135,17 @@ Platform hosts, filters it to host-owned registrations, and posts accepted
 state changes to Godot's main thread. The Windows choice and its non-exclusive
 conflict semantics are recorded in
 [ADR-0003](decisions/0003-use-a-low-level-keyboard-hook-for-windows-global-shortcuts.md).
-Linux backends remain pending work rather than excluded platforms.
+Linux global-shortcut backends remain pending work rather than excluded
+platforms.
+
+Desktop notifications keep the same caller-owned id and silent-toast contract
+on both implemented desktops. macOS posts through RumpSharp, as recorded in
+[ADR-0004](decisions/0004-add-macos-desktop-notifications.md). Windows posts
+through `Windows.UI.Notifications` for an unpackaged executable and delivers
+the click on Godot's main thread only while the Platform host is alive. The
+Windows registration and its per-executable identity are recorded in
+[ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
+Linux notification backends remain pending work.
 
 Android system Back is forwarded from the bound window's
 `Window.GoBackRequested` signal. The browser subscribes to the exported
