@@ -13,7 +13,7 @@ uv = "0.11.7"
 java = "temurin-21.0.10+7.0.LTS"
 dotnet = "10.0.300"
 ktlint = "1.8.0"
-swiftlint = "0.62.2"
+swiftlint = { version = "0.62.2", os = ["unix"] }
 "pipx:gdtoolkit" = "4.5.0"
 pnpm = "12"
 
