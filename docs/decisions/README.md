@@ -36,3 +36,5 @@ architecture documentation.
   — accepted, 2026-09-22
 - [ADR-0006: Export Platform inbound events as Eventa contracts](0006-export-platform-inbound-events-as-eventa-contracts.md)
   — accepted, 2026-09-22
+- [ADR-0007: Use WinRT toasts for Windows desktop notifications](0007-use-winrt-toasts-for-windows-desktop-notifications.md)
+  — proposed, 2026-09-22

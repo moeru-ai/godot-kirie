@@ -120,6 +120,19 @@ packaging, or platform WebView bridge details.
   Upstream implementation reference for Carbon hot-key registration and
   pressed/released event dispatch on the application event target.
 
+## Windows
+
+- [ToastNotificationManager](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotificationmanager)
+  WinRT API used to post a toast from an unpackaged desktop process.
+- [INotificationActivationCallback](https://learn.microsoft.com/en-us/windows/win32/api/notificationactivationcallback/nn-notificationactivationcallback-inotificationactivationcallback)
+  COM callback that receives a toast click while the process is running.
+- [Application User Model IDs](https://learn.microsoft.com/en-us/windows/win32/shell/appids)
+  Identity an unpackaged executable must register before Windows will show its
+  toasts.
+- [Avalonia.Labs Windows notifications](https://github.com/AvaloniaUI/Avalonia.Labs/tree/main/src/Avalonia.Labs.Notifications/Windows)
+  Implementation reference for the unpackaged AppUserModelID, COM activator,
+  and direct WinRT toast calls.
+
 ## IPC formats and compatibility targets
 
 - [Godot CEF methods](https://godotcef.org/api/methods)

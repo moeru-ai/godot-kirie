@@ -49,12 +49,23 @@ implemented.
 ## Desktop notifications
 
 On macOS 11 or later, RumpSharp requests permission, posts silent notifications,
-and reports their caller-owned IDs when clicked. Callbacks end when the host is
-disposed and do not survive a cold launch.
+and reports their caller-owned IDs when clicked.
+
+On Windows 10 version 1607 or later, the host posts a silent toast through
+`Windows.UI.Notifications` and reports the same caller-owned ID when it is
+clicked. An unpackaged process registers its notification identity for the
+current user while a Platform host is alive. That identity follows the running
+executable, so the Godot editor and an exported game are different
+applications. Clicks are posted to Godot's main thread only while the host is
+alive and do not start the process. Windows does not show a permission prompt;
+`show()` fails when notifications are turned off.
+
+Callbacks end when the host is disposed and do not survive a cold launch.
 
 RumpSharp owns the process UserNotifications delegate and runs in-process; do
-not install a second delegate while a Platform host is active. Windows and
-Linux calls fail with `PlatformNotSupportedException`.
+not install a second delegate while a Platform host is active. Linux calls fail
+with `PlatformNotSupportedException`. Elevated Windows processes cannot post
+these notifications.
 
 ## System back
 

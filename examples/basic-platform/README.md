@@ -7,15 +7,22 @@ data directory, desktop notifications, and Android system Back requests.
 
 The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.
-Desktop notifications are available on macOS 11 or later. The example shows
-the notification ID after the user clicks the notification.
+Desktop notifications are available on macOS 11 or later and on Windows 10
+version 1607 or later. The example shows the notification ID after the user
+clicks the notification.
 Android forwards the system Back button to the exported `backRequested` event.
 On Android, set `SceneTree.quit_on_go_back` to `false` to handle Back in the page.
 
 To test macOS notifications under the example's identity, export it and copy
 the app to `/Applications` or `~/Applications` before its first launch. A run
 from the editor uses Godot's identity; a temporary app path can fail with
-`UNErrorDomain 1`.
+`UNErrorDomain 1`. On Windows, the editor registers notifications as the Godot
+executable, and an exported game uses that game's executable. A Windows click is
+only delivered while the example is still running; after a clean exit, the
+per-user registration is removed and a click does not start the executable. After
+a crash the registration stays, so a click starts the executable again, and that
+fresh process receives the activation only once it publishes its first
+notification.
 
 Run these setup commands from the repository root:
 
