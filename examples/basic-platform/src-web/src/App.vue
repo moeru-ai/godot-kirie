@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { GlobalShortcut, GlobalShortcutKeyEvent, HostWindowState } from "@gd-kirie/platform";
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { createPlatformClient } from "@gd-kirie/platform";
+import { backRequested, createPlatformClient, hostWindowStateChanged, notificationActivated } from "@gd-kirie/platform";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
 import { useRafFn } from "@vueuse/core";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
@@ -76,19 +76,21 @@ async function refreshTelemetry(): Promise<void> {
 useRafFn(refreshTelemetry);
 
 onMounted(async () => {
-  if (!platform) {
+  if (!eventa || !platform) {
     return;
   }
 
   try {
-    stopNotificationActivation = platform.notifications.onActivated(({ id }) => {
-      actionResult.value = `Activated notification ${id}`;
+    stopNotificationActivation = eventa.context.on(notificationActivated, ({ body }) => {
+      if (body)
+        actionResult.value = `Activated notification ${body.id}`;
     });
-    stopBackRequest = platform.back.onRequested(() => {
+    stopBackRequest = eventa.context.on(backRequested, () => {
       actionResult.value = "System Back requested";
     });
-    stopWindowState = platform.hostWindow.onStateChanged((state) => {
-      windowState.value = state;
+    stopWindowState = eventa.context.on(hostWindowStateChanged, ({ body }) => {
+      if (body)
+        windowState.value = body;
     });
     windowState.value = await platform.hostWindow.getState();
   } catch (error) {

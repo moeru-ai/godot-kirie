@@ -60,8 +60,8 @@ Linux calls fail with `PlatformNotSupportedException`.
 
 Android forwards the system Back button through the bound window's
 `Window.GoBackRequested` signal. The host re-emits it as the Platform
-`kirie:platform:back:requested` event. The application subscribes in the
-browser through `@gd-kirie/platform`.
+`kirie:platform:back:requested` event. The browser subscribes through the
+`backRequested` contract exported by `@gd-kirie/platform`.
 
 The host does not quit the application. Set
 [`SceneTree.quit_on_go_back`](https://docs.godotengine.org/en/4.7/classes/class_scenetree.html#class-scenetree-property-quit-on-go-back)

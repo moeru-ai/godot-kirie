@@ -22,10 +22,10 @@ already disable that setting manually.
 
 ## Decision
 
-Add `back.onRequested()` to the Platform layer. `GdKiriePlatformHost` connects
-to the bound window's `Window.GoBackRequested` signal and re-emits each request
-as the `kirie:platform:back:requested` event. The application subscribes in the
-browser and decides what Back means.
+Export the `backRequested` event contract from the Platform layer.
+`GdKiriePlatformHost` connects to the bound window's `Window.GoBackRequested`
+signal and re-emits each request as the `kirie:platform:back:requested` event.
+The application subscribes on its Eventa context and decides what Back means.
 
 The Platform host does not change `SceneTree.quit_on_go_back`. An application
 that handles Back sets it to `false`; otherwise Godot quits before or while the

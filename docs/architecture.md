@@ -138,8 +138,8 @@ conflict semantics are recorded in
 Linux backends remain pending work rather than excluded platforms.
 
 Android system Back is forwarded from the bound window's
-`Window.GoBackRequested` signal. The browser receives each request through one
-`onRequested` handler and decides whether it changes the route or closes the
+`Window.GoBackRequested` signal. The browser subscribes to the exported
+`backRequested` contract and decides whether it changes the route or closes the
 application. The application keeps Godot's `SceneTree.quit_on_go_back`
 disabled while it handles Back; the Platform host does not change that setting.
 The choice is recorded in
