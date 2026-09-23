@@ -130,8 +130,9 @@ jobs:
         timeout-minutes: 2
         continue-on-error: true
         run: |
-          ps -axo pid,ppid,etime,state,comm | awk 'NR == 1 || /[C]oreSimulator|[s]imctl|[S]imulator\.app/'
-          /usr/bin/log show --last 5m --info --style compact --predicate 'process == "CoreSimulatorService" OR process == "simctl" OR subsystem BEGINSWITH "com.apple.CoreSimulator"' | tail -n 150
+          ps -axo pid,ppid,etime,state,comm | grep -E '(^ *PID|/simctl$|/com[.]apple[.]CoreSimulator[.]CoreSimulatorService$|/SimLaunchHost[.]arm64$)'
+          /usr/bin/log show --last 5m --style compact --predicate '(process CONTAINS "CoreSimulator" OR subsystem BEGINSWITH "com.apple.CoreSimulator") AND (logType == "error" OR logType == "fault")' | tail -n 100
+          /usr/bin/log show --last 5m --style compact --predicate 'process CONTAINS "CoreSimulator" OR subsystem BEGINSWITH "com.apple.CoreSimulator"' | tail -n 100
 
       - name: Check iOS Simulator state after failure
         if: failure()
