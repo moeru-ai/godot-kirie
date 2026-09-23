@@ -261,6 +261,14 @@ currently shares this simulator export path, but that is a tooling shortcut
 rather than a desired examples API shape. Examples should not be treated as
 inherently simulator-only.
 
+Apple's iOS Simulator supports Metal, but Godot 4.7.2 disables its Metal and
+Vulkan drivers in simulator builds ([Apple](https://developer.apple.com/documentation/metal/developing-metal-apps-that-run-in-simulator),
+[Godot source](https://github.com/godotengine/godot/blob/4.7.2-stable/platform/ios/detect.py#L143-L158)).
+The CI simulator app therefore uses Compatibility/OpenGL ES 3.0, even though
+the integration project selects Mobile for iOS. These probes test Kirie's
+WebView and IPC paths, not Mobile/Metal rendering. The iOS XCFramework includes
+a device build, but this CI does not run the app on a physical device.
+
 Install and run tests with the iOS test task:
 
 ```bash
