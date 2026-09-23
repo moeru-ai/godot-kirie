@@ -113,10 +113,11 @@ async function waitForMarker(options: {
   testName: string;
   timeoutSeconds: number;
   includeStart?: boolean;
+  signal?: AbortSignal;
 }): Promise<MarkerResult> {
   const deadline = Date.now() + options.timeoutSeconds * 1000;
 
-  while (Date.now() < deadline) {
+  while (Date.now() < deadline && !options.signal?.aborted) {
     const marker = findMarker(options);
     if (marker) {
       return marker;
@@ -236,16 +237,18 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
   );
 
   let result: MarkerResult | undefined;
+  const markerWait = new AbortController();
 
   try {
     console.error(
       `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; Android log: ${logFile}`,
     );
     result = await Promise.race([
-      waitForMarker({ logFile, testName, timeoutSeconds }),
+      waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
       watchedKirieRun,
     ]);
   } finally {
+    markerWait.abort();
     kirieRun.kill();
     await watchedKirieRun;
     logStream.end();
@@ -306,7 +309,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       path.resolve(rootDir, appPath),
       "--device",
       simulatorId,
-      "--terminate-existing",
       "--launch-option",
       `kirie_test=${testName}`,
     ]),
@@ -351,6 +353,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   );
 
   let result: MarkerResult | undefined;
+  const markerWait = new AbortController();
 
   try {
     console.error(`Waiting up to ${startupTimeoutSeconds}s for KIRIE_TEST_START for ${testName}`);
@@ -360,6 +363,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
         testName,
         timeoutSeconds: startupTimeoutSeconds,
         includeStart: true,
+        signal: markerWait.signal,
       }),
       watchedKirieRun,
       watchedLogProcess,
@@ -368,12 +372,13 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     if (startupResult.status === "start") {
       console.error(`Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}`);
       result = await Promise.race([
-        waitForMarker({ logFile, testName, timeoutSeconds }),
+        waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
         watchedKirieRun,
         watchedLogProcess,
       ]);
     }
   } finally {
+    markerWait.abort();
     kirieRun.kill();
     logProcess.kill();
     await watchedKirieRun;
@@ -463,10 +468,11 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
     () => undefined,
   );
   let result: MarkerResult | undefined;
+  const markerWait = new AbortController();
 
   try {
     result = await Promise.race([
-      waitForMarker({ logFile, testName, timeoutSeconds }),
+      waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
       watchedGodotProcess.then(
         (): MarkerResult => ({
           ...(findMarker({ logFile, testName }) || {
@@ -477,6 +483,7 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
       ),
     ]);
   } finally {
+    markerWait.abort();
     godotProcess.kill();
     await watchedGodotProcess;
     runtimeLogStream.end();
