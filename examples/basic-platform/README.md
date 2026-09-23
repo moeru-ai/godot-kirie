@@ -9,7 +9,8 @@ The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.
 Desktop notifications are available on macOS 11 or later and on Windows 10
 version 1607 or later. The example shows the notification ID after the user
-clicks the notification.
+clicks the notification. Only one Platform notification host can be active per
+process.
 Android forwards the system Back button to the exported `backRequested` event.
 On Android, set `SceneTree.quit_on_go_back` to `false` to handle Back in the page.
 

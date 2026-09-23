@@ -12,14 +12,18 @@ internal static unsafe class WindowsToastApi
     private static readonly Guid ToastFactoryIid = new("04124B20-82C6-4229-B109-FD9ED4662B53");
     private static readonly Guid ToastManagerIid = new("50AC103F-D235-4598-BBEF-98FE4D1A3AD4");
 
-    [ThreadStatic]
-    private static bool _threadInitialized;
-
     public static void Show(string applicationId, string xml)
     {
-        InitializeThread();
+        var apartment = Thread.CurrentThread.GetApartmentState() == ApartmentState.STA
+            ? RoInitType.SingleThreaded
+            : RoInitType.MultiThreaded;
+        var initialization = WinRtInterop.RoInitialize(apartment);
+        if (initialization.Value < 0 && (uint)initialization.Value != 0x80010106)
+        {
+            ThrowIfFailed(initialization.Value);
+        }
 
-        var document = Activate("Windows.Data.Xml.Dom.XmlDocument");
+        var document = IntPtr.Zero;
         var documentIo = IntPtr.Zero;
         var documentInterface = IntPtr.Zero;
         var factory = IntPtr.Zero;
@@ -28,6 +32,7 @@ internal static unsafe class WindowsToastApi
         var notifier = IntPtr.Zero;
         try
         {
+            document = Activate("Windows.Data.Xml.Dom.XmlDocument");
             documentIo = QueryInterface(document, XmlDocumentIoIid);
             using (var xmlString = new WinRtString(xml))
             {
@@ -65,26 +70,11 @@ internal static unsafe class WindowsToastApi
             Release(documentInterface);
             Release(documentIo);
             Release(document);
+            if (initialization.Value >= 0)
+            {
+                WinRtInterop.RoUninitialize();
+            }
         }
-    }
-
-    private static void InitializeThread()
-    {
-        if (_threadInitialized)
-        {
-            return;
-        }
-
-        var apartment = Thread.CurrentThread.GetApartmentState() == ApartmentState.STA
-            ? RoInitType.SingleThreaded
-            : RoInitType.MultiThreaded;
-        var result = WinRtInterop.RoInitialize(apartment);
-        if (result.Value < 0 && (uint)result.Value != 0x80010106)
-        {
-            ThrowIfFailed(result.Value);
-        }
-
-        _threadInitialized = true;
     }
 
     private static nint Activate(string className)
@@ -142,13 +132,15 @@ internal static unsafe class WindowsToastApi
         // AddToHistory 9, RemoveFromHistory 10.
         var getSetting = (delegate* unmanaged[Stdcall]<nint, int*, int>)Vtable(notifier)[8];
         int setting;
-        if (getSetting(notifier, &setting) < 0)
+        var result = getSetting(notifier, &setting);
+        if ((uint)result == 0x80070490)
         {
             // The query itself can fail (ERROR_NOT_FOUND before the notifier has
             // ever delivered). That is not a report that notifications are off.
             return null;
         }
 
+        ThrowIfFailed(result);
         return setting;
     }
 

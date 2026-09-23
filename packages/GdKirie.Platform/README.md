@@ -60,7 +60,8 @@ applications. Clicks are posted to Godot's main thread only while the host is
 alive and do not start the process. Windows does not show a permission prompt;
 `show()` fails when notifications are turned off.
 
-Callbacks end when the host is disposed and do not survive a cold launch.
+Only one Platform notification host can be active per process. Callbacks end
+when the host is disposed and do not survive a cold launch.
 
 RumpSharp owns the process UserNotifications delegate and runs in-process; do
 not install a second delegate while a Platform host is active. Linux calls fail

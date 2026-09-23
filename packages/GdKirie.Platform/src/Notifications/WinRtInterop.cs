@@ -21,49 +21,26 @@ internal readonly unsafe struct HSTRING
 [SupportedOSPlatform("windows10.0.14393.0")]
 internal static unsafe class WinRtInterop
 {
-    public static HRESULT RoInitialize(RoInitType apartment) =>
-        RoInitializeNative(apartment);
-
-    public static HRESULT RoActivateInstance(HSTRING className, out void* instance) =>
-        RoActivateInstanceNative(className, out instance);
-
-    public static HRESULT RoGetActivationFactory(HSTRING className, Guid* iid, void** factory) =>
-        RoGetActivationFactoryNative(className, iid, factory);
-
-    public static HRESULT WindowsCreateString(char* value, uint length, HSTRING* created) =>
-        WindowsCreateStringNative(value, length, created);
-
-    public static HRESULT WindowsDeleteString(HSTRING value) =>
-        WindowsDeleteStringNative(value);
-
-    public static HRESULT CoRegisterClassObject(
-        Guid classId,
-        void* classObject,
-        uint context,
-        uint flags,
-        out uint cookie) =>
-        CoRegisterClassObjectNative(&classId, classObject, context, flags, out cookie);
-
-    public static HRESULT CoRevokeClassObject(uint cookie) =>
-        CoRevokeClassObjectNative(cookie);
-
     [DllImport("api-ms-win-core-winrt-l1-1-0.dll", EntryPoint = "RoInitialize")]
-    private static extern HRESULT RoInitializeNative(RoInitType apartment);
+    public static extern HRESULT RoInitialize(RoInitType apartment);
+
+    [DllImport("api-ms-win-core-winrt-l1-1-0.dll", EntryPoint = "RoUninitialize")]
+    public static extern void RoUninitialize();
 
     [DllImport("api-ms-win-core-winrt-l1-1-0.dll", EntryPoint = "RoActivateInstance")]
-    private static extern HRESULT RoActivateInstanceNative(HSTRING className, out void* instance);
+    public static extern HRESULT RoActivateInstance(HSTRING className, out void* instance);
 
     [DllImport("api-ms-win-core-winrt-l1-1-0.dll", EntryPoint = "RoGetActivationFactory")]
-    private static extern HRESULT RoGetActivationFactoryNative(HSTRING className, Guid* iid, void** factory);
+    public static extern HRESULT RoGetActivationFactory(HSTRING className, Guid* iid, void** factory);
 
     [DllImport("api-ms-win-core-winrt-string-l1-1-0.dll", EntryPoint = "WindowsCreateString")]
-    private static extern HRESULT WindowsCreateStringNative(char* value, uint length, HSTRING* created);
+    public static extern HRESULT WindowsCreateString(char* value, uint length, HSTRING* created);
 
     [DllImport("api-ms-win-core-winrt-string-l1-1-0.dll", EntryPoint = "WindowsDeleteString")]
-    private static extern HRESULT WindowsDeleteStringNative(HSTRING value);
+    public static extern HRESULT WindowsDeleteString(HSTRING value);
 
     [DllImport("ole32.dll", EntryPoint = "CoRegisterClassObject")]
-    private static extern HRESULT CoRegisterClassObjectNative(
+    public static extern HRESULT CoRegisterClassObject(
         Guid* classId,
         void* classObject,
         uint context,
@@ -71,7 +48,7 @@ internal static unsafe class WinRtInterop
         out uint cookie);
 
     [DllImport("ole32.dll", EntryPoint = "CoRevokeClassObject")]
-    private static extern HRESULT CoRevokeClassObjectNative(uint cookie);
+    public static extern HRESULT CoRevokeClassObject(uint cookie);
 }
 
 /// <summary>

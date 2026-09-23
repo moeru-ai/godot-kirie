@@ -35,7 +35,7 @@ uses for unpackaged apps.
 
 The running executable gets one AppUserModelID, derived from its path and
 stored under `HKCU\Software\Classes` only while a Platform host owns a
-notification callback. The registration is removed with the last host, so a
+notification callback. The registration is removed with the host, so a
 later click does not start the process. The callback posts the caller-owned id
 back to Godot's main thread.
 
@@ -59,9 +59,11 @@ Linux remains unimplemented.
   implementation therefore delivers first and only rejects a setting that was
   actually reported as something other than `Allowed`.
 - The per-user `AppUserModelId` and `CLSID` registrations are created when a
-  host first publishes and removed with the last host. Verified on Windows 11
+  host first publishes and removed with that host. Verified on Windows 11
   26200: a click is delivered to the live host process through the registered
   class object, and no second process is started.
+- One Platform notification host can be active per process. A second host fails
+  at attachment instead of replacing the first host's callback.
 - Elevated processes are not supported by this Windows API.
 - A crash can leave the per-user registration behind until the next successful
   shutdown removes it. A click in that window starts the executable: verified that
@@ -78,5 +80,7 @@ Linux remains unimplemented.
 - [Avalonia.Labs Windows notifications](https://github.com/AvaloniaUI/Avalonia.Labs/tree/main/src/Avalonia.Labs.Notifications/Windows)
 - [ToastNotificationManager](https://learn.microsoft.com/en-us/uwp/api/windows.ui.notifications.toastnotificationmanager)
 - [INotificationActivationCallback](https://learn.microsoft.com/en-us/windows/win32/api/notificationactivationcallback/nn-notificationactivationcallback-inotificationactivationcallback)
+- [RoInitialize](https://learn.microsoft.com/en-us/windows/win32/api/roapi/nf-roapi-roinitialize)
+- [CoRegisterClassObject](https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coregisterclassobject)
 - [Application User Model IDs](https://learn.microsoft.com/en-us/windows/win32/shell/appids)
 - [WPF app notifications](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/app-notifications/app-notifications-wpf)
