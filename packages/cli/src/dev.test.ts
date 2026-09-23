@@ -5,7 +5,7 @@ import { execa } from "execa";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { resolveAndroidReverseWebUrl, runDev } from "./dev.ts";
-import { createKirieDevLaunchOptions, runIosSimulator } from "./run.ts";
+import { createKirieDevLaunchOptions, runAndroid, runIosSimulator } from "./run.ts";
 import {
   createBasicKirieCliProjectTracker,
   installGodotCefFixture,
@@ -161,6 +161,34 @@ describe("runDev", () => {
     expect(launchRun?.argv).toContain(`http://127.0.0.1:${reverseRun?.argv[1].slice(4)}/`);
   });
 
+  it("launches an already-installed Android app without skipping session cleanup", async () => {
+    const project = await projects.copy();
+
+    await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
+    await installFakeAdb(project);
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${path.join(project, "fake-bin")}${path.delimiter}${originalPath ?? ""}`;
+    try {
+      await runAndroid({
+        attachLogcat: false,
+        clearData: true,
+        cwd: project,
+        forceStop: true,
+        skipInstall: true,
+      });
+    } finally {
+      process.env.PATH = originalPath;
+    }
+
+    const invocations = await readFakeAdbInvocations(project);
+    expect(invocations.map((invocation) => invocation.argv.slice(0, 3))).toEqual([
+      ["shell", "am", "force-stop"],
+      ["shell", "pm", "clear"],
+      ["shell", "am", "start"],
+    ]);
+  });
+
   it("keeps the CLI dev command defaulting to desktop", async () => {
     const project = await projects.copy();
 
@@ -244,6 +272,27 @@ describe("runDev", () => {
     ]);
   });
 
+  it("retries an iOS launch while FrontBoard finishes installing the app", async () => {
+    const project = await projects.copy();
+
+    await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
+    await installFakeXcrun(project, 1);
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = `${path.join(project, "fake-bin")}${path.delimiter}${originalPath ?? ""}`;
+    try {
+      await runIosSimulator({ cwd: project, simulatorId: "booted" });
+    } finally {
+      process.env.PATH = originalPath;
+    }
+
+    const invocations = await readFakeXcrunInvocations(project);
+    expect(invocations.map((invocation) => invocation.argv.slice(0, 2))).toEqual([
+      ["simctl", "launch"],
+      ["simctl", "launch"],
+    ]);
+  });
+
   it("rejects Kirie-owned Vite options", async () => {
     const project = await projects.copy();
     await installKirieConfigFixture(project, "dev-owned-server-port.kirie.config.ts");
@@ -323,7 +372,7 @@ async function readFakeAdbInvocations(project: string): Promise<AdbInvocation[]>
   return JSON.parse(await fs.readFile(invocationsFile, "utf8")) as AdbInvocation[];
 }
 
-async function installFakeXcrun(project: string): Promise<void> {
+async function installFakeXcrun(project: string, launchBusyAttempts = 0): Promise<void> {
   const fakeBinDir = path.join(project, "fake-bin");
   const fakeXcrunPath = path.join(fakeBinDir, "xcrun");
 
@@ -339,6 +388,14 @@ const argv = process.argv.slice(2);
 
 invocations.push({ argv, cwd: process.cwd() });
 writeFileSync(file, JSON.stringify(invocations));
+
+if (argv[0] === "simctl" && argv[1] === "launch") {
+  const launchAttempts = invocations.filter((invocation) => invocation.argv[1] === "launch").length;
+  if (launchAttempts <= ${launchBusyAttempts}) {
+    console.error('RequestDenied: Busy (Application is installing or uninstalling)');
+    process.exit(1);
+  }
+}
 `,
   );
   await fs.chmod(fakeXcrunPath, 0o755);

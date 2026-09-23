@@ -72,6 +72,7 @@ const androidRunArgs = {
   ...androidLaunchArgs,
   "launch-option": { description: "Launch option as key=value.", type: "string" },
   "no-logcat": { description: "Do not attach Android logcat after launch.", type: "boolean" },
+  "skip-install": { description: "Launch an already-installed Android export.", type: "boolean" },
 } as const;
 
 const devArgs = {
@@ -358,6 +359,7 @@ export const mainCommand: CommandDef = defineCommand({
               device: args.device,
               forceStop: args["force-stop"],
               launchOptions: parseLaunchOptions(args["launch-option"]),
+              skipInstall: args["skip-install"],
             }),
         }),
         ios: defineCommand({

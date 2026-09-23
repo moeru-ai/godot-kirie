@@ -23,6 +23,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
 
     steps:
       - name: Checkout
@@ -32,7 +33,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm
+          install_args: --locked node pnpm
           cache: true
 
       - name: Setup Godot
@@ -111,9 +112,14 @@ jobs:
           xcrun simctl bootstatus "$DEVICE_ID"
           echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
 
+      - name: Install integration App
+        run: xcrun simctl install "$SIMULATOR_ID" dist/integration/ios_debug.app
+
       - name: Run integration tests
-        timeout-minutes: 8
+        timeout-minutes: 15
+        env:
+          KIRIE_INTEGRATION_APP_PREINSTALLED: "1"
         run: |
-          mise run test:integration-ios -- ipc_round_trip_probe
-          mise run test:integration-ios -- webview_lifecycle_probe
-          mise run test:integration-ios -- res_asset_loading_probe
+          mise run --skip-deps test:integration-ios -- ipc_round_trip_probe
+          mise run --skip-deps test:integration-ios -- webview_lifecycle_probe
+          mise run --skip-deps test:integration-ios -- res_asset_loading_probe

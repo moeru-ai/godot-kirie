@@ -173,7 +173,7 @@ Run one test:
 mise run test:integration-android -- ipc_round_trip_probe
 ```
 
-The test task:
+By default, the local test task:
 
 - runs `kirie run android` through the repo scripts package
 - asks the CLI to clear logcat and attach logs for the launched app PID
@@ -181,6 +181,14 @@ The test task:
 - asks the CLI to install and start the exported app
 - passes the test name as the `kirie_test` launch option
 - waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`
+
+In CI, the emulator job installs the exported APK once before running the
+probes. It sets `KIRIE_INTEGRATION_APP_PREINSTALLED=1` so subsequent test tasks
+skip installation, but still force-stop the app, clear its data and logcat, and
+start a fresh app session for each probe. The CLI prints the `am start` result;
+it waits up to 30 seconds for the package PID to allow for emulator cold start.
+If the PID does not appear, it also reports startup-related logcat entries.
+The longer wait does not establish the cause of any previous PID timeout.
 
 The Android package defaults to:
 
@@ -203,7 +211,7 @@ com.godot.game.GodotAppLauncher
 Tests are isolated by app session:
 
 - export one test APK
-- install it once
+- install it once in CI (local standalone test tasks install by default)
 - run each test in a fresh app start
 - run `pm clear` before each test
 
@@ -228,8 +236,13 @@ This task uses the Kirie CLI export path, which builds the configured Vite web
 fixture before exporting the Godot project.
 
 The iOS integration runner is currently simulator-specific because it
-uses the Kirie CLI run helpers to install and launch with the `kirie_test`
-launch option, then streams logs for the pass/fail marker. The example runner
+uses the Kirie CLI run helpers to launch with the `kirie_test` option, then
+streams logs for the pass/fail marker. A local standalone test installs the
+exported app by default. In CI, the app is installed once after simulator boot;
+`KIRIE_INTEGRATION_APP_PREINSTALLED=1` skips later installs while each probe
+still gets a fresh app launch. The runner distinguishes a missing
+`KIRIE_TEST_START` (failure before the test runner is observed) from a test
+that starts but never prints a final marker. The example runner
 currently shares this simulator export path, but that is a tooling shortcut
 rather than a desired examples API shape. Examples should not be treated as
 inherently simulator-only.
@@ -239,6 +252,9 @@ Install and run tests with the iOS test task:
 ```bash
 mise run test:integration-ios -- ipc_round_trip_probe
 ```
+
+Build the exported app before running a test. CI skips the test task's package
+build dependency because the export task has already built the packages.
 
 The iOS XCFramework and simulator app tasks expect the Godot source checkout at
 repo-root `godot/`.
@@ -271,8 +287,10 @@ mise run test:integration-desktop webview_lifecycle_probe
 mise run test:integration-desktop res_asset_loading_probe
 ```
 
-The desktop runner first performs a headless editor import so Godot discovers
-GDExtensions such as Godot CEF, then launches the runtime with `--headless`,
+For a local single-test run, the desktop runner first performs a headless editor
+import so Godot discovers GDExtensions such as Godot CEF. Desktop CI imports the
+project once before the smoke set and sets `KIRIE_DESKTOP_SKIP_IMPORT=true` for
+the test commands. Each test still launches a fresh runtime with `--headless`,
 passes `--kirie-test=<name>` as a Godot user argument, captures stdout, and
 waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
 

@@ -20,6 +20,7 @@ jobs:
     env:
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
 
     steps:
       - name: Checkout
@@ -29,7 +30,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm
+          install_args: --locked node pnpm
           cache: true
 
       - name: Get pnpm store path
@@ -58,6 +59,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
 
     steps:
       - name: Checkout
@@ -67,7 +69,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm
+          install_args: --locked node pnpm
           cache: true
 
       - name: Install XcodeGen

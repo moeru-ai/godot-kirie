@@ -30,6 +30,7 @@ export interface RunAndroidOptions {
   launchOptions?: LaunchOptions;
   packageName?: string;
   preset?: string;
+  skipInstall?: boolean;
 }
 
 export interface RunIosSimulatorOptions {
@@ -65,24 +66,26 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   const packageName =
     options.packageName ?? readAndroidPackageName(config.godot.project, options.preset);
 
-  await execa(
-    "adb",
-    [
-      ...adbArgs,
-      "install",
-      "-r",
-      resolveExportOutputPath({
-        configCwd: config.cwd,
-        mode: "debug",
-        platform: "android",
-        preset: options.preset ?? "Android",
-      }),
-    ],
-    {
-      cwd: config.cwd,
-      stdio: "inherit",
-    },
-  );
+  if (!options.skipInstall) {
+    await execa(
+      "adb",
+      [
+        ...adbArgs,
+        "install",
+        "-r",
+        resolveExportOutputPath({
+          configCwd: config.cwd,
+          mode: "debug",
+          platform: "android",
+          preset: options.preset ?? "Android",
+        }),
+      ],
+      {
+        cwd: config.cwd,
+        stdio: "inherit",
+      },
+    );
+  }
 
   if (options.clearLogcat) {
     await execa("adb", [...adbArgs, "logcat", "-c"], {
@@ -108,7 +111,7 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
     });
   }
 
-  await execa(
+  const launch = await execa(
     "adb",
     [
       ...adbArgs,
@@ -122,9 +125,11 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
     {
       cwd: config.cwd,
       stderr: "inherit",
-      stdout: "ignore",
     },
   );
+  if (launch.stdout) {
+    console.log(launch.stdout);
+  }
 
   if (options.attachLogcat === false) {
     return;
@@ -133,6 +138,7 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   const pid = await waitForAndroidPackagePid({
     adbArgs,
     cwd: config.cwd,
+    launchOutput: launch.stdout,
     packageName,
   });
   await attachAndroidLogcat({
@@ -182,21 +188,41 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     });
   }
 
-  await execa(
-    "xcrun",
-    [
-      "simctl",
-      "launch",
-      "--console",
-      simulatorId,
-      bundleId,
-      ...iosLaunchOptionArgs(options.launchOptions),
-    ],
-    {
+  const launchArgs = [
+    "simctl",
+    "launch",
+    "--console",
+    simulatorId,
+    bundleId,
+    ...iosLaunchOptionArgs(options.launchOptions),
+  ];
+  const launchDeadline = Date.now() + 20_000;
+
+  while (true) {
+    const launch = execa("xcrun", launchArgs, {
+      buffer: { stdout: false, stderr: true },
       cwd: config.cwd,
-      stdio: "inherit",
-    },
-  );
+    });
+    launch.stdout?.pipe(process.stdout, { end: false });
+    launch.stderr?.pipe(process.stderr, { end: false });
+
+    try {
+      await launch;
+      return;
+    } catch (error) {
+      const simulatorNotReady =
+        error instanceof Error &&
+        /\bBusy\b.*\binstalling or uninstalling\b|\bNotFound\b.*\bunknown to FrontBoard\b/s.test(
+          error.message,
+        );
+      if (!simulatorNotReady || Date.now() >= launchDeadline) {
+        throw error;
+      }
+
+      console.error(`iOS simulator is not ready to launch ${bundleId}; retrying in 500ms`);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 }
 
 export async function runIos(options: RunIosOptions = {}): Promise<void> {
@@ -401,10 +427,11 @@ async function attachAndroidLogcat(options: {
 async function waitForAndroidPackagePid(options: {
   adbArgs: string[];
   cwd: string;
+  launchOutput: string;
   packageName: string;
   timeoutMs?: number;
 }): Promise<string> {
-  const deadline = Date.now() + (options.timeoutMs ?? 10_000);
+  const deadline = Date.now() + (options.timeoutMs ?? 30_000);
 
   while (Date.now() < deadline) {
     const result = await execa("adb", [...options.adbArgs, "shell", "pidof", options.packageName], {
@@ -423,7 +450,31 @@ async function waitForAndroidPackagePid(options: {
     });
   }
 
-  throw new Error(`Timed out waiting for Android package PID: ${options.packageName}`);
+  const logcat = await execa(
+    "adb",
+    [
+      ...options.adbArgs,
+      "logcat",
+      "-d",
+      "-t",
+      "120",
+      "-v",
+      "time",
+      "ActivityManager:I",
+      "ActivityTaskManager:I",
+      "AndroidRuntime:E",
+      "DEBUG:E",
+      "Godot:E",
+      "*:S",
+    ],
+    { cwd: options.cwd, reject: false },
+  );
+  const startupLog = logcat.exitCode === 0 ? logcat.stdout : logcat.stderr;
+  throw new Error(
+    `Timed out waiting for Android package PID: ${options.packageName}\n` +
+      `am start: ${options.launchOutput || "(no output)"}\n` +
+      `Android startup logcat:\n${startupLog || "(no output)"}`,
+  );
 }
 
 async function waitForIosSimulatorAppInstall(options: {

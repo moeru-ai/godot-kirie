@@ -87,7 +87,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm java
+          install_args: --locked node pnpm java
           cache: true
 
       - name: Setup Android SDK
