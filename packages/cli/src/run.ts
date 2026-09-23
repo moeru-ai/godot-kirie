@@ -58,7 +58,6 @@ export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 const simulatorLookupTimeoutMs = 30_000;
 const simulatorTerminateTimeoutMs = 30_000;
 const simulatorInstallTimeoutMs = 120_000;
-const simulatorAppLookupTimeoutMs = 10_000;
 
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
   const config =
@@ -200,14 +199,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       },
     );
     console.error(`iOS app install command finished in ${Date.now() - installStartedAt}ms`);
-    await waitForIosSimulatorAppInstall({
-      bundleId,
-      cwd: config.cwd,
-      simulatorId,
-    });
-    console.error(
-      `iOS app installation is ready: ${bundleId} (${Date.now() - installStartedAt}ms total)`,
-    );
   }
 
   const launchArgs = [
@@ -498,39 +489,6 @@ async function waitForAndroidPackagePid(options: {
       `am start: ${options.launchOutput || "(no output)"}\n` +
       `Android startup logcat:\n${startupLog || "(no output)"}`,
   );
-}
-
-async function waitForIosSimulatorAppInstall(options: {
-  bundleId: string;
-  cwd: string;
-  simulatorId: string;
-  timeoutMs?: number;
-}): Promise<void> {
-  const deadline = Date.now() + (options.timeoutMs ?? 30_000);
-
-  while (Date.now() < deadline) {
-    const result = await execa(
-      "xcrun",
-      ["simctl", "get_app_container", options.simulatorId, options.bundleId, "app"],
-      {
-        cwd: options.cwd,
-        reject: false,
-        stderr: "ignore",
-        stdout: "ignore",
-        timeout: simulatorAppLookupTimeoutMs,
-      },
-    );
-    if (result.timedOut) {
-      throw new Error(`Timed out checking iOS app installation: ${options.bundleId}`);
-    }
-    if (result.exitCode === 0) {
-      return;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  throw new Error(`Timed out waiting for iOS app install: ${options.bundleId}`);
 }
 
 function iosLaunchOptionArgs(launchOptions: LaunchOptions | undefined): string[] {
