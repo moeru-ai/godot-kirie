@@ -98,7 +98,10 @@ jobs:
         run: mise run build:ios-debug-xcframework
 
       - name: Build integration App
-        run: mise run build:integration-ios
+        run: |
+          mise run build:integration-ios
+          du -sh dist/integration/ios_debug.app
+          du -sh dist/integration/ios_debug.app/*
 
       - name: Start iOS Simulator
         run: |

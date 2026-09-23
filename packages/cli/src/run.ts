@@ -162,17 +162,24 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     (options.appPath
       ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
       : readIosBundleId(config.godot.project));
+  console.error(`Resolved iOS simulator app: ${bundleId}`);
 
   if (options.terminateExisting) {
-    await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+    const terminateStartedAt = Date.now();
+    console.error(`Terminating existing iOS app on simulator ${simulatorId}: ${bundleId}`);
+    const termination = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
       cwd: config.cwd,
       reject: false,
       stderr: "ignore",
       stdout: "ignore",
     });
+    console.error(
+      `iOS app termination finished in ${Date.now() - terminateStartedAt}ms (exit ${termination.exitCode})`,
+    );
   }
 
   if (options.appPath) {
+    const installStartedAt = Date.now();
     console.error(`Installing iOS app on simulator ${simulatorId}: ${bundleId}`);
     await execa(
       "xcrun",
@@ -182,12 +189,15 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         stdio: "inherit",
       },
     );
+    console.error(`iOS app install command finished in ${Date.now() - installStartedAt}ms`);
     await waitForIosSimulatorAppInstall({
       bundleId,
       cwd: config.cwd,
       simulatorId,
     });
-    console.error(`iOS app installation is ready: ${bundleId}`);
+    console.error(
+      `iOS app installation is ready: ${bundleId} (${Date.now() - installStartedAt}ms total)`,
+    );
   }
 
   const launchArgs = [
@@ -299,11 +309,16 @@ export async function isIosSimulatorDevice(device: string, cwd?: string): Promis
     return true;
   }
 
+  const lookupStartedAt = Date.now();
+  console.error(`Looking up iOS simulator: ${device}`);
   const result = await execa("xcrun", ["simctl", "list", "devices", "--json"], {
     cwd,
     reject: false,
     stderr: "ignore",
   });
+  console.error(
+    `iOS simulator lookup finished in ${Date.now() - lookupStartedAt}ms (exit ${result.exitCode})`,
+  );
   if (result.exitCode !== 0) {
     return false;
   }
