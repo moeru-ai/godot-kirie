@@ -103,14 +103,20 @@ jobs:
           du -sh dist/integration/ios_debug.app
           du -sh dist/integration/ios_debug.app/*
 
-      - name: Start iOS Simulator
+      - name: Select iOS Simulator
+        timeout-minutes: 1
         run: |
           DEVICE_ID=$(xcrun simctl list devices available | grep -m 1 "iPhone 16" | awk -F '[()]' '{print $2}')
+          echo "Selected device ID: $DEVICE_ID"
+          echo "SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
-          echo "Booting device ID: $DEVICE_ID"
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID"
-          echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
+      - name: Boot iOS Simulator
+        timeout-minutes: 1
+        run: xcrun simctl boot "$SIMULATOR_ID"
+
+      - name: Wait for iOS Simulator
+        timeout-minutes: 4
+        run: xcrun simctl bootstatus "$SIMULATOR_ID"
 
       - name: Run integration tests
         timeout-minutes: 15
@@ -118,3 +124,17 @@ jobs:
           mise run --skip-deps test:integration-ios -- ipc_round_trip_probe
           mise run --skip-deps test:integration-ios -- webview_lifecycle_probe
           mise run --skip-deps test:integration-ios -- res_asset_loading_probe
+
+      - name: Diagnose iOS Simulator failure
+        if: failure()
+        timeout-minutes: 2
+        continue-on-error: true
+        run: |
+          ps -axo pid,ppid,etime,state,comm | awk 'NR == 1 || /[C]oreSimulator|[s]imctl|[S]imulator\.app/'
+          /usr/bin/log show --last 5m --info --style compact --predicate 'process == "CoreSimulatorService" OR process == "simctl" OR subsystem BEGINSWITH "com.apple.CoreSimulator"' | tail -n 150
+
+      - name: Check iOS Simulator state after failure
+        if: failure()
+        timeout-minutes: 1
+        continue-on-error: true
+        run: xcrun simctl list devices

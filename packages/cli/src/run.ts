@@ -55,6 +55,11 @@ export interface RunIosDeviceOptions {
 
 export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 
+const simulatorLookupTimeoutMs = 30_000;
+const simulatorTerminateTimeoutMs = 30_000;
+const simulatorInstallTimeoutMs = 120_000;
+const simulatorAppLookupTimeoutMs = 10_000;
+
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
   const config =
     options.config ??
@@ -172,7 +177,11 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       reject: false,
       stderr: "ignore",
       stdout: "ignore",
+      timeout: simulatorTerminateTimeoutMs,
     });
+    if (termination.timedOut) {
+      throw new Error(`Timed out terminating iOS app on simulator ${simulatorId}: ${bundleId}`);
+    }
     console.error(
       `iOS app termination finished in ${Date.now() - terminateStartedAt}ms (exit ${termination.exitCode})`,
     );
@@ -187,6 +196,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       {
         cwd: config.cwd,
         stdio: "inherit",
+        timeout: simulatorInstallTimeoutMs,
       },
     );
     console.error(`iOS app install command finished in ${Date.now() - installStartedAt}ms`);
@@ -313,16 +323,11 @@ export async function isIosSimulatorDevice(device: string, cwd?: string): Promis
   console.error(`Looking up iOS simulator: ${device}`);
   const result = await execa("xcrun", ["simctl", "list", "devices", "--json"], {
     cwd,
-    reject: false,
-    stderr: "ignore",
+    timeout: simulatorLookupTimeoutMs,
   });
   console.error(
     `iOS simulator lookup finished in ${Date.now() - lookupStartedAt}ms (exit ${result.exitCode})`,
   );
-  if (result.exitCode !== 0) {
-    return false;
-  }
-
   try {
     const devices = JSON.parse(result.stdout) as {
       devices?: Record<string, Array<{ udid?: string }>>;
@@ -512,8 +517,12 @@ async function waitForIosSimulatorAppInstall(options: {
         reject: false,
         stderr: "ignore",
         stdout: "ignore",
+        timeout: simulatorAppLookupTimeoutMs,
       },
     );
+    if (result.timedOut) {
+      throw new Error(`Timed out checking iOS app installation: ${options.bundleId}`);
+    }
     if (result.exitCode === 0) {
       return;
     }

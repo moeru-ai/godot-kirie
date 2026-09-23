@@ -390,12 +390,16 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     }
     logStream.end();
     const bundleId = await readBundleId(path.resolve(rootDir, appPath));
-    await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+    const cleanup = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
       cwd: rootDir,
       reject: false,
       stderr: "ignore",
       stdout: "ignore",
+      timeout: 30_000,
     });
+    if (cleanup.timedOut) {
+      console.error(`Timed out terminating iOS app during cleanup: ${bundleId}`);
+    }
   }
 
   if (result) {
