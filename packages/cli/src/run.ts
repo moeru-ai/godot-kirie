@@ -173,6 +173,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   }
 
   if (options.appPath) {
+    console.error(`Installing iOS app on simulator ${simulatorId}: ${bundleId}`);
     await execa(
       "xcrun",
       ["simctl", "install", simulatorId, path.resolve(config.cwd, options.appPath)],
@@ -186,6 +187,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       cwd: config.cwd,
       simulatorId,
     });
+    console.error(`iOS app installation is ready: ${bundleId}`);
   }
 
   const launchArgs = [
@@ -197,6 +199,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     ...iosLaunchOptionArgs(options.launchOptions),
   ];
   const launchDeadline = Date.now() + 20_000;
+  console.error(`Launching iOS app on simulator ${simulatorId}: ${bundleId}`);
 
   while (true) {
     const launch = execa("xcrun", launchArgs, {

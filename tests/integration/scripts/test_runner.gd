@@ -22,6 +22,15 @@ func _ready() -> void:
 		return
 
 	print("KIRIE_TEST_START %s" % _test_name)
+	if OS.get_name() == "Android":
+		var rendering_method := RenderingServer.get_current_rendering_method()
+		var rendering_driver := RenderingServer.get_current_rendering_driver_name()
+		if rendering_method != "mobile" or rendering_driver != "vulkan":
+			_fail(
+				"Expected Android Mobile/Vulkan renderer, got %s/%s"
+				% [rendering_method, rendering_driver]
+			)
+			return
 
 	var test_result: Variant = await _run_test_case(_kirie, get_tree(), _test_name)
 	if typeof(test_result) != TYPE_STRING:

@@ -104,8 +104,8 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Install XcodeGen, SCons and MoltenVK
-        run: brew install xcodegen scons molten-vk
+      - name: Install XcodeGen and SCons
+        run: brew install xcodegen scons
 
       - name: Download and prepare Godot source headers
         run: |
@@ -116,11 +116,8 @@ jobs:
 
           cd godot
 
-          MOLTENVK_PATH="$(brew --prefix molten-vk)"
-          echo "Using MoltenVK from: ${MOLTENVK_PATH}"
-
           scons platform=macos target=editor \
-            vulkan_sdk_path="${MOLTENVK_PATH}" \
+            vulkan=no \
             core/version_generated.gen.h \
             core/disabled_classes.gen.h \
             core/extension/gdextension_interface.gen.h \

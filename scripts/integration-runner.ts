@@ -269,7 +269,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
   const startupTimeoutSeconds = Number(process.env.START_TIMEOUT_SECONDS || "150");
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
-  const appPreinstalled = process.env.KIRIE_INTEGRATION_APP_PREINSTALLED === "1";
   const logStreamSettleSeconds = Number(process.env.LOG_STREAM_SETTLE_SECONDS || "1");
   const logFile = prepareLogFile(testName);
   const logPredicate =
@@ -303,7 +302,8 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       "ios",
       "--project",
       path.resolve(rootDir, integrationProjectDir),
-      ...(appPreinstalled ? [] : ["--app", path.resolve(rootDir, appPath)]),
+      "--app",
+      path.resolve(rootDir, appPath),
       "--device",
       simulatorId,
       "--terminate-existing",
@@ -329,13 +329,18 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     process.stderr.write(chunk);
   });
 
-  const watchedKirieRun = kirieRun.then(
-    (): MarkerResult =>
+  const watchedKirieRun = kirieRun.then((runResult): MarkerResult => {
+    const exitStatus = runResult.signal
+      ? `signal ${runResult.signal}`
+      : `code ${runResult.exitCode ?? "unknown"}`;
+
+    return (
       findMarker({ logFile, testName }) || {
-        line: `kirie run ios exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
+        line: `kirie run ios exited with ${exitStatus} before KIRIE_TEST_PASS/FAIL for ${testName}`,
         status: "stopped",
-      },
-  );
+      }
+    );
+  });
   const watchedLogProcess = logProcess.then(
     (logProcessResult): MarkerResult => ({
       line: logProcessResult.signal

@@ -196,9 +196,14 @@ The Android package defaults to:
 ai.moeru.kirie.integrationtests
 ```
 
-The GitHub Android emulator cannot present Vulkan with the Mobile renderer.
-The Android export preset therefore adds `--rendering-method gl_compatibility`.
-This override does not change the iOS or desktop runners.
+The integration project's Android export uses its Mobile renderer setting and
+does not force Compatibility mode. Each Android probe checks the active Mobile
+renderer and Vulkan driver before exercising Kirie. The CI emulator uses a
+software graphics device, so this checks the Godot and WebView integration
+path but not physical Android GPU behavior. Godot can fall back to another
+renderer when the requested driver is unavailable; the probe fails in that
+case rather than reporting a misleading pass. See the
+[Godot RenderingServer API](https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#class-renderingserver-method-get-current-rendering-method).
 
 The Android launcher component defaults to:
 
@@ -237,11 +242,10 @@ fixture before exporting the Godot project.
 
 The iOS integration runner is currently simulator-specific because it
 uses the Kirie CLI run helpers to launch with the `kirie_test` option, then
-streams logs for the pass/fail marker. A local standalone test installs the
-exported app by default. In CI, the app is installed once after simulator boot;
-`KIRIE_INTEGRATION_APP_PREINSTALLED=1` skips later installs while each probe
-still gets a fresh app launch. The runner distinguishes a missing
-`KIRIE_TEST_START` (failure before the test runner is observed) from a test
+streams logs for the pass/fail marker. Each local and CI probe installs the
+exported app, waits for the simulator to see it, and starts a fresh app session.
+The runner distinguishes a missing `KIRIE_TEST_START` (failure before the test
+runner is observed) from a test
 that starts but never prints a final marker. The example runner
 currently shares this simulator export path, but that is a tooling shortcut
 rather than a desired examples API shape. Examples should not be treated as
