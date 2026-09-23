@@ -205,6 +205,16 @@ renderer when the requested driver is unavailable; the probe fails in that
 case rather than reporting a misleading pass. See the
 [Godot RenderingServer API](https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#class-renderingserver-method-get-current-rendering-method).
 
+The integration fixture disables Android Swappy frame pacing because Godot
+4.7.2 fails to present Vulkan frames on the emulator with `VkResult error 5`
+([upstream issue](https://github.com/godotengine/godot/issues/121035)). This
+does not change Kirie or application defaults.
+
+TODO (Godot 4.8 upgrade): Remove the frame-pacing override from
+`tests/integration/project.godot` and rerun the Android Mobile/Vulkan probes
+with Swappy enabled. The [upstream fix](https://github.com/godotengine/godot/pull/121701)
+is in 4.8 development builds but not Godot 4.7.2.
+
 The Android launcher component defaults to:
 
 ```text
