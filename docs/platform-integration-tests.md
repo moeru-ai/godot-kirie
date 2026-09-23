@@ -197,13 +197,9 @@ ai.moeru.kirie.integrationtests
 ```
 
 The integration project's Android export uses its Mobile renderer setting and
-does not force Compatibility mode. Each Android probe checks the active Mobile
-renderer and Vulkan driver before exercising Kirie. The CI emulator uses a
-software graphics device, so this checks the Godot and WebView integration
-path but not physical Android GPU behavior. Godot can fall back to another
-renderer when the requested driver is unavailable; the probe fails in that
-case rather than reporting a misleading pass. See the
-[Godot RenderingServer API](https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#class-renderingserver-method-get-current-rendering-method).
+does not force Compatibility mode. The CI emulator uses a software graphics
+device. The probes cover the Godot and WebView integration path, but they do
+not verify the active renderer or physical Android GPU behavior.
 
 The integration fixture disables Android Swappy frame pacing because Godot
 4.7.2 fails to present Vulkan frames on the emulator with `VkResult error 5`
@@ -211,7 +207,7 @@ The integration fixture disables Android Swappy frame pacing because Godot
 does not change Kirie or application defaults.
 
 TODO (Godot 4.8 upgrade): Remove the frame-pacing override from
-`tests/integration/project.godot` and rerun the Android Mobile/Vulkan probes
+`tests/integration/project.godot` and rerun the Android integration probes
 with Swappy enabled. The [upstream fix](https://github.com/godotengine/godot/pull/121701)
 is in 4.8 development builds but not Godot 4.7.2.
 
