@@ -9,6 +9,7 @@ const OPTION_ENABLE_WEB_INSPECTOR := "kirie/debug/enable_web_inspector"
 const OPTION_ALLOW_TLS_BYPASS := "kirie/debug/allow_tls_bypass"
 
 const ANDROID_DEBUG_AAR_ARG := "--kirie-android-aar"
+const ANDROID_EXTRA_ARGS_ARG := "--kirie-android-extra-args"
 const ANDROID_DEBUG_AAR := "kirie/libraries/android/Kirie-debug.aar"
 const ANDROID_RELEASE_AAR := "kirie/libraries/android/Kirie-release.aar"
 const ANDROID_META_ENABLE_WEB_INSPECTOR := "ai.moeru.kirie.ENABLE_WEB_INSPECTOR"
@@ -88,6 +89,18 @@ func _get_export_options(_platform: EditorExportPlatform) -> Array[Dictionary]:
 			"default_value": false,
 		},
 	]
+
+
+func _get_export_options_overrides(platform: EditorExportPlatform) -> Dictionary:
+	if not platform is EditorExportPlatformAndroid:
+		return {}
+
+	var extra_args := _android_extra_args_override()
+	if extra_args.is_empty():
+		return {}
+
+	print("[Kirie][export] override Android command line extra args: %s" % extra_args)
+	return {"command_line/extra_args": extra_args}
 
 
 func _export_begin(
@@ -172,6 +185,14 @@ func _get_android_aar_mode() -> String:
 			return "invalid"
 
 	return "release"
+
+
+func _android_extra_args_override() -> String:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("%s=" % ANDROID_EXTRA_ARGS_ARG):
+			return arg.substr(ANDROID_EXTRA_ARGS_ARG.length() + 1)
+
+	return ""
 
 
 func _add_ios_runtime_configuration() -> void:
