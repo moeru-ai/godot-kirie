@@ -211,6 +211,13 @@ Exports use `Kirie-release.aar` by default. Repository-local Android native
 debugging can opt into `Kirie-debug.aar` for a single export by passing
 `-- --kirie-android-aar=debug` to the Godot export command.
 
+Android application command line arguments are part of the export preset. A
+single export can replace them by passing
+`-- --kirie-android-extra-args=<arguments>` to the Godot export command, which
+the export plugin applies through Godot's `command_line/extra_args` Android
+export option. Use this to keep environment-specific arguments, such as an
+emulator renderer override, out of the shared preset.
+
 ## Kirie app layout and CLI direction
 
 The Kirie application shape is a Godot project with a Vite web frontend beside
