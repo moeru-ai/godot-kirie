@@ -1,4 +1,3 @@
-import "@gd-kirie/ipc/pointer-input/auto";
 import { createContext } from "@gd-kirie/ipc-eventa";
 import {
   defineEventa,
@@ -7,6 +6,7 @@ import {
   defineInvokeHandler,
   type Eventa,
 } from "@moeru/eventa";
+import "@gd-kirie/ipc/pointer-input/auto";
 
 interface WebReadyPayload {
   platform: string;

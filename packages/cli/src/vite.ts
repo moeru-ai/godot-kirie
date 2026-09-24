@@ -1,9 +1,9 @@
+import type { ResolvedKirieConfig } from "./config.ts";
 import fs from "node:fs";
 import path from "node:path";
 import { createViteBuildConfig } from "@gd-kirie/build";
-import { createServer, type InlineConfig, mergeConfig, type ViteDevServer } from "vite";
 
-import type { ResolvedKirieConfig } from "./config.ts";
+import { createServer, type InlineConfig, mergeConfig, type ViteDevServer } from "vite";
 
 export interface StartedViteServer {
   server: ViteDevServer;

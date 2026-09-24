@@ -71,6 +71,11 @@ Build native release artifacts and pack the public addon zip:
 mise run build:addon-pack
 ```
 
+The pack task regenerates addon GDScript from
+`packages/kirie/src-godot` before staging. The generated `.gd` files are
+ignored by Git and shipped to Godot users in the addon zip; the TypeScript
+source stays in the repository.
+
 The task stages a clean addon tree at:
 
 ```text

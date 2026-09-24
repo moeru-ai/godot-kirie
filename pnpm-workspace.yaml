@@ -18,7 +18,7 @@ allowBuilds:
 catalog:
   "@alint-js/cli": ^0.0.38
   "@alint-js/core": ^0.0.38
-  "@biomejs/biome": 2.2.4
+  "@antfu/eslint-config": ^9.5.1
   "@moeru/eventa": ^1.0.0
   "@types/ini": ^4.1.1
   "@types/node": ^25.6.0
@@ -26,9 +26,12 @@ catalog:
   cborg: ^4.5.8
   citty: ^0.2.2
   execa: 9.6.1
+  eslint: ^10.11.0
+  eslint-plugin-format: ^2.0.1
   ini: ^7.0.0
   tsdown: ^0.22.2
   typescript: ^6.0.3
+  typescript-to-gdscript: github:LemonNekoGH/typescript-to-gdscript#demo/external-package-sources
   vite: ^8.0.16
   vitest: ^4.0.15
   xsai: ^0.5.0-beta.6

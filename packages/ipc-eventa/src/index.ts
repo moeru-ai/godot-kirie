@@ -1,5 +1,5 @@
-import { onTextReceived, sendText } from "@gd-kirie/ipc";
 import type { Eventa, EventContext, EventTag } from "@moeru/eventa";
+import { onTextReceived, sendText } from "@gd-kirie/ipc";
 import {
   and,
   createContext as createEventaContext,

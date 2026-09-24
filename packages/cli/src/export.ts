@@ -1,5 +1,5 @@
 import path from "node:path";
-import { type ExportMode, exportGodotPreset } from "@gd-kirie/build";
+import { exportGodotPreset, type ExportMode } from "@gd-kirie/build";
 import { runBuild } from "./build.ts";
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
 

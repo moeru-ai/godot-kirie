@@ -13,8 +13,7 @@ uv = "0.11.7"
 java = "temurin-21.0.10+7.0.LTS"
 dotnet = "10.0.300"
 ktlint = "1.8.0"
-swiftlint = { version = "0.62.2", os = ["unix"] }
-"pipx:gdtoolkit" = "4.5.0"
+swiftlint = { version = "0.62.2", os = ["macos", "linux"] }
 pnpm = "12"
 
 [tasks.build]
@@ -79,15 +78,11 @@ run = "./scripts/run-build-task.js checkAddonPack"
 
 [tasks.format]
 description = "Format all covered source files"
-run = "pnpm run format:biome && mise run format:gdscript && mise run format:kotlin && mise run format:swift && mise format:csharp"
+run = "pnpm run format:eslint && mise run format:kotlin && mise run format:swift && mise format:csharp"
 
-[tasks."format:biome"]
+[tasks."format:eslint"]
 description = "Format TypeScript, JSON, CSS, and HTML files"
-run = "pnpm run format:biome"
-
-[tasks."format:gdscript"]
-description = "Format GDScript files"
-run = "gdformat packages/kirie/addon/addons/kirie examples/basic-ipc tests/integration/scripts"
+run = "pnpm run format:eslint"
 
 [tasks."format:kotlin"]
 description = "Format Kotlin and Gradle Kotlin DSL files"
@@ -103,15 +98,11 @@ run = "dotnet format style -v diag"
 
 [tasks.lint]
 description = "Run all linters"
-run = "pnpm -C examples/basic-kirie-cli run generate:godot && pnpm run lint:biome && mise run lint:gdscript && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
+run = "pnpm -C packages/kirie run generate:godot && pnpm -C examples/basic-kirie-cli run generate:godot && pnpm run lint:eslint && mise run lint:kotlin && mise run lint:swift && mise run lint:csharp"
 
-[tasks."lint:biome"]
+[tasks."lint:eslint"]
 description = "Lint TypeScript, JSON, CSS, and HTML files"
-run = "pnpm run lint:biome"
-
-[tasks."lint:gdscript"]
-description = "Lint GDScript files"
-run = "gdlint packages/kirie/addon/addons/kirie examples tests/integration/scripts"
+run = "pnpm run lint:eslint"
 
 [tasks."lint:kotlin"]
 description = "Lint Kotlin and Gradle Kotlin DSL files"
@@ -174,6 +165,7 @@ run = './scripts/run-build-task.js runIntegrationIosTest "${usage_test_name?}"'
 
 [tasks."test:integration-desktop"]
 description = "Run one desktop Godot CEF platform integration test"
+depends = ["build:packages"]
 usage = '''
 arg "<test_name>" help="Integration test name"
 '''

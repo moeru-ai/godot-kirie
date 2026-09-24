@@ -67,6 +67,11 @@ This creates a WebView if needed, loads
 ## Running the Godot side
 
 Recommended to use [mise](https://mise.jdx.dev/) to manage Godot versions.
+On a fresh checkout, generate the addon scripts before opening the project:
+
+```sh
+mise run build:packages
+```
 
 Desktop runs use the pinned Godot CEF addon. Install it into this example before
 running on macOS, Windows, or Linux:

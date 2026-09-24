@@ -144,6 +144,8 @@ function prepareIosBuildDirs(): void {
 // mise task entrypoint.
 export function checkAddonPack(): void {
   assertPathExists(addonStageDir);
+  assertPathExists(`${addonStageDir}/plugin.gd`);
+  assertPathExists(`${addonStageDir}/gd_kirie.gd`);
   assertPathExists(androidStagedReleaseAar);
   assertPathExists(iosStagedDebugXcframework);
   assertPathExists(`${iosStagedDebugXcframework}/Info.plist`);
@@ -238,6 +240,10 @@ export async function testSwift(): Promise<void> {
 
 // mise task entrypoint.
 export async function packAddon(): Promise<void> {
+  await execa("pnpm", ["-C", "packages/kirie", "run", "generate:godot"], {
+    cwd: rootDir,
+    stdio: "inherit",
+  });
   fs.rmSync(addonStageDir, { force: true, recursive: true });
   fs.mkdirSync(path.dirname(addonStageDir), { recursive: true });
   fs.cpSync(addonSourceDir, addonStageDir, {

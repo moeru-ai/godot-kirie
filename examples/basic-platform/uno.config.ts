@@ -1,5 +1,5 @@
-import { presetChromatic } from "@proj-airi/unocss-preset-chromatic";
 import type { Preset } from "unocss";
+import { presetChromatic } from "@proj-airi/unocss-preset-chromatic";
 import { defineConfig, presetAttributify, presetWind3 } from "unocss";
 
 export default defineConfig({

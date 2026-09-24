@@ -4,18 +4,18 @@ import "./style.css";
 
 type WebToGodotMessage =
   | {
-      type: "web_ready";
-      payload: {
-        source: "app";
-        userAgent: string;
-      };
-    }
-  | {
-      type: "web_ping";
-      payload: {
-        source: "web";
-      };
+    type: "web_ready";
+    payload: {
+      source: "app";
+      userAgent: string;
     };
+  } |
+  {
+    type: "web_ping";
+    payload: {
+      source: "web";
+    };
+  };
 
 const logNodeElement = document.querySelector<HTMLPreElement>("#log");
 const sendButtonElement = document.querySelector<HTMLButtonElement>("#sendButton");

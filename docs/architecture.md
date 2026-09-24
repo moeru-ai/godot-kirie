@@ -76,6 +76,11 @@ Current signals should also stay narrow:
 - `permission_requested`
 - `ipc_error`
 
+The Godot-facing scripts are authored in `packages/kirie/src-godot` and
+converted to Git-ignored GDScript in `packages/kirie/addon/addons/kirie`.
+The generated paths and `class_name` declarations remain the public Godot
+interface. TypeScript source does not ship in the addon zip.
+
 Desktop permission requests remain pending until the application grants or
 denies each request ID. Kirie only forwards the permission type, requesting
 origin, and request ID. The application owns the trust policy and must resolve

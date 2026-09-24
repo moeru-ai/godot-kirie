@@ -3,14 +3,14 @@ import type { InboundEventa } from "@moeru/eventa";
 import { defineInboundEventa, defineInvokeEventa, defineInvokes } from "@moeru/eventa";
 
 export type ResizeEdge =
-  | "top"
-  | "right"
-  | "bottom"
-  | "left"
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right";
+  | "top" |
+  "right" |
+  "bottom" |
+  "left" |
+  "top-left" |
+  "top-right" |
+  "bottom-left" |
+  "bottom-right";
 
 export interface HostWindowPointerPosition {
   x: number;

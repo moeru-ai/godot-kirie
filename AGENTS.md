@@ -78,6 +78,16 @@ Do not duplicate those documents here.
 
 - Prefer type inference in GDScript, TypeScript, Kotlin, and Swift when the
   inferred type is stable and obvious.
+- Use `snake_case` for variables, parameters, functions, methods, and fields in
+  `src-godot` TypeScript. Keep class and type names in PascalCase and preserve
+  external API names.
+- Leave a blank line after control-flow blocks in `src-godot` TypeScript, and
+  separate unrelated steps within a function with blank lines.
+- Write explicit key-value pairs in `src-godot` object literals. The current
+  TypeScript-to-GDScript converter drops shorthand fields.
+- Prefer TypeScript `instanceof` narrowing over `gd.as` in `src-godot`. Keep
+  `gd.as` where the generated GDScript needs an explicit runtime cast; plain
+  TypeScript `as` assertions are erased by the converter.
 - Prefer current stable language syntax supported by the repository toolchain
   when it improves type clarity or reduces boilerplate without hurting
   readability.
@@ -87,9 +97,8 @@ Do not duplicate those documents here.
   payloads, and bridge-facing types explicit when that improves readability.
 - For TypeScript object shapes, prefer `interface` over `type`. Keep `type` for
   unions, intersections, mapped types, conditional types, and other aliases that
-  are not simple object shapes. This is enforced by Biome's
-  `lint/nursery/useConsistentTypeDefinitions` rule; do not add custom checks for
-  this preference.
+  are not simple object shapes. This is enforced by ESLint's
+  `ts/consistent-type-definitions` rule.
 - Prefer idiomatic C# events on public C# wrappers instead of exposing raw Godot
   signal connection details to C# users.
 - Prefer `val` over `var` in Kotlin unless mutation is required.
@@ -164,14 +173,15 @@ Do not duplicate those documents here.
 ## Validation
 
 - Run the relevant lint task after changing a covered language:
-  - GDScript: `mise run lint:gdscript`
-  - TypeScript, JSON, CSS, and HTML: `mise run lint:biome`
+  - TypeScript, JSON, CSS, and HTML: `mise run lint:eslint`
   - Kotlin and Gradle Kotlin DSL: `mise run lint:kotlin`
   - Swift: `mise run lint:swift`
 - Run `mise run lint` for broad, multi-language changes.
-- Use the matching formatter for style-only edits: `mise run format:gdscript`,
-  `mise run format:biome`, `mise run format:kotlin`, or
-  `mise run format:swift`.
+- Use the matching formatter for style-only edits: `mise run format:eslint`,
+  `mise run format:kotlin`, or `mise run format:swift`.
+- Edit addon GDScript through `packages/kirie/src-godot` and regenerate with
+  `mise x -- pnpm -C packages/kirie run generate:godot`. Validate generated
+  scripts with Godot when changing their behavior.
 - After Android native changes, run `mise run build:android-aar` before exported
   integration tests.
 - After iOS native changes, run `mise run build:ios-xcframework` before device

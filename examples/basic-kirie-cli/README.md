@@ -31,12 +31,12 @@ The example supports two startup sources for the same app page:
 ## TypeScript-authored GDScript
 
 The scene controller follows tstogd's
-[manual project setup](https://github.com/nnn3d/typescript-to-gdscript/blob/v0.1.2/docs/configuration.md).
-The experiment is intentionally limited to `src-godot/scripts/main.ts`. Kirie
-addon and scene typings are disabled because tstogd 0.1.2 cannot generate valid
-TypeScript for the current Kirie addon or the hyphenated `src-godot` scene path.
-The source declares only the small Kirie API surface it uses; Kirie's native
-GDScript remains unchanged.
+[manual project setup](https://github.com/nnn3d/typescript-to-gdscript/blob/master/docs/configuration.md).
+Until the merged upstream changes have a release, this example installs the
+[prebuilt demo fork](https://github.com/LemonNekoGH/typescript-to-gdscript/tree/demo/external-package-sources).
+The controller imports `GdKirie` from `packages/kirie/src-godot`.
+tstogd emits the Godot global class name in the generated script.
+The example does not generate addon or scene typings.
 
 ## Setup
 
