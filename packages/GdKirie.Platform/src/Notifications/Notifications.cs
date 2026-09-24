@@ -8,8 +8,6 @@ namespace GdKirie.Platform;
 /// </summary>
 internal static class Notifications
 {
-    private static Action<string>? _listener;
-
     public static async Task<EmptyPayload> ShowAsync(
         NotificationPayload notification,
         CancellationToken cancellationToken)
@@ -43,18 +41,16 @@ internal static class Notifications
 
     public static void SetListener(Action<string> onActivated, SynchronizationContext? synchronizationContext)
     {
-        _listener = onActivated;
-
         if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
-            MacOsNotificationRuntime.SetListener(Activate);
+            MacOsNotificationRuntime.SetListener(onActivated);
             return;
         }
 
         if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393))
         {
             WindowsNotificationRuntime.SetListener(
-                Activate,
+                onActivated,
                 synchronizationContext
                     ?? throw new InvalidOperationException(
                         "Windows desktop notifications require Godot's main-thread synchronization context."));
@@ -63,8 +59,6 @@ internal static class Notifications
 
     public static void RemoveListener()
     {
-        _listener = null;
-
         if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
             MacOsNotificationRuntime.RemoveListener();
@@ -76,6 +70,4 @@ internal static class Notifications
             WindowsNotificationRuntime.RemoveListener();
         }
     }
-
-    private static void Activate(string id) => _listener?.Invoke(id);
 }

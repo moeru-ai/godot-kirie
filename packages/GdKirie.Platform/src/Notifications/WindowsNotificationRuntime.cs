@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Win32;
 using Windows.Win32;
 using Windows.Win32.System.Com;
@@ -13,7 +14,7 @@ namespace GdKirie.Platform;
 
 /// <summary>
 /// One process-wide toast registration. The COM activator stays in this process
-/// and the registry entries are removed once the last Platform host is gone, so
+/// and the registry entries are removed once the Platform host is gone, so
 /// a click does not start the executable after that.
 /// </summary>
 [SupportedOSPlatform("windows10.0.14393.0")]
@@ -40,14 +41,16 @@ internal static unsafe class WindowsNotificationRuntime
     private static uint _cookie;
     private static string? _applicationId;
     private static Guid _activatorId;
-    private static Exception? _registrationError;
-    private static bool _registering;
-    private static bool _registered;
 
     public static void SetListener(Action<string> onActivated, SynchronizationContext synchronizationContext)
     {
         lock (Gate)
         {
+            if (_listener is not null)
+            {
+                throw new InvalidOperationException("Only one Platform notification host can be active per process.");
+            }
+
             _listener = onActivated;
             _listenerContext = synchronizationContext;
         }
@@ -55,117 +58,64 @@ internal static unsafe class WindowsNotificationRuntime
 
     public static void RemoveListener()
     {
-        Thread? thread = null;
+        Exception? stopError;
         lock (Gate)
         {
             _listener = null;
             _listenerContext = null;
-            if (!_registered)
+            if (_thread is null)
             {
                 return;
             }
 
-            _registered = false;
             _stop?.Set();
-            thread = _thread;
+            _thread.Join();
             _thread = null;
+            _stop?.Dispose();
+            _stop = null;
+            DeleteRegistry();
+            stopError = _startError;
+            _startError = null;
         }
 
-        thread?.Join();
-        DeleteRegistry();
+        if (stopError is not null)
+        {
+            ExceptionDispatchInfo.Capture(stopError).Throw();
+        }
     }
 
     public static void Show(NotificationPayload notification)
     {
-        EnsureRegistered();
-        WindowsToastApi.Show(
-            ApplicationId(),
-            ToastXml(notification));
-    }
-
-    private static void EnsureRegistered()
-    {
-        var startRegistration = false;
         lock (Gate)
         {
-            if (_registered)
+            if (_listener is null)
             {
-                return;
+                throw new InvalidOperationException("Windows notifications require a registered listener.");
             }
 
-            while (_registering)
+            if (_thread is null)
             {
-                Monitor.Wait(Gate);
+                Register();
             }
 
-            if (_registered)
-            {
-                return;
-            }
-
-            if (_registrationError is not null)
-            {
-                var error = _registrationError;
-                _registrationError = null;
-                ExceptionDispatchInfo.Capture(error).Throw();
-            }
-
-            _registering = true;
-            startRegistration = true;
+            WindowsToastApi.Show(_applicationId!, ToastXml(notification));
         }
+    }
 
-        if (!startRegistration)
-        {
-            return;
-        }
-
+    private static void Register()
+    {
+        var identity = CreateIdentity();
         try
         {
-            var identity = CreateIdentity();
             WriteRegistry(identity);
-            try
-            {
-                StartActivator(identity.ActivatorId);
-            }
-            catch
-            {
-                DeleteRegistry();
-                throw;
-            }
-
-            lock (Gate)
-            {
-                _applicationId = identity.ApplicationId;
-                _activatorId = identity.ActivatorId;
-                _registered = _listener is not null;
-                _registering = false;
-                Monitor.PulseAll(Gate);
-            }
-
-            if (!_registered)
-            {
-                RemoveListener();
-            }
+            StartActivator(identity.ActivatorId);
+            _applicationId = identity.ApplicationId;
+            _activatorId = identity.ActivatorId;
         }
-        catch (Exception error)
+        catch
         {
-            lock (Gate)
-            {
-                _registering = false;
-                _registrationError = error;
-                Monitor.PulseAll(Gate);
-            }
-
+            DeleteRegistry(identity.ApplicationId, identity.ActivatorId);
             throw;
-        }
-    }
-
-    private static string ApplicationId()
-    {
-        lock (Gate)
-        {
-            return _applicationId
-                ?? throw new InvalidOperationException("Windows notification identity is not registered.");
         }
     }
 
@@ -205,20 +155,18 @@ internal static unsafe class WindowsNotificationRuntime
 
     private static void DeleteRegistry()
     {
-        string? applicationId;
-        Guid activatorId;
-        lock (Gate)
-        {
-            applicationId = _applicationId;
-            activatorId = _activatorId;
-            _applicationId = null;
-        }
-
-        if (applicationId is null)
+        if (_applicationId is null)
         {
             return;
         }
 
+        var applicationId = _applicationId;
+        DeleteRegistry(applicationId, _activatorId);
+        _applicationId = null;
+    }
+
+    private static void DeleteRegistry(string applicationId, Guid activatorId)
+    {
         DeleteTree($@"Software\Classes\CLSID\{activatorId:B}");
         DeleteTree($@"Software\Classes\AppUserModelId\{applicationId}");
     }
@@ -246,29 +194,35 @@ internal static unsafe class WindowsNotificationRuntime
         };
         _thread.Start();
         _ready.Wait();
+        _ready.Dispose();
+        _ready = null;
         if (_startError is not null)
         {
             _thread.Join();
             _thread = null;
+            _stop.Dispose();
+            _stop = null;
             ExceptionDispatchInfo.Capture(_startError).Throw();
         }
     }
 
     private static void ActivatorThread(Guid activatorId)
     {
+        var initialized = false;
         try
         {
-            var initialized = WinRtInterop.RoInitialize(RoInitType.MultiThreaded);
-            if (initialized.Value < 0 && (uint)initialized.Value != 0x80010106)
+            var initialization = WinRtInterop.RoInitialize(RoInitType.MultiThreaded);
+            if (initialization.Value < 0 && (uint)initialization.Value != 0x80010106)
             {
-                Marshal.ThrowExceptionForHR(initialized.Value);
+                Marshal.ThrowExceptionForHR(initialization.Value);
             }
 
+            initialized = initialization.Value >= 0;
             EnsureVtables();
             _factory = Allocate(_factoryVtable);
             _activator = Allocate(_activatorVtable);
             WinRtInterop.CoRegisterClassObject(
-                activatorId,
+                &activatorId,
                 _factory,
                 (uint)CLSCTX.CLSCTX_LOCAL_SERVER,
                 (uint)REGCLS.REGCLS_MULTIPLEUSE,
@@ -286,6 +240,21 @@ internal static unsafe class WindowsNotificationRuntime
             _startError = error;
             _ready?.Set();
         }
+        finally
+        {
+            if (_cookie == 0)
+            {
+                ReleaseReference(_factory);
+                ReleaseReference(_activator);
+                _factory = null;
+                _activator = null;
+            }
+
+            if (initialized)
+            {
+                WinRtInterop.RoUninitialize();
+            }
+        }
     }
 
     private static void OnActivated(char* invokedArgs)
@@ -295,14 +264,8 @@ internal static unsafe class WindowsNotificationRuntime
             return;
         }
 
-        Action<string>? listener;
-        SynchronizationContext? context;
-        lock (Gate)
-        {
-            listener = _listener;
-            context = _listenerContext;
-        }
-
+        var listener = Volatile.Read(ref _listener);
+        var context = Volatile.Read(ref _listenerContext);
         if (listener is null || context is null)
         {
             return;
@@ -310,61 +273,26 @@ internal static unsafe class WindowsNotificationRuntime
 
         // The launch argument is the caller's own id, so it goes back unchanged.
         var notificationId = new string(invokedArgs);
-        context.Post(_ => listener(notificationId), null);
+        context.Post(_ =>
+        {
+            if (ReferenceEquals(Volatile.Read(ref _listener), listener))
+            {
+                listener(notificationId);
+            }
+        }, null);
     }
 
     private static string ToastXml(NotificationPayload notification)
     {
-        var launch = EscapeXml(notification.Id);
-        var title = EscapeXml(notification.Title);
-        var body = EscapeXml(notification.Body);
-        return $"""
-            <toast launch="{launch}">
-              <visual>
-                <binding template="ToastGeneric">
-                  <text>{title}</text>
-                  <text>{body}</text>
-                </binding>
-              </visual>
-              <audio silent="true"/>
-            </toast>
-            """;
-    }
-
-    private static string EscapeXml(string value)
-    {
-        var encoded = new StringBuilder(value.Length);
-        foreach (var character in value)
-        {
-            switch (character)
-            {
-                case '&':
-                    encoded.Append("&amp;");
-                    break;
-                case '<':
-                    encoded.Append("&lt;");
-                    break;
-                case '>':
-                    encoded.Append("&gt;");
-                    break;
-                case '"':
-                    encoded.Append("&quot;");
-                    break;
-                case '\'':
-                    encoded.Append("&apos;");
-                    break;
-                default:
-                    if (character is not ('\t' or '\n' or '\r') && character < ' ')
-                    {
-                        throw new ArgumentException("The notification contains a character XML cannot represent.");
-                    }
-
-                    encoded.Append(character);
-                    break;
-            }
-        }
-
-        return encoded.ToString();
+        return new XElement("toast",
+            new XAttribute("launch", notification.Id),
+            new XElement("visual",
+                new XElement("binding",
+                    new XAttribute("template", "ToastGeneric"),
+                    new XElement("text", notification.Title),
+                    new XElement("text", notification.Body))),
+            new XElement("audio", new XAttribute("silent", true)))
+            .ToString(SaveOptions.DisableFormatting);
     }
 
     private static void EnsureVtables()
@@ -432,8 +360,15 @@ internal static unsafe class WindowsNotificationRuntime
     private static uint AddRef(void* self) => AddReference(self);
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-    private static uint Release(void* self)
+    private static uint Release(void* self) => ReleaseReference(self);
+
+    private static uint ReleaseReference(void* self)
     {
+        if (self is null)
+        {
+            return 0;
+        }
+
         var count = Interlocked.Decrement(ref *(int*)((byte*)self + sizeof(nint)));
         if (count == 0)
         {

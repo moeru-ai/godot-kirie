@@ -143,6 +143,7 @@ on both implemented desktops. macOS posts through RumpSharp, as recorded in
 [ADR-0004](decisions/0004-add-macos-desktop-notifications.md). Windows posts
 through `Windows.UI.Notifications` for an unpackaged executable and delivers
 the click on Godot's main thread only while the Platform host is alive. The
+notification listener permits one Platform host per process on both desktops.
 Windows registration and its per-executable identity are recorded in
 [ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
 Linux notification backends remain pending work.

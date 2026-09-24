@@ -14,20 +14,24 @@ internal static class MacOsNotificationRuntime
     {
         lock (RuntimeLock)
         {
-            _listener = listener;
-            if (_center is not null)
+            if (_listener is not null)
             {
-                return;
+                throw new InvalidOperationException("Only one Platform notification host can be active per process.");
             }
 
-            _center = new NotificationCenter(new NotificationCenterOptions
+            if (_center is null)
             {
-                Transport = NotificationTransport.InProcess,
-                BecomeAccessoryApplication = false,
-                PresentWhenForeground = true,
-                RequestAuthorizationOnDemand = false,
-            });
-            _center.Activated += OnActivated;
+                _center = new NotificationCenter(new NotificationCenterOptions
+                {
+                    Transport = NotificationTransport.InProcess,
+                    BecomeAccessoryApplication = false,
+                    PresentWhenForeground = true,
+                    RequestAuthorizationOnDemand = false,
+                });
+                _center.Activated += OnActivated;
+            }
+
+            _listener = listener;
         }
     }
 

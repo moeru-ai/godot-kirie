@@ -126,6 +126,10 @@ packaging, or platform WebView bridge details.
   WinRT API used to post a toast from an unpackaged desktop process.
 - [INotificationActivationCallback](https://learn.microsoft.com/en-us/windows/win32/api/notificationactivationcallback/nn-notificationactivationcallback-inotificationactivationcallback)
   COM callback that receives a toast click while the process is running.
+- [RoInitialize](https://learn.microsoft.com/en-us/windows/win32/api/roapi/nf-roapi-roinitialize)
+  Each successful call requires a matching `RoUninitialize` call on that thread.
+- [CoRegisterClassObject](https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-coregisterclassobject)
+  COM adds a class factory reference and releases it when registration ends.
 - [Application User Model IDs](https://learn.microsoft.com/en-us/windows/win32/shell/appids)
   Identity an unpackaged executable must register before Windows will show its
   toasts.
