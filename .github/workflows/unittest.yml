@@ -51,6 +51,28 @@ jobs:
       - name: Run unit tests
         run: mise run test:unit
 
+  dotnet-unit-tests:
+    name: .NET tests
+    runs-on: ubuntu-latest
+    env:
+      MISE_EXEC_AUTO_INSTALL: "false"
+      MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          install_args: --locked dotnet
+          cache: true
+
+      - name: Run .NET tests
+        run: mise run test:dotnet
+
   swift-unit-tests:
     name: Swift unit tests
     runs-on: macos-latest
