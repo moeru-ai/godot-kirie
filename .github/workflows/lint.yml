@@ -53,6 +53,45 @@ jobs:
           mise run lint
           git diff --exit-code
 
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    env:
+      MISE_EXEC_AUTO_INSTALL: "false"
+      MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install format tools
+        uses: jdx/mise-action@v3
+        with:
+          install: true
+          install_args: --locked node pnpm python uv java ktlint swiftlint pipx:gdtoolkit dotnet
+          cache: true
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(mise x -- pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install pnpm dependencies
+        run: mise x -- pnpm install --frozen-lockfile
+
+      - name: Check format
+        run: |
+          mise run format
+          git diff --exit-code
+
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest

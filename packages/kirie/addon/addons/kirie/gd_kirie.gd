@@ -394,8 +394,7 @@ func _destroy_cef_webview() -> void:
 func _connect_cef_signals() -> void:
 	if _plugin_singleton.has_signal(&"ipc_message"):
 		_plugin_singleton.connect(
-			&"ipc_message",
-			func(message: String) -> void: _on_plugin_text_received(-1, message)
+			&"ipc_message", func(message: String) -> void: _on_plugin_text_received(-1, message)
 		)
 
 	if _plugin_singleton.has_signal(&"ipc_binary_message"):
@@ -406,8 +405,7 @@ func _connect_cef_signals() -> void:
 
 	if _plugin_singleton.has_signal(&"ipc_data_message"):
 		_plugin_singleton.connect(
-			&"ipc_data_message",
-			func(value: Variant) -> void: _on_plugin_data_received(-1, value)
+			&"ipc_data_message", func(value: Variant) -> void: _on_plugin_data_received(-1, value)
 		)
 
 	if _plugin_singleton.has_signal(&"permission_requested"):
@@ -474,53 +472,66 @@ func _emit_cef_webview_ready() -> void:
 func _on_cef_load_error(url: String, error_code: int, error_text: String) -> void:
 	_on_plugin_ipc_error(
 		-1,
-		"Godot CEF failed to load %s: %s (%d)" % [
-			url,
-			error_text,
-			error_code,
-		]
+		(
+			"Godot CEF failed to load %s: %s (%d)"
+			% [
+				url,
+				error_text,
+				error_code,
+			]
+		)
 	)
 
 
 func _on_cef_render_process_terminated(status: int, error_message: String) -> void:
 	_on_plugin_ipc_error(
 		-1,
-		"Godot CEF render process terminated: %s (%d)" % [
-			error_message,
-			status,
-		]
+		(
+			"Godot CEF render process terminated: %s (%d)"
+			% [
+				error_message,
+				status,
+			]
+		)
 	)
 
 
 func _on_plugin_webview_ready(view_id: int) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	print("[Kirie][gd] signal webview_ready")
 	webview_ready.emit()
 
 
 func _on_plugin_text_received(view_id: int, message: String) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	# print("[Kirie][gd] signal text_received %s" % message)
 	text_received.emit(message)
 
 
 func _on_plugin_binary_received(view_id: int, bytes: PackedByteArray) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	print("[Kirie][gd] signal binary_received bytes=%d" % bytes.size())
 	binary_received.emit(bytes)
 
 
 func _on_plugin_data_received(view_id: int, value: Variant) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	var cef_control := _plugin_singleton as Control
-	if _pointer_input_forwarder.try_forward_pointer_input(
-		value,
-		pointer_input_forwarding_enabled,
-		cef_control,
+	if (
+		_pointer_input_forwarder
+		. try_forward_pointer_input(
+			value,
+			pointer_input_forwarding_enabled,
+			cef_control,
+		)
 	):
 		return
 
@@ -534,17 +545,21 @@ func _on_plugin_permission_requested(
 	origin: String,
 	request_id: int,
 ) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	print(
-		"[Kirie][gd] signal permission_requested type=%s origin=%s request_id=%d"
-		% [permission_type, origin, request_id]
+		(
+			"[Kirie][gd] signal permission_requested type=%s origin=%s request_id=%d"
+			% [permission_type, origin, request_id]
+		)
 	)
 	permission_requested.emit(permission_type, origin, request_id)
 
 
 func _on_plugin_ipc_error(view_id: int, error: String) -> void:
-	if _should_ignore_view_signal(view_id): return
+	if _should_ignore_view_signal(view_id):
+		return
 
 	print("[Kirie][gd] signal ipc_error %s" % error)
 	ipc_error.emit(error)
