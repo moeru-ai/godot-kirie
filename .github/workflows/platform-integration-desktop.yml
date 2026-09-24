@@ -44,7 +44,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm godot
+          install_args: --locked node pnpm godot
           cache: true
 
       - name: Install Node and pnpm
@@ -52,7 +52,7 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm
+          install_args: --locked node pnpm
           cache: true
 
       - name: Setup Godot
@@ -90,8 +90,19 @@ jobs:
       - name: Build integration web fixture
         run: mise run build:integration-web
 
+      - name: Import integration project
+        timeout-minutes: 3
+        run: |
+          godot_command="${GODOT:-godot}"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            godot_command="$(cygpath -u "$godot_command")"
+          fi
+          "$godot_command" --headless --import --path tests/integration
+
       - name: Run integration tests
         timeout-minutes: 8
+        env:
+          KIRIE_DESKTOP_SKIP_IMPORT: "true"
         run: |
           mise run test:integration-desktop ipc_round_trip_probe
           mise run test:integration-desktop webview_lifecycle_probe

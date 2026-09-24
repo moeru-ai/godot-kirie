@@ -79,8 +79,7 @@ func try_forward_pointer_input(
 
 func _create_event(input: Dictionary, cef_control: Control) -> InputEvent:
 	var normalized_position := Vector2(
-		float(input.get("normalized_x", NAN)),
-		float(input.get("normalized_y", NAN))
+		float(input.get("normalized_x", NAN)), float(input.get("normalized_y", NAN))
 	)
 	if not is_finite(normalized_position.x) or not is_finite(normalized_position.y):
 		push_warning("Ignored Kirie input packet with invalid coordinates")

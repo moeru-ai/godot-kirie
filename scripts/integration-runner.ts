@@ -12,7 +12,7 @@ import {
 
 interface MarkerResult {
   line?: string;
-  status: "pass" | "fail" | "timeout" | "stopped";
+  status: "start" | "pass" | "fail" | "timeout" | "stopped";
 }
 
 function resolveTestName(
@@ -78,7 +78,11 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function findMarker(options: { logFile: string; testName: string }): MarkerResult | undefined {
+function findMarker(options: {
+  logFile: string;
+  testName: string;
+  includeStart?: boolean;
+}): MarkerResult | undefined {
   const testNamePattern = escapeRegExp(options.testName);
   const failPattern = new RegExp(`KIRIE_TEST_FAIL (${testNamePattern}|unknown)( |$)`);
   const passPattern = new RegExp(`KIRIE_TEST_PASS ${testNamePattern}( |$)`);
@@ -93,6 +97,14 @@ function findMarker(options: { logFile: string; testName: string }): MarkerResul
     return { line: passLine, status: "pass" };
   }
 
+  if (options.includeStart) {
+    const startPattern = new RegExp(`KIRIE_TEST_START ${testNamePattern}( |$)`);
+    const startLine = lines.find((line) => startPattern.test(line));
+    if (startLine) {
+      return { line: startLine, status: "start" };
+    }
+  }
+
   return undefined;
 }
 
@@ -100,10 +112,12 @@ async function waitForMarker(options: {
   logFile: string;
   testName: string;
   timeoutSeconds: number;
+  includeStart?: boolean;
+  signal?: AbortSignal;
 }): Promise<MarkerResult> {
   const deadline = Date.now() + options.timeoutSeconds * 1000;
 
-  while (Date.now() < deadline) {
+  while (Date.now() < deadline && !options.signal?.aborted) {
     const marker = findMarker(options);
     if (marker) {
       return marker;
@@ -112,7 +126,9 @@ async function waitForMarker(options: {
     await sleep(500);
   }
 
-  return { status: "timeout" };
+  return options.includeStart
+    ? { line: `Timed out waiting for KIRIE_TEST_START for ${options.testName}`, status: "timeout" }
+    : { status: "timeout" };
 }
 
 async function printIntegrationResult(
@@ -143,7 +159,9 @@ async function printIntegrationResult(
   }
 
   if (result.status === "timeout") {
-    console.error(`Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`);
+    console.error(
+      result.line || `Timed out waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
+    );
   } else if (result.status === "stopped" && options.earlyExitSubject) {
     console.error(
       `Timed out (or ${options.earlyExitSubject} exited early) waiting for KIRIE_TEST_PASS or KIRIE_TEST_FAIL for ${testName}`,
@@ -178,6 +196,7 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
 
   const logFile = prepareLogFile(testName);
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
+  const appPreinstalled = process.env.KIRIE_INTEGRATION_APP_PREINSTALLED === "1";
 
   const logStream = await openLogStream(logFile);
   const kirieRun = execa(
@@ -192,6 +211,7 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
       "--clear-logcat",
       "--launch-option",
       `kirie_test=${testName}`,
+      ...(appPreinstalled ? ["--skip-install"] : []),
     ]),
     {
       cwd: rootDir,
@@ -217,16 +237,15 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
   );
 
   let result: MarkerResult | undefined;
+  const markerWait = new AbortController();
 
   try {
-    console.error(
-      `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; Android log: ${logFile}`,
-    );
     result = await Promise.race([
-      waitForMarker({ logFile, testName, timeoutSeconds }),
+      waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
       watchedKirieRun,
     ]);
   } finally {
+    markerWait.abort();
     kirieRun.kill();
     await watchedKirieRun;
     logStream.end();
@@ -248,7 +267,10 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
 
   const simulatorId = process.env.SIMULATOR_ID || "booted";
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
+  const startupTimeoutSeconds = Number(process.env.START_TIMEOUT_SECONDS || "150");
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
+  // Simulator log entries can arrive after --console reports that the app exited.
+  const logDrainTimeoutSeconds = 20;
   const logStreamSettleSeconds = Number(process.env.LOG_STREAM_SETTLE_SECONDS || "1");
   const logFile = prepareLogFile(testName);
   const logPredicate =
@@ -286,7 +308,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       path.resolve(rootDir, appPath),
       "--device",
       simulatorId,
-      "--terminate-existing",
       "--launch-option",
       `kirie_test=${testName}`,
     ]),
@@ -309,31 +330,68 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     process.stderr.write(chunk);
   });
 
-  const watchedKirieRun = kirieRun.then(
-    (): MarkerResult =>
-      findMarker({ logFile, testName }) || {
-        line: `kirie run ios exited before KIRIE_TEST_PASS/FAIL for ${testName}`,
-        status: "stopped",
-      },
+  const markerWait = new AbortController();
+  let kirieRunExited = false;
+  const watchedKirieRun = kirieRun.then(async (runResult): Promise<MarkerResult> => {
+    kirieRunExited = true;
+    const exitStatus = runResult.signal
+      ? `signal ${runResult.signal}`
+      : `code ${runResult.exitCode ?? "unknown"}`;
+    const marker = await waitForMarker({
+      logFile,
+      testName,
+      timeoutSeconds: logDrainTimeoutSeconds,
+      signal: markerWait.signal,
+    });
+
+    return marker.status !== "timeout"
+      ? marker
+      : {
+          line: `kirie run ios exited with ${exitStatus} without KIRIE_TEST_PASS/FAIL for ${testName}`,
+          status: "stopped",
+        };
+  });
+  const watchedLogProcess = logProcess.then(
+    (logProcessResult): MarkerResult => ({
+      line: logProcessResult.signal
+        ? `iOS log stream exited with signal ${logProcessResult.signal} before ${testName} finished`
+        : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} before ${testName} finished`,
+      status: "stopped",
+    }),
   );
 
   let result: MarkerResult | undefined;
 
   try {
-    result = await Promise.race([
-      waitForMarker({ logFile, testName, timeoutSeconds }),
+    const startupResult = await Promise.race([
+      waitForMarker({
+        logFile,
+        testName,
+        timeoutSeconds: startupTimeoutSeconds,
+        includeStart: true,
+        signal: markerWait.signal,
+      }),
       watchedKirieRun,
-      logProcess.then(
-        (logProcessResult): MarkerResult => ({
-          line: logProcessResult.signal
-            ? `iOS log stream exited with signal ${logProcessResult.signal} before ${testName} finished`
-            : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} before ${testName} finished`,
-          status: "stopped",
-        }),
-      ),
+      watchedLogProcess,
     ]);
+    result = startupResult;
+    if (startupResult.status === "start") {
+      result = await Promise.race([
+        waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
+        watchedKirieRun,
+        watchedLogProcess,
+      ]);
+    }
   } finally {
-    kirieRun.kill();
+    markerWait.abort();
+    if (!kirieRunExited && (result?.status === "pass" || result?.status === "fail")) {
+      await Promise.race([kirieRun, sleep(5_000)]);
+    }
+
+    const needsTermination = !kirieRunExited;
+    if (needsTermination) {
+      kirieRun.kill();
+    }
     logProcess.kill();
     await watchedKirieRun;
     const logProcessResult = await logProcess;
@@ -347,14 +405,24 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
         };
       }
     }
-    logStream.end();
-    const bundleId = await readBundleId(path.resolve(rootDir, appPath));
-    await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
-      cwd: rootDir,
-      reject: false,
-      stderr: "ignore",
-      stdout: "ignore",
-    });
+    await new Promise<void>((resolve) => logStream.end(resolve));
+    if (needsTermination) {
+      const bundleId = await readBundleId(path.resolve(rootDir, appPath));
+      const cleanup = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+        cwd: rootDir,
+        reject: false,
+        stderr: "ignore",
+        stdout: "ignore",
+        timeout: 30_000,
+      });
+      if (cleanup.timedOut) {
+        const reason = `Timed out terminating iOS app during cleanup: ${bundleId}`;
+        console.error(reason);
+        if (result?.status === "pass") {
+          result = { line: reason, status: "stopped" };
+        }
+      }
+    }
   }
 
   if (result) {
@@ -381,28 +449,30 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "60");
   const logFile = prepareLogFile(testName);
   const godotCommand = process.env.GODOT || "godot";
-  const importLogStream = await openLogStream(logFile);
-  let importError: unknown;
+  if (process.env.KIRIE_DESKTOP_SKIP_IMPORT !== "true") {
+    const importLogStream = await openLogStream(logFile);
+    let importError: unknown;
 
-  try {
-    await execa(godotCommand, ["--headless", "--import", "--path", integrationProjectDir], {
-      cwd: rootDir,
-      stderr: importLogStream,
-      stdout: importLogStream,
-    });
-  } catch (error) {
-    importError = error;
-  } finally {
-    importLogStream.end();
-  }
+    try {
+      await execa(godotCommand, ["--headless", "--import", "--path", integrationProjectDir], {
+        cwd: rootDir,
+        stderr: importLogStream,
+        stdout: importLogStream,
+      });
+    } catch (error) {
+      importError = error;
+    } finally {
+      importLogStream.end();
+    }
 
-  if (importError) {
-    await sleep(300);
-    console.error(`Godot editor import failed before running ${testName}`);
-    console.error(`=== Full log: ${logFile} ===`);
-    console.error(readLogFile(logFile));
-    console.error("=== End of log ===");
-    throw importError;
+    if (importError) {
+      await sleep(300);
+      console.error(`Godot editor import failed before running ${testName}`);
+      console.error(`=== Full log: ${logFile} ===`);
+      console.error(readLogFile(logFile));
+      console.error("=== End of log ===");
+      throw importError;
+    }
   }
 
   const runtimeLogStream = await openLogStream(logFile);
@@ -416,10 +486,11 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
     () => undefined,
   );
   let result: MarkerResult | undefined;
+  const markerWait = new AbortController();
 
   try {
     result = await Promise.race([
-      waitForMarker({ logFile, testName, timeoutSeconds }),
+      waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
       watchedGodotProcess.then(
         (): MarkerResult => ({
           ...(findMarker({ logFile, testName }) || {
@@ -430,6 +501,7 @@ export async function runIntegrationDesktopTest(testNameArg?: string): Promise<v
       ),
     ]);
   } finally {
+    markerWait.abort();
     godotProcess.kill();
     await watchedGodotProcess;
     runtimeLogStream.end();

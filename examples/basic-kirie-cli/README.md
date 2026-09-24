@@ -128,7 +128,8 @@ pnpm kirie run android
 ```
 
 `kirie run android` is expected to install the default Android export output
-before launching the Godot activity.
+before launching the Godot activity. To launch an APK that is already installed,
+use `pnpm kirie run android --skip-install`.
 
 Development runs can also use the CLI-managed Vite server on mobile:
 

@@ -21,10 +21,13 @@ func run(_kirie: Object, tree: SceneTree, test_name: String) -> String:
 		probes.append(probe)
 
 		probe.reset()
-		var url := "res://src-web/dist/?probe=%s&test=%s" % [
-			probe_name.uri_encode(),
-			test_name.uri_encode(),
-		]
+		var url := (
+			"res://src-web/dist/?probe=%s&test=%s"
+			% [
+				probe_name.uri_encode(),
+				test_name.uri_encode(),
+			]
+		)
 		node.create_webview({"initial_url": url})
 
 		var failure_reason := await probe.wait_for_webview_ready(probe_name)
@@ -37,10 +40,7 @@ func run(_kirie: Object, tree: SceneTree, test_name: String) -> String:
 	var expected_echo := "web_text_echo:%s" % payload
 	nodes[0].send_text(payload)
 
-	var failure_reason := await probes[0].wait_for_text_message(
-		expected_echo,
-		PROBE_NAMES[0]
-	)
+	var failure_reason := await probes[0].wait_for_text_message(expected_echo, PROBE_NAMES[0])
 	if failure_reason == "":
 		await tree.create_timer(0.5).timeout
 		if probes[1].has_text_message(expected_echo):

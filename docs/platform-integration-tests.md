@@ -24,7 +24,6 @@ The current focus is:
 - WebView lifecycle behavior from Godot
 - raw WebView IPC lanes
 - resource loading through `res://`
-- C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
 The browser fixture uses `@gd-kirie/ipc` to exercise the text, binary, and data
@@ -33,10 +32,6 @@ coverage for CBOR serialization in the Unit Tests workflow. Eventa adapter
 behavior should be tested separately.
 Host-window behavior, especially Windows cross-application pointer passthrough,
 belongs in an interactive desktop suite rather than this raw bridge suite.
-
-The C# wrapper should be covered by a small exported-app smoke test that uses
-`KirieClient` events and verifies the same WebView IPC round-trip as the
-GDScript probe. That test is not implemented yet.
 
 ## Project Layout
 
@@ -144,7 +139,6 @@ coverage categories:
 - IPC round trips through text, binary, and data lanes
 - WebView lifecycle transitions driven from Godot
 - exported `res://` web resource loading
-- C# `KirieClient` event forwarding over the same native singleton path
 
 New tests should add a focused case under `scripts/test_cases/` when they need
 different lifecycle operations, a different loaded URL, or a different platform
@@ -173,7 +167,7 @@ Run one test:
 mise run test:integration-android -- ipc_round_trip_probe
 ```
 
-The test task:
+By default, the local test task:
 
 - runs `kirie run android` through the repo scripts package
 - asks the CLI to clear logcat and attach logs for the launched app PID
@@ -182,15 +176,33 @@ The test task:
 - passes the test name as the `kirie_test` launch option
 - waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`
 
+In CI, the emulator job installs the exported APK once before running the
+probes. It sets `KIRIE_INTEGRATION_APP_PREINSTALLED=1` so subsequent test tasks
+skip installation, but still force-stop the app, clear its data and logcat, and
+start a fresh app session for each probe. The CLI waits up to 30 seconds for
+the package PID to allow for emulator cold start. The longer wait does not
+establish the cause of any previous PID timeout.
+
 The Android package defaults to:
 
 ```text
 ai.moeru.kirie.integrationtests
 ```
 
-The GitHub Android emulator cannot present Vulkan with the Mobile renderer.
-The Android export preset therefore adds `--rendering-method gl_compatibility`.
-This override does not change the iOS or desktop runners.
+The integration project's Android export uses its Mobile renderer setting and
+does not force Compatibility mode. The CI emulator uses a software graphics
+device. The probes cover the Godot and WebView integration path, but they do
+not verify the active renderer or physical Android GPU behavior.
+
+The integration fixture disables Android Swappy frame pacing because Godot
+4.7.2 fails to present Vulkan frames on the emulator with `VkResult error 5`
+([upstream issue](https://github.com/godotengine/godot/issues/121035)). This
+does not change Kirie or application defaults.
+
+TODO (Godot 4.8 upgrade): Remove the frame-pacing override from
+`tests/integration/project.godot` and rerun the Android integration probes
+with Swappy enabled. The [upstream fix](https://github.com/godotengine/godot/pull/121701)
+is in 4.8 development builds but not Godot 4.7.2.
 
 The Android launcher component defaults to:
 
@@ -203,7 +215,7 @@ com.godot.game.GodotAppLauncher
 Tests are isolated by app session:
 
 - export one test APK
-- install it once
+- install it once in CI (local standalone test tasks install by default)
 - run each test in a fresh app start
 - run `pm clear` before each test
 
@@ -228,17 +240,32 @@ This task uses the Kirie CLI export path, which builds the configured Vite web
 fixture before exporting the Godot project.
 
 The iOS integration runner is currently simulator-specific because it
-uses the Kirie CLI run helpers to install and launch with the `kirie_test`
-launch option, then streams logs for the pass/fail marker. The example runner
-currently shares this simulator export path, but that is a tooling shortcut
-rather than a desired examples API shape. Examples should not be treated as
-inherently simulator-only.
+uses the Kirie CLI run helpers to launch with the `kirie_test` option, then
+streams logs for the pass/fail marker. Each local and CI probe installs the
+exported app and starts a fresh app session. Launch retries briefly if the
+simulator reports that installation is still in progress.
+After the app exits, the runner waits briefly for a final marker from the
+simulator log. A zero exit code without `KIRIE_TEST_PASS` is not a pass.
+If the app does not exit, the runner terminates it during cleanup.
+The example runner shares this simulator export path. This is a tooling
+shortcut, not a limit on where examples can run.
+
+Apple's iOS Simulator supports Metal, but Godot 4.7.2 disables its Metal and
+Vulkan drivers in simulator builds ([Apple](https://developer.apple.com/documentation/metal/developing-metal-apps-that-run-in-simulator),
+[Godot source](https://github.com/godotengine/godot/blob/4.7.2-stable/platform/ios/detect.py#L143-L158)).
+The CI simulator app therefore uses Compatibility/OpenGL ES 3.0, even though
+the integration project selects Mobile for iOS. These probes test Kirie's
+WebView and IPC paths, not Mobile/Metal rendering. The iOS XCFramework includes
+a device build, but this CI does not run the app on a physical device.
 
 Install and run tests with the iOS test task:
 
 ```bash
 mise run test:integration-ios -- ipc_round_trip_probe
 ```
+
+Build the exported app before running a test. CI skips the test task's package
+build dependency because the export task has already built the packages.
 
 The iOS XCFramework and simulator app tasks expect the Godot source checkout at
 repo-root `godot/`.
@@ -271,8 +298,10 @@ mise run test:integration-desktop webview_lifecycle_probe
 mise run test:integration-desktop res_asset_loading_probe
 ```
 
-The desktop runner first performs a headless editor import so Godot discovers
-GDExtensions such as Godot CEF, then launches the runtime with `--headless`,
+For a local single-test run, the desktop runner first performs a headless editor
+import so Godot discovers GDExtensions such as Godot CEF. Desktop CI imports the
+project once before the smoke set and sets `KIRIE_DESKTOP_SKIP_IMPORT=true` for
+the test commands. Each test still launches a fresh runtime with `--headless`,
 passes `--kirie-test=<name>` as a Godot user argument, captures stdout, and
 waits for `KIRIE_TEST_PASS` or `KIRIE_TEST_FAIL`.
 

@@ -277,6 +277,9 @@ kirie run android
 kirie run ios
 ```
 
+`kirie run android` installs the exported APK by default. Its `--skip-install`
+option launches an already-installed APK, as used by platform integration CI.
+
 The broader application workflow should keep these command semantics. The
 `--mode <mode>` option is supported by `kirie dev`; public `--mode` support for
 `build`, `export`, and `run` is still planned:

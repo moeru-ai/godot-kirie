@@ -19,6 +19,10 @@ config/icon="res://icon.svg"
 
 settings/stdout/verbose_stdout=true
 
+[display]
+
+window/frame_pacing/android/enable_frame_pacing=false
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/kirie/plugin.cfg")

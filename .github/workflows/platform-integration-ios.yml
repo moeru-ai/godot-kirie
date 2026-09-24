@@ -23,6 +23,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
 
     steps:
       - name: Checkout
@@ -32,14 +33,14 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm
+          install_args: --locked node pnpm
           cache: true
 
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v2
         with:
           version: ${{ env.GODOT_VERSION }}
-          use-dotnet: true
+          use-dotnet: false
           include-templates: true
 
       - name: Setup Xcode version
@@ -53,8 +54,8 @@ jobs:
           xcodebuild -version
           echo "version=$(xcodebuild -version | tr ' \n' '--')" >> "$GITHUB_OUTPUT"
 
-      - name: Install XcodeGen, SCons and MoltenVK
-        run: brew install xcodegen scons molten-vk
+      - name: Install XcodeGen and SCons
+        run: brew install xcodegen scons
 
       - name: Download and Prepare Godot Source Headers
         run: |
@@ -65,11 +66,8 @@ jobs:
 
           cd godot
 
-          MOLTENVK_PATH="$(brew --prefix molten-vk)"
-          echo "Using MoltenVK from: ${MOLTENVK_PATH}"
-
           scons platform=macos target=editor \
-            vulkan_sdk_path="${MOLTENVK_PATH}" \
+            vulkan=no \
             core/version_generated.gen.h \
             core/disabled_classes.gen.h \
             core/extension/gdextension_interface.gen.h \
@@ -103,17 +101,16 @@ jobs:
         run: mise run build:integration-ios
 
       - name: Start iOS Simulator
+        timeout-minutes: 5
         run: |
           DEVICE_ID=$(xcrun simctl list devices available | grep -m 1 "iPhone 16" | awk -F '[()]' '{print $2}')
-
-          echo "Booting device ID: $DEVICE_ID"
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID"
-          echo "SIMULATOR_ID=$DEVICE_ID" >> $GITHUB_ENV
+          echo "SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Run integration tests
-        timeout-minutes: 8
+        timeout-minutes: 15
         run: |
-          mise run test:integration-ios -- ipc_round_trip_probe
-          mise run test:integration-ios -- webview_lifecycle_probe
-          mise run test:integration-ios -- res_asset_loading_probe
+          mise run --skip-deps test:integration-ios -- ipc_round_trip_probe
+          mise run --skip-deps test:integration-ios -- webview_lifecycle_probe
+          mise run --skip-deps test:integration-ios -- res_asset_loading_probe

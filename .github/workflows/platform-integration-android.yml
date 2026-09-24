@@ -20,6 +20,7 @@ jobs:
     env:
       MISE_EXEC_AUTO_INSTALL: "false"
       MISE_NOT_FOUND_AUTO_INSTALL: "false"
+      MISE_TASK_RUN_AUTO_INSTALL: "false"
 
     steps:
       - name: Checkout
@@ -29,14 +30,14 @@ jobs:
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: node pnpm java
+          install_args: --locked node pnpm java
           cache: true
 
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
-          use-dotnet: true
+          use-dotnet: false
           include-templates: true
 
       - name: Setup Android SDK
@@ -77,12 +78,17 @@ jobs:
 
       - name: Run integration tests
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          KIRIE_INTEGRATION_APP_PREINSTALLED: "1"
         with:
           api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_7
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim
           script: |
-            mise run test:integration-android -- ipc_round_trip_probe
-            mise run test:integration-android -- webview_lifecycle_probe
-            mise run test:integration-android -- res_asset_loading_probe
+            set -e
+            adb install -r tests/integration/dist/kirie/android/debug.apk
+            mise run --skip-deps test:integration-android -- ipc_round_trip_probe
+            mise run --skip-deps test:integration-android -- webview_lifecycle_probe
+            mise run --skip-deps test:integration-android -- res_asset_loading_probe
