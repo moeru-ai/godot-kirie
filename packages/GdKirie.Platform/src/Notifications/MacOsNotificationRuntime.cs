@@ -16,7 +16,7 @@ internal static class MacOsNotificationRuntime
         {
             if (_listener is not null)
             {
-                throw new InvalidOperationException("Only one Platform notification host can be active per process.");
+                throw new InvalidOperationException("Only one Platform notification listener can be active per process.");
             }
 
             if (_center is null)

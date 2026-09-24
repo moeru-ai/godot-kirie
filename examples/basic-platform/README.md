@@ -9,8 +9,8 @@ The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.
 Desktop notifications are available on macOS 11 or later and on Windows 10
 version 1607 or later. The example shows the notification ID after the user
-clicks the notification. Only one Platform notification host can be active per
-process.
+clicks the notification. Multiple Platform hosts share one native notification
+listener, and each click returns to the host that published it.
 Android forwards the system Back button to the exported `backRequested` event.
 On Android, set `SceneTree.quit_on_go_back` to `false` to handle Back in the page.
 
@@ -21,9 +21,8 @@ from the editor uses Godot's identity; a temporary app path can fail with
 executable, and an exported game uses that game's executable. A Windows click is
 only delivered while the example is still running; after a clean exit, the
 per-user registration is removed and a click does not start the executable. After
-a crash the registration stays, so a click starts the executable again, and that
-fresh process receives the activation only once it publishes its first
-notification.
+a crash the registration stays, so a click can start the executable again.
+The fresh process has no route for the old native ID and ignores that activation.
 
 Run these setup commands from the repository root:
 

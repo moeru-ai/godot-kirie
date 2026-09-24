@@ -143,12 +143,14 @@ conflict semantics are recorded in
 Linux global-shortcut backends remain pending work rather than excluded
 platforms.
 
-Desktop notifications keep the same caller-owned id and silent-toast contract
-on both implemented desktops. macOS posts through RumpSharp, as recorded in
+Desktop notifications return the same caller-owned id and keep the silent-toast
+contract on both implemented desktops. macOS posts through RumpSharp, as recorded in
 [ADR-0004](decisions/0004-add-macos-desktop-notifications.md). Windows posts
 through `Windows.UI.Notifications` for an unpackaged executable and delivers
-the click on Godot's main thread only while the Platform host is alive. The
-notification listener permits one Platform host per process on both desktops.
+the click on Godot's main thread only while the publishing Platform host is alive.
+Platform hosts share one process notification listener. Each host has a unique
+ID in its native notifications. Kirie uses that ID to emit the caller-owned
+ID on the publishing host's Eventa context. A click for a disposed host is ignored.
 Windows registration and its per-executable identity are recorded in
 [ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
 Linux notification backends remain pending work.
