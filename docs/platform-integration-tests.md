@@ -185,10 +185,9 @@ By default, the local test task:
 In CI, the emulator job installs the exported APK once before running the
 probes. It sets `KIRIE_INTEGRATION_APP_PREINSTALLED=1` so subsequent test tasks
 skip installation, but still force-stop the app, clear its data and logcat, and
-start a fresh app session for each probe. The CLI prints the `am start` result;
-it waits up to 30 seconds for the package PID to allow for emulator cold start.
-If the PID does not appear, it also reports startup-related logcat entries.
-The longer wait does not establish the cause of any previous PID timeout.
+start a fresh app session for each probe. The CLI waits up to 30 seconds for
+the package PID to allow for emulator cold start. The longer wait does not
+establish the cause of any previous PID timeout.
 
 The Android package defaults to:
 
@@ -249,7 +248,8 @@ fixture before exporting the Godot project.
 The iOS integration runner is currently simulator-specific because it
 uses the Kirie CLI run helpers to launch with the `kirie_test` option, then
 streams logs for the pass/fail marker. Each local and CI probe installs the
-exported app, waits for the simulator to see it, and starts a fresh app session.
+exported app and starts a fresh app session. Launch retries briefly if the
+simulator reports that installation is still in progress.
 The runner distinguishes a missing `KIRIE_TEST_START` (failure before the test
 runner is observed) from a test
 that starts but never prints a final marker. The example runner

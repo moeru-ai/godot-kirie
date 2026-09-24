@@ -115,7 +115,7 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
     });
   }
 
-  const launch = await execa(
+  await execa(
     "adb",
     [
       ...adbArgs,
@@ -129,11 +129,9 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
     {
       cwd: config.cwd,
       stderr: "inherit",
+      stdout: "ignore",
     },
   );
-  if (launch.stdout) {
-    console.log(launch.stdout);
-  }
 
   if (options.attachLogcat === false) {
     return;
@@ -142,7 +140,6 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   const pid = await waitForAndroidPackagePid({
     adbArgs,
     cwd: config.cwd,
-    launchOutput: launch.stdout,
     packageName,
   });
   await attachAndroidLogcat({
@@ -166,11 +163,8 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     (options.appPath
       ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
       : readIosBundleId(config.godot.project));
-  console.error(`Resolved iOS simulator app: ${bundleId}`);
 
   if (options.terminateExisting) {
-    const terminateStartedAt = Date.now();
-    console.error(`Terminating existing iOS app on simulator ${simulatorId}: ${bundleId}`);
     const termination = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
       cwd: config.cwd,
       reject: false,
@@ -181,14 +175,9 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     if (termination.timedOut) {
       throw new Error(`Timed out terminating iOS app on simulator ${simulatorId}: ${bundleId}`);
     }
-    console.error(
-      `iOS app termination finished in ${Date.now() - terminateStartedAt}ms (exit ${termination.exitCode})`,
-    );
   }
 
   if (options.appPath) {
-    const installStartedAt = Date.now();
-    console.error(`Installing iOS app on simulator ${simulatorId}: ${bundleId}`);
     await execa(
       "xcrun",
       ["simctl", "install", simulatorId, path.resolve(config.cwd, options.appPath)],
@@ -198,7 +187,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         timeout: simulatorInstallTimeoutMs,
       },
     );
-    console.error(`iOS app install command finished in ${Date.now() - installStartedAt}ms`);
   }
 
   const launchArgs = [
@@ -210,7 +198,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     ...iosLaunchOptionArgs(options.launchOptions),
   ];
   const launchDeadline = Date.now() + 20_000;
-  console.error(`Launching iOS app on simulator ${simulatorId}: ${bundleId}`);
 
   while (true) {
     const launch = execa("xcrun", launchArgs, {
@@ -233,7 +220,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         throw error;
       }
 
-      console.error(`iOS simulator is not ready to launch ${bundleId}; retrying in 500ms`);
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
@@ -310,15 +296,10 @@ export async function isIosSimulatorDevice(device: string, cwd?: string): Promis
     return true;
   }
 
-  const lookupStartedAt = Date.now();
-  console.error(`Looking up iOS simulator: ${device}`);
   const result = await execa("xcrun", ["simctl", "list", "devices", "--json"], {
     cwd,
     timeout: simulatorLookupTimeoutMs,
   });
-  console.error(
-    `iOS simulator lookup finished in ${Date.now() - lookupStartedAt}ms (exit ${result.exitCode})`,
-  );
   try {
     const devices = JSON.parse(result.stdout) as {
       devices?: Record<string, Array<{ udid?: string }>>;
@@ -441,7 +422,6 @@ async function attachAndroidLogcat(options: {
 async function waitForAndroidPackagePid(options: {
   adbArgs: string[];
   cwd: string;
-  launchOutput: string;
   packageName: string;
   timeoutMs?: number;
 }): Promise<string> {
@@ -464,31 +444,7 @@ async function waitForAndroidPackagePid(options: {
     });
   }
 
-  const logcat = await execa(
-    "adb",
-    [
-      ...options.adbArgs,
-      "logcat",
-      "-d",
-      "-t",
-      "120",
-      "-v",
-      "time",
-      "ActivityManager:I",
-      "ActivityTaskManager:I",
-      "AndroidRuntime:E",
-      "DEBUG:E",
-      "Godot:E",
-      "*:S",
-    ],
-    { cwd: options.cwd, reject: false },
-  );
-  const startupLog = logcat.exitCode === 0 ? logcat.stdout : logcat.stderr;
-  throw new Error(
-    `Timed out waiting for Android package PID: ${options.packageName}\n` +
-      `am start: ${options.launchOutput || "(no output)"}\n` +
-      `Android startup logcat:\n${startupLog || "(no output)"}`,
-  );
+  throw new Error(`Timed out waiting for Android package PID: ${options.packageName}`);
 }
 
 function iosLaunchOptionArgs(launchOptions: LaunchOptions | undefined): string[] {

@@ -240,9 +240,6 @@ export async function runIntegrationAndroidTest(testNameArg?: string): Promise<v
   const markerWait = new AbortController();
 
   try {
-    console.error(
-      `Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}; Android log: ${logFile}`,
-    );
     result = await Promise.race([
       waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
       watchedKirieRun,
@@ -356,7 +353,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   const markerWait = new AbortController();
 
   try {
-    console.error(`Waiting up to ${startupTimeoutSeconds}s for KIRIE_TEST_START for ${testName}`);
     const startupResult = await Promise.race([
       waitForMarker({
         logFile,
@@ -370,7 +366,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     ]);
     result = startupResult;
     if (startupResult.status === "start") {
-      console.error(`Waiting up to ${timeoutSeconds}s for KIRIE_TEST_PASS/FAIL for ${testName}`);
       result = await Promise.race([
         waitForMarker({ logFile, testName, timeoutSeconds, signal: markerWait.signal }),
         watchedKirieRun,
