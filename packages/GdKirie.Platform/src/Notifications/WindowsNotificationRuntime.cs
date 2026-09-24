@@ -14,7 +14,7 @@ namespace GdKirie.Platform;
 
 /// <summary>
 /// One process-wide toast registration. The COM activator stays in this process
-/// and the registry entries are removed once the Platform host is gone, so
+/// and the registry entries are removed once the last Platform host is gone, so
 /// a click does not start the executable after that.
 /// </summary>
 [SupportedOSPlatform("windows10.0.14393.0")]
@@ -48,7 +48,7 @@ internal static unsafe class WindowsNotificationRuntime
         {
             if (_listener is not null)
             {
-                throw new InvalidOperationException("Only one Platform notification host can be active per process.");
+                throw new InvalidOperationException("Only one Platform notification listener can be active per process.");
             }
 
             _listener = onActivated;
@@ -271,7 +271,8 @@ internal static unsafe class WindowsNotificationRuntime
             return;
         }
 
-        // The launch argument is the caller's own id, so it goes back unchanged.
+        // The launch argument is Kirie's native ID. The Platform router restores
+        // the caller-owned ID after this callback reaches Godot's main thread.
         var notificationId = new string(invokedArgs);
         context.Post(_ =>
         {

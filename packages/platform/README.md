@@ -117,9 +117,10 @@ stop();
 
 The first macOS `show()` requests permission. Windows does not show a
 permission prompt; `show()` fails when notifications are turned off. IDs and
-titles must not be empty. Click events end when the Platform host is disposed
-and do not survive a cold launch. The Windows identity follows the running
-executable. Linux backends are not implemented.
+titles must not be empty. With multiple Platform hosts, a click reaches only
+the Eventa context that published the notification. Click events end when the
+Platform host is disposed and do not survive a cold launch. The Windows
+identity follows the running executable. Linux backends are not implemented.
 
 ## System back
 

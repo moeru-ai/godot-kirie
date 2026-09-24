@@ -34,10 +34,11 @@ an in-process `INotificationActivationCallback`. This is the same mechanism
 uses for unpackaged apps.
 
 The running executable gets one AppUserModelID, derived from its path and
-stored under `HKCU\Software\Classes` only while a Platform host owns a
-notification callback. The registration is removed with the host, so a
-later click does not start the process. The callback posts the caller-owned id
-back to Godot's main thread.
+stored under `HKCU\Software\Classes` only while Platform hosts own a
+notification callback. The registration is removed with the last host, so a
+later click does not start the process. The callback posts Kirie's private
+native ID to Godot's main thread. The Platform router then emits the
+caller-owned ID on the publishing host's Eventa context.
 
 Linux remains unimplemented.
 
@@ -59,19 +60,19 @@ Linux remains unimplemented.
   implementation therefore delivers first and only rejects a setting that was
   actually reported as something other than `Allowed`.
 - The per-user `AppUserModelId` and `CLSID` registrations are created when a
-  host first publishes and removed with that host. Verified on Windows 11
+  host first publishes and removed with the last host. Verified on Windows 11
   26200: a click is delivered to the live host process through the registered
   class object, and no second process is started.
-- One Platform notification host can be active per process. A second host fails
-  at attachment instead of replacing the first host's callback.
+- Platform hosts share one process notification listener. Kirie routes each
+  click to the host that published it.
 - Elevated processes are not supported by this Windows API.
 - A crash can leave the per-user registration behind until the next successful
   shutdown removes it. A click in that window starts the executable: verified that
   the shell launches it through `LocalServer32` with `-Embedding` from a
   `svchost.exe` parent while no host was running. The activation is not delivered
   at that moment, because the class object is registered only when a process
-  publishes its first notification. COM holds the activation until then, so the
-  freshly started process received it only after its own first `show()`.
+  publishes its first notification. COM holds the native activation until then.
+  A fresh process has no route for the old native ID and ignores it.
 - The implementation calls WinRT by vtable and does not take a dependency on
   the Windows App SDK, the archived toolkit, or MicroCom.
 

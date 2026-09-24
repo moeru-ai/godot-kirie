@@ -1,14 +1,54 @@
-using System.Runtime.Versioning;
-
 namespace GdKirie.Platform;
 
 /// <summary>
-/// Desktop notifications for one Platform host. The listener is process-wide and
-/// platform-specific; this type keeps the contract checks in one place.
+/// Shares one native listener across Platform hosts and routes each activation
+/// to the Eventa context that published the notification.
 /// </summary>
 internal static class Notifications
 {
+    private static readonly object Gate = new();
+    private static readonly NotificationRouter Router = new();
+
+    public static Guid Attach(
+        Action<string> onActivated,
+        SynchronizationContext? synchronizationContext)
+    {
+        // Attach and disposal run on Godot's main thread. Native callbacks can
+        // arrive from another thread, so routing state also uses a lock.
+        if (Router.OwnerCount == 0)
+        {
+            SetListener(Activate, synchronizationContext);
+        }
+
+        lock (Gate)
+        {
+            return Router.Add(onActivated);
+        }
+    }
+
+    public static void Detach(Guid hostId)
+    {
+        bool removeListener;
+        lock (Gate)
+        {
+            if (!Router.Remove(hostId))
+            {
+                return;
+            }
+
+            removeListener = Router.OwnerCount == 0;
+        }
+
+        // Do not hold the routing lock while a native runtime waits for its
+        // callback thread to stop.
+        if (removeListener)
+        {
+            RemoveListener();
+        }
+    }
+
     public static async Task<EmptyPayload> ShowAsync(
+        Guid hostId,
         NotificationPayload notification,
         CancellationToken cancellationToken)
     {
@@ -17,15 +57,22 @@ internal static class Notifications
         ArgumentNullException.ThrowIfNull(notification.Body);
         cancellationToken.ThrowIfCancellationRequested();
 
+        string nativeId;
+        lock (Gate)
+        {
+            nativeId = Router.NativeId(hostId, notification.Id);
+        }
+
+        var nativeNotification = notification with { Id = nativeId };
         if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
-            await MacOsNotificationRuntime.ShowAsync(notification);
+            await MacOsNotificationRuntime.ShowAsync(nativeNotification);
             return new EmptyPayload();
         }
 
         if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393))
         {
-            WindowsNotificationRuntime.Show(notification);
+            WindowsNotificationRuntime.Show(nativeNotification);
             return new EmptyPayload();
         }
 
@@ -39,7 +86,15 @@ internal static class Notifications
             "Desktop notifications are currently implemented only on macOS 11 or later and Windows 10 version 1607 or later.");
     }
 
-    public static void SetListener(Action<string> onActivated, SynchronizationContext? synchronizationContext)
+    private static void Activate(string nativeId)
+    {
+        lock (Gate)
+        {
+            Router.Activate(nativeId);
+        }
+    }
+
+    private static void SetListener(Action<string> onActivated, SynchronizationContext? synchronizationContext)
     {
         if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
@@ -57,7 +112,7 @@ internal static class Notifications
         }
     }
 
-    public static void RemoveListener()
+    private static void RemoveListener()
     {
         if (OperatingSystem.IsMacOSVersionAtLeast(11))
         {
