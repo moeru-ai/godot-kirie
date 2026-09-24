@@ -269,6 +269,8 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   const appPath = process.env.APP_PATH || `${integrationDistDir}/ios_debug.app`;
   const startupTimeoutSeconds = Number(process.env.START_TIMEOUT_SECONDS || "150");
   const timeoutSeconds = Number(process.env.TIMEOUT_SECONDS || "120");
+  // Simulator log entries can arrive after --console reports that the app exited.
+  const logDrainTimeoutSeconds = 20;
   const logStreamSettleSeconds = Number(process.env.LOG_STREAM_SETTLE_SECONDS || "1");
   const logFile = prepareLogFile(testName);
   const logPredicate =
@@ -328,17 +330,26 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     process.stderr.write(chunk);
   });
 
-  const watchedKirieRun = kirieRun.then((runResult): MarkerResult => {
+  const markerWait = new AbortController();
+  let kirieRunExited = false;
+  const watchedKirieRun = kirieRun.then(async (runResult): Promise<MarkerResult> => {
+    kirieRunExited = true;
     const exitStatus = runResult.signal
       ? `signal ${runResult.signal}`
       : `code ${runResult.exitCode ?? "unknown"}`;
+    const marker = await waitForMarker({
+      logFile,
+      testName,
+      timeoutSeconds: logDrainTimeoutSeconds,
+      signal: markerWait.signal,
+    });
 
-    return (
-      findMarker({ logFile, testName }) || {
-        line: `kirie run ios exited with ${exitStatus} before KIRIE_TEST_PASS/FAIL for ${testName}`,
-        status: "stopped",
-      }
-    );
+    return marker.status !== "timeout"
+      ? marker
+      : {
+          line: `kirie run ios exited with ${exitStatus} without KIRIE_TEST_PASS/FAIL for ${testName}`,
+          status: "stopped",
+        };
   });
   const watchedLogProcess = logProcess.then(
     (logProcessResult): MarkerResult => ({
@@ -350,7 +361,6 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   );
 
   let result: MarkerResult | undefined;
-  const markerWait = new AbortController();
 
   try {
     const startupResult = await Promise.race([
@@ -374,7 +384,14 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     }
   } finally {
     markerWait.abort();
-    kirieRun.kill();
+    if (!kirieRunExited && (result?.status === "pass" || result?.status === "fail")) {
+      await Promise.race([kirieRun, sleep(5_000)]);
+    }
+
+    const needsTermination = !kirieRunExited;
+    if (needsTermination) {
+      kirieRun.kill();
+    }
     logProcess.kill();
     await watchedKirieRun;
     const logProcessResult = await logProcess;
@@ -388,17 +405,23 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
         };
       }
     }
-    logStream.end();
-    const bundleId = await readBundleId(path.resolve(rootDir, appPath));
-    const cleanup = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
-      cwd: rootDir,
-      reject: false,
-      stderr: "ignore",
-      stdout: "ignore",
-      timeout: 30_000,
-    });
-    if (cleanup.timedOut) {
-      console.error(`Timed out terminating iOS app during cleanup: ${bundleId}`);
+    await new Promise<void>((resolve) => logStream.end(resolve));
+    if (needsTermination) {
+      const bundleId = await readBundleId(path.resolve(rootDir, appPath));
+      const cleanup = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
+        cwd: rootDir,
+        reject: false,
+        stderr: "ignore",
+        stdout: "ignore",
+        timeout: 30_000,
+      });
+      if (cleanup.timedOut) {
+        const reason = `Timed out terminating iOS app during cleanup: ${bundleId}`;
+        console.error(reason);
+        if (result?.status === "pass") {
+          result = { line: reason, status: "stopped" };
+        }
+      }
     }
   }
 

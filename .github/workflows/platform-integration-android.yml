@@ -37,7 +37,7 @@ jobs:
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.7.2
-          use-dotnet: true
+          use-dotnet: false
           include-templates: true
 
       - name: Setup Android SDK

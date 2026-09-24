@@ -24,7 +24,6 @@ The current focus is:
 - WebView lifecycle behavior from Godot
 - raw WebView IPC lanes
 - resource loading through `res://`
-- C# wrapper smoke coverage for the same platform bridge path
 - exported app behavior, not editor-only behavior
 
 The browser fixture uses `@gd-kirie/ipc` to exercise the text, binary, and data
@@ -33,10 +32,6 @@ coverage for CBOR serialization in the Unit Tests workflow. Eventa adapter
 behavior should be tested separately.
 Host-window behavior, especially Windows cross-application pointer passthrough,
 belongs in an interactive desktop suite rather than this raw bridge suite.
-
-The C# wrapper should be covered by a small exported-app smoke test that uses
-`KirieClient` events and verifies the same WebView IPC round-trip as the
-GDScript probe. That test is not implemented yet.
 
 ## Project Layout
 
@@ -144,7 +139,6 @@ coverage categories:
 - IPC round trips through text, binary, and data lanes
 - WebView lifecycle transitions driven from Godot
 - exported `res://` web resource loading
-- C# `KirieClient` event forwarding over the same native singleton path
 
 New tests should add a focused case under `scripts/test_cases/` when they need
 different lifecycle operations, a different loaded URL, or a different platform
@@ -250,12 +244,11 @@ uses the Kirie CLI run helpers to launch with the `kirie_test` option, then
 streams logs for the pass/fail marker. Each local and CI probe installs the
 exported app and starts a fresh app session. Launch retries briefly if the
 simulator reports that installation is still in progress.
-The runner distinguishes a missing `KIRIE_TEST_START` (failure before the test
-runner is observed) from a test
-that starts but never prints a final marker. The example runner
-currently shares this simulator export path, but that is a tooling shortcut
-rather than a desired examples API shape. Examples should not be treated as
-inherently simulator-only.
+After the app exits, the runner waits briefly for a final marker from the
+simulator log. A zero exit code without `KIRIE_TEST_PASS` is not a pass.
+If the app does not exit, the runner terminates it during cleanup.
+The example runner shares this simulator export path. This is a tooling
+shortcut, not a limit on where examples can run.
 
 Apple's iOS Simulator supports Metal, but Godot 4.7.2 disables its Metal and
 Vulkan drivers in simulator builds ([Apple](https://developer.apple.com/documentation/metal/developing-metal-apps-that-run-in-simulator),
