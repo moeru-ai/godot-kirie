@@ -58,12 +58,12 @@ declare global {
  * It intentionally excludes engine-local and JavaScript-local object types.
  */
 export type KirieData =
-  | null
-  | boolean
-  | number
-  | string
-  | KirieData[]
-  | { [key: string]: KirieData };
+  | null |
+  boolean |
+  number |
+  string |
+  KirieData[] |
+  { [key: string]: KirieData };
 
 export type KirieMessageHandler<TMessage> = (message: TMessage) => void;
 
@@ -126,7 +126,7 @@ function listenAndroid<TMessage>(
   read: (value: unknown) => TMessage,
   handler: KirieMessageHandler<TMessage>,
 ): () => void {
-  const listener = (event: MessageEvent) => {
+  const listener = (event: MessageEvent): void => {
     handler(read(event.data));
   };
 
@@ -231,7 +231,7 @@ function listenIos<TMessage>(
   read: (value: unknown) => TMessage,
   handler: KirieMessageHandler<TMessage>,
 ): () => void {
-  const listener = (event: Event) => {
+  const listener = (event: Event): void => {
     if (!(event instanceof CustomEvent) || !isIosPacketMessage(event.detail)) {
       return;
     }

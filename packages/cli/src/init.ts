@@ -116,7 +116,7 @@ export async function applyProjectName(project: string, projectName: string): Pr
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll("\"", "&quot;")
     .replaceAll("'", "&#39;");
   await fs.writeFile(
     indexPath,

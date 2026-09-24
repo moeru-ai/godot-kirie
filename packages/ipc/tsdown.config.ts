@@ -5,7 +5,7 @@ export default defineConfig({
     sourcemap: true,
   },
   entry: {
-    index: "src/index.ts",
+    "index": "src/index.ts",
     "pointer-input/auto": "src/pointer-input/auto.ts",
     "pointer-input/index": "src/pointer-input/index.ts",
   },

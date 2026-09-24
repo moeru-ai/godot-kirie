@@ -160,9 +160,9 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   const simulatorId = options.simulatorId ?? process.env.SIMULATOR_ID ?? "booted";
   const bundleId =
     options.bundleId ??
-    (options.appPath
-      ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
-      : readIosBundleId(config.godot.project));
+    (options.appPath ?
+        await readIosAppBundleId(path.resolve(config.cwd, options.appPath)) :
+        readIosBundleId(config.godot.project));
 
   if (options.terminateExisting) {
     const termination = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
@@ -213,7 +213,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     } catch (error) {
       const simulatorNotReady =
         error instanceof Error &&
-        /\bBusy\b.*\binstalling or uninstalling\b|\bNotFound\b.*\bunknown to FrontBoard\b/s.test(
+        /\bBusy\b.+\binstalling or uninstalling\b|\bNotFound\b.+\bunknown to FrontBoard\b/s.test(
           error.message,
         );
       if (!simulatorNotReady || Date.now() >= launchDeadline) {
@@ -256,9 +256,9 @@ export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<v
 
   const bundleId =
     options.bundleId ??
-    (options.appPath
-      ? await readIosAppBundleId(path.resolve(config.cwd, options.appPath))
-      : readIosBundleId(config.godot.project));
+    (options.appPath ?
+        await readIosAppBundleId(path.resolve(config.cwd, options.appPath)) :
+        readIosBundleId(config.godot.project));
 
   if (options.appPath) {
     await execa(
@@ -389,7 +389,7 @@ async function attachAndroidLogcat(options: {
 
     return cleanupPromise;
   };
-  const handleInterrupt = (signal: NodeJS.Signals) => {
+  const handleInterrupt = (signal: NodeJS.Signals): void => {
     cleanupAndroidRun(signal).then(() => {
       process.exitCode = signal === "SIGINT" ? 130 : 143;
     });
@@ -412,9 +412,9 @@ async function attachAndroidLogcat(options: {
 
   if (result.failed && result.signal !== "SIGTERM" && result.exitCode !== 143) {
     throw new Error(
-      result.signal
-        ? `adb logcat exited with signal ${result.signal}`
-        : `adb logcat exited with code ${result.exitCode ?? "unknown"}`,
+      result.signal ?
+        `adb logcat exited with signal ${result.signal}` :
+        `adb logcat exited with code ${result.exitCode ?? "unknown"}`,
     );
   }
 }

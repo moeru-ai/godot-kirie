@@ -77,9 +77,9 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
     await installGodotCef({ projectDir: config.godot.project });
   }
 
-  const checks = options.target
-    ? [await checkGodotCefPrerequisite(config.godot.project)]
-    : await runDoctorChecks({
+  const checks = options.target ?
+      [await checkGodotCefPrerequisite(config.godot.project)] :
+      await runDoctorChecks({
         config,
         env: options.env,
         homeDir: options.homeDir,
@@ -112,13 +112,13 @@ export async function runDoctorChecks(options: {
     godotCommand: options.config.godot.command,
     projectDir: options.config.godot.project,
   });
-  const exportTemplates = godotCommand.version
-    ? await checkGodotExportTemplates({
+  const exportTemplates = godotCommand.version ?
+      await checkGodotExportTemplates({
         homeDir: options.homeDir,
         platform: options.platform,
         version: godotCommand.version,
-      })
-    : {
+      }) :
+      {
         message: "skipped because the Godot version could not be detected",
         name: "Godot export templates",
         status: DoctorCheckStatus.Fail,
@@ -143,9 +143,9 @@ export async function checkGodotCefPrerequisite(projectDir: string): Promise<Doc
       };
     }
     return {
-      message: result.installed
-        ? result.message
-        : `${result.message} (run: pnpm kirie doctor --fix godot-cef)`,
+      message: result.installed ?
+        result.message :
+        `${result.message} (run: pnpm kirie doctor --fix godot-cef)`,
       name: "Godot CEF",
       status: result.installed ? DoctorCheckStatus.Ok : DoctorCheckStatus.Warn,
     };

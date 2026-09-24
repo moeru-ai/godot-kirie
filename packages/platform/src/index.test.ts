@@ -1,8 +1,8 @@
 import type { KirieEventaContext } from "@gd-kirie/ipc-eventa";
-import { createContext, defineEventa } from "@moeru/eventa";
-import { describe, expect, it } from "vitest";
-
 import type { HostWindowState } from "./index";
+import { createContext, defineEventa } from "@moeru/eventa";
+
+import { describe, expect, it } from "vitest";
 import { createPlatformClient } from "./index";
 
 describe("host window state", () => {

@@ -4,14 +4,19 @@ This package contains the Kirie plugin sources and platform-specific native
 implementations.
 
 `@gd-kirie/kirie` is a private workspace container for the Godot addon and
-native plugin sources. It is not a public npm package and does not own a package
-build pipeline. Native artifacts and the downloadable addon zip are built by the
-repository-level mise tasks documented in
+native plugin sources. It is not a public npm package. TypeScript in
+`src-godot` is the source for the addon GDScript; `addon/addons/kirie/*.gd` is
+generated locally and ignored by Git. Generate
+it with `mise x -- pnpm -C packages/kirie run generate:godot`, and check the
+TypeScript with `mise x -- pnpm -C packages/kirie run typecheck`. Native
+artifacts and the downloadable addon zip are built by the repository-level
+mise tasks documented in
 [docs/addon-release.md](../../docs/addon-release.md).
 
 Current layout:
 
-- `addon/addons/kirie`: Godot-facing plugin files
+- `src-godot`: TypeScript source for the Godot-facing scripts
+- `addon/addons/kirie`: generated GDScript and other Godot-facing plugin files
 - `addon/addons/kirie/csharp`: C# wrapper files for Godot .NET projects
 - `native/android`: Android implementation
 - `native/ios`: iOS implementation

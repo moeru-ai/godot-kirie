@@ -1,7 +1,7 @@
-import { defineEventa, defineInvoke, defineInvokeEventa, defineInvokeHandler } from "@moeru/eventa";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import type { KirieEventaMessage } from "./index";
+import { defineEventa, defineInvoke, defineInvokeEventa, defineInvokeHandler } from "@moeru/eventa";
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createContext } from "./index";
 
 const ipcMock = vi.hoisted(() => ({

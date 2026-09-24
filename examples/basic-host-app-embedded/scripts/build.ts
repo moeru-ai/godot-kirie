@@ -159,7 +159,7 @@ function replaceExactlyOnce(source: string, token: string, value: string): strin
 }
 
 function escapeGodotConfig(value: string): string {
-  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
 function renderBuildConfiguration(options: {
@@ -433,7 +433,7 @@ async function prepareAndroidExport(): Promise<void> {
   );
   const androidSourceTemplate = path.resolve(
     process.env.GODOT_ANDROID_SOURCE_TEMPLATE ||
-      path.join(godotSourceRoot, "bin/android_source.zip"),
+    path.join(godotSourceRoot, "bin/android_source.zip"),
   );
   const dotnet = await resolveDotnet();
 
@@ -500,8 +500,8 @@ async function prepareAndroidExport(): Promise<void> {
 function resolveAndroidSdk(): string {
   return path.resolve(
     process.env.ANDROID_HOME ||
-      process.env.ANDROID_SDK_ROOT ||
-      path.join(process.env.HOME || "", "Library/Android/sdk"),
+    process.env.ANDROID_SDK_ROOT ||
+    path.join(process.env.HOME || "", "Library/Android/sdk"),
   );
 }
 

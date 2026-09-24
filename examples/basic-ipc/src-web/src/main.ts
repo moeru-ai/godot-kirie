@@ -7,25 +7,25 @@ type KirieExampleMode = "manual" | "probe";
 
 type WebToGodotMessage =
   | {
-      type: "web_ready";
-      payload: {
-        source: KirieExampleMode;
-        userAgent: string;
-      };
-    }
-  | {
-      type: "web_ack";
-      payload: {
-        source: "probe";
-        acknowledgedType: string;
-      };
-    }
-  | {
-      type: "web_ping";
-      payload: {
-        source: "web";
-      };
+    type: "web_ready";
+    payload: {
+      source: KirieExampleMode;
+      userAgent: string;
     };
+  } |
+  {
+    type: "web_ack";
+    payload: {
+      source: "probe";
+      acknowledgedType: string;
+    };
+  } |
+  {
+    type: "web_ping";
+    payload: {
+      source: "web";
+    };
+  };
 
 interface GodotToWebMessage {
   type?: string;
@@ -109,9 +109,9 @@ sendButton.addEventListener("click", () => {
  * Downstream:
  * - {@link Event.stopPropagation}
  */
-const stopCardInputForwarding = (event: Event): void => {
+function stopCardInputForwarding(event: Event): void {
   event.stopPropagation();
-};
+}
 
 card.addEventListener("pointerdown", stopCardInputForwarding);
 

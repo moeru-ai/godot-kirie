@@ -6,9 +6,9 @@
   "scripts": {
     "build": "pnpm -r run build",
     "build:packages": "pnpm -rF \"./packages/*\" run build",
-    "format:biome": "biome check --write .",
+    "format:eslint": "eslint . --fix",
     "lint:alint": "alint",
-    "lint:biome": "biome check .",
+    "lint:eslint": "eslint .",
     "release": "bumpp",
     "test:swift": "./scripts/run-build-task.js testSwift",
     "test:unit": "pnpm -rF \"./packages/*\" run test:run",
@@ -16,10 +16,12 @@
   },
   "devDependencies": {
     "@alint-js/cli": "catalog:",
-    "@biomejs/biome": "catalog:",
+    "@antfu/eslint-config": "catalog:",
     "@gd-kirie/alint-config": "workspace:*",
     "bumpp": "catalog:",
     "execa": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-format": "catalog:",
     "kirie": "workspace:*"
   }
 }

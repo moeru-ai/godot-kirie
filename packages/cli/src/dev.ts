@@ -6,7 +6,7 @@ import { assertGodotCefInstalled } from "./doctor/godot-cef.ts";
 import { runExport } from "./export.ts";
 import { exportIosApp } from "./ios.ts";
 import { createKirieDevLaunchOptions, isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
-import { type StartViteDevServerOptions, startViteDevServer } from "./vite.ts";
+import { startViteDevServer, type StartViteDevServerOptions } from "./vite.ts";
 
 export type DevTarget = "desktop" | "android" | "ios";
 
@@ -63,7 +63,6 @@ export async function runDev(options: DevOptions = {}): Promise<void> {
         return;
       case "ios":
         await runIosDev(config, vite.url, options);
-        return;
     }
   } finally {
     await vite.server.close();

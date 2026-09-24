@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "echo 'TypeScript packages are not introduced yet'"
+    "build": "pnpm run generate:godot",
+    "generate:godot": "pnpm run typecheck && tstogd convert --no-check",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "typescript-to-gdscript": "catalog:"
   }
 }

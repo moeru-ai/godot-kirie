@@ -1,9 +1,9 @@
+import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
 import fs from "node:fs/promises";
 import os from "node:os";
-import path from "node:path";
 
+import path from "node:path";
 import { execa } from "execa";
-import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
 const GODOT_CEF_CHECKSUM_PATH = ".godot/kirie/godot-cef.sha256";
@@ -253,9 +253,9 @@ async function downloadFile(options: DownloadFileOptions): Promise<void> {
         resolveCompletion(snapshot);
       } else if (snapshot.phase === "failed") {
         const message =
-          snapshot.lastErrorCode === TakanawaStatus.HashMismatch
-            ? `Godot CEF checksum mismatch: expected ${options.expectedSha256}`
-            : (snapshot.lastError ?? "Takanawa download failed");
+          snapshot.lastErrorCode === TakanawaStatus.HashMismatch ?
+            `Godot CEF checksum mismatch: expected ${options.expectedSha256}` :
+              (snapshot.lastError ?? "Takanawa download failed");
         rejectCompletion(new TakanawaError(message, snapshot.lastErrorCode));
       }
     });

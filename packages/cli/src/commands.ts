@@ -39,12 +39,12 @@ const initArgs = {
 
 const devServerArgs = {
   "clear-screen": { description: "Allow Vite to clear the terminal.", type: "boolean" },
-  force: { description: "Force Vite dependency pre-bundling.", type: "boolean" },
-  host: { description: "Vite dev server host override.", type: "string" },
+  "force": { description: "Force Vite dependency pre-bundling.", type: "boolean" },
+  "host": { description: "Vite dev server host override.", type: "string" },
   "log-level": { description: "Vite log level: info, warn, error, or silent.", type: "string" },
-  mode: { description: "Vite mode.", type: "string" },
+  "mode": { description: "Vite mode.", type: "string" },
   "no-clear-screen": { description: "Prevent Vite from clearing the terminal.", type: "boolean" },
-  port: { description: "Vite dev server port override.", type: "string" },
+  "port": { description: "Vite dev server port override.", type: "string" },
   "strict-port": {
     description: "Fail if the requested Vite port is unavailable.",
     type: "boolean",
@@ -97,7 +97,7 @@ const iosSimulatorLaunchArgs = {
 const iosRunArgs = {
   ...projectArgs,
   ...iosSimulatorLaunchArgs,
-  app: { description: "iOS .app path to install before launch.", type: "string" },
+  "app": { description: "iOS .app path to install before launch.", type: "string" },
   "launch-option": { description: "Launch option as key=value.", type: "string" },
 } as const;
 
@@ -140,9 +140,9 @@ async function runIosExportCommand({ args }: CommandContext<typeof iosExportArgs
   await exportIosApp({
     appPath:
       args.output ??
-      (targetIsSimulator
-        ? `dist/kirie/ios/${configuration}.app`
-        : `dist/kirie/ios/device_${configuration}.app`),
+      (targetIsSimulator ?
+        `dist/kirie/ios/${configuration}.app` :
+        `dist/kirie/ios/device_${configuration}.app`),
     build: args.build !== false,
     cwd: args.project,
     device: args.device,

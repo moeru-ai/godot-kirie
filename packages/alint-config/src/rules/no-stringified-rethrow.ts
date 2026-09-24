@@ -1,6 +1,6 @@
 import type { ResolvedModel, RuleContext, RuleDefinition, SourceFile } from "@alint-js/core";
-import { defineRule } from "@alint-js/core";
 import type { GenerateTextResult } from "xsai";
+import { defineRule } from "@alint-js/core";
 import { generateText } from "xsai";
 
 export interface ErrorWrappingReviewFinding {
@@ -56,7 +56,7 @@ async function reviewStringifiedRethrows(
   const content = response.text;
 
   if (typeof content !== "string") {
-    throw new Error("alint model response did not include message content.");
+    throw new TypeError("alint model response did not include message content.");
   }
 
   recordUsage(usage, model, response);
@@ -87,7 +87,7 @@ function createReviewMessages(
         "Do not report code that logs an error and rethrows the same original error.",
         "",
         "Return JSON only with this shape:",
-        '{"findings":[{"line":1,"message":"short diagnostic","evidence":{"reason":"short reason"}}]}',
+        "{\"findings\":[{\"line\":1,\"message\":\"short diagnostic\",\"evidence\":{\"reason\":\"short reason\"}}]}",
         "Use the line number of the throw statement.",
         "Return an empty findings array when there is no issue.",
       ].join("\n"),

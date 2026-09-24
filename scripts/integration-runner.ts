@@ -126,9 +126,11 @@ async function waitForMarker(options: {
     await sleep(500);
   }
 
-  return options.includeStart
-    ? { line: `Timed out waiting for KIRIE_TEST_START for ${options.testName}`, status: "timeout" }
-    : { status: "timeout" };
+  if (options.includeStart) {
+    return { line: `Timed out waiting for KIRIE_TEST_START for ${options.testName}`, status: "timeout" };
+  }
+
+  return { status: "timeout" };
 }
 
 async function printIntegrationResult(
@@ -275,7 +277,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   const logFile = prepareLogFile(testName);
   const logPredicate =
     process.env.LOG_PREDICATE ||
-    'eventMessage CONTAINS "KIRIE_TEST_" OR eventMessage CONTAINS "[Kirie]" OR eventMessage CONTAINS "Godot" OR eventMessage CONTAINS "SCRIPT ERROR" OR eventMessage CONTAINS "ERROR:" OR eventMessage CONTAINS "WARNING:"';
+    "eventMessage CONTAINS \"KIRIE_TEST_\" OR eventMessage CONTAINS \"[Kirie]\" OR eventMessage CONTAINS \"Godot\" OR eventMessage CONTAINS \"SCRIPT ERROR\" OR eventMessage CONTAINS \"ERROR:\" OR eventMessage CONTAINS \"WARNING:\"";
 
   const logStream = await openLogStream(logFile);
   const logProcess = execa(
@@ -334,9 +336,7 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
   let kirieRunExited = false;
   const watchedKirieRun = kirieRun.then(async (runResult): Promise<MarkerResult> => {
     kirieRunExited = true;
-    const exitStatus = runResult.signal
-      ? `signal ${runResult.signal}`
-      : `code ${runResult.exitCode ?? "unknown"}`;
+    const exitStatus = runResult.signal ? `signal ${runResult.signal}` : `code ${runResult.exitCode ?? "unknown"}`;
     const marker = await waitForMarker({
       logFile,
       testName,
@@ -344,20 +344,29 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
       signal: markerWait.signal,
     });
 
-    return marker.status !== "timeout"
-      ? marker
-      : {
-          line: `kirie run ios exited with ${exitStatus} without KIRIE_TEST_PASS/FAIL for ${testName}`,
-          status: "stopped",
-        };
+    if (marker.status !== "timeout") {
+      return marker;
+    }
+
+    return {
+      line: `kirie run ios exited with ${exitStatus} without KIRIE_TEST_PASS/FAIL for ${testName}`,
+      status: "stopped",
+    };
   });
   const watchedLogProcess = logProcess.then(
-    (logProcessResult): MarkerResult => ({
-      line: logProcessResult.signal
-        ? `iOS log stream exited with signal ${logProcessResult.signal} before ${testName} finished`
-        : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} before ${testName} finished`,
-      status: "stopped",
-    }),
+    (logProcessResult): MarkerResult => {
+      if (logProcessResult.signal) {
+        return {
+          line: `iOS log stream exited with signal ${logProcessResult.signal} before ${testName} finished`,
+          status: "stopped",
+        };
+      }
+
+      return {
+        line: `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} before ${testName} finished`,
+        status: "stopped",
+      };
+    },
   );
 
   let result: MarkerResult | undefined;
@@ -398,9 +407,9 @@ export async function runIntegrationIosTest(testNameArg?: string): Promise<void>
     if (result?.status === "pass" && logProcessResult.failed) {
       if (logProcessResult.signal !== "SIGTERM" && logProcessResult.exitCode !== 143) {
         result = {
-          line: logProcessResult.signal
-            ? `iOS log stream exited with signal ${logProcessResult.signal} during cleanup`
-            : `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} during cleanup`,
+          line: logProcessResult.signal ?
+            `iOS log stream exited with signal ${logProcessResult.signal} during cleanup` :
+            `iOS log stream exited with code ${logProcessResult.exitCode ?? "unknown"} during cleanup`,
           status: "stopped",
         };
       }
