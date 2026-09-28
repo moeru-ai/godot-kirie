@@ -5,7 +5,7 @@ Godot host. Create the client from an existing `@gd-kirie/ipc-eventa` context.
 
 ```ts
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { createPlatformClient } from "@gd-kirie/platform";
+import { createPlatformClient, hostWindowPointerPositionChanged } from "@gd-kirie/platform";
 
 const eventa = createContext();
 const platform = createPlatformClient(eventa.context);
@@ -14,9 +14,13 @@ await platform.hostWindow.setAlwaysOnTop(true);
 
 const windowBounds = await platform.hostWindow.getBounds();
 const displayBounds = await platform.hostWindow.getCurrentDisplayBounds();
+const stopPointer = eventa.context.on(hostWindowPointerPositionChanged, ({ body }) => {
+  console.log(body);
+});
 const pointer = await platform.hostWindow.getPointerPosition();
 const windowState = await platform.hostWindow.getState();
 console.log(windowBounds, displayBounds, pointer, windowState);
+stopPointer();
 eventa.dispose();
 ```
 
@@ -59,7 +63,9 @@ This capability does not accept an arbitrary path.
 - visibility, focus, and minimized-state snapshots and change events
 
 Pointer coordinates use host-window pixels and are not normalized to the
-browser viewport. `getPointerPosition()` returns a single snapshot.
+browser viewport. Subscribe to `hostWindowPointerPositionChanged` first. Then
+call `getPointerPosition()` to get a snapshot and start native observation.
+The host sends later changes while the window is unfocused or click-through.
 
 `getState()` returns one lifecycle snapshot and starts native state observation.
 Call it once during setup. Later changes arrive as `hostWindowStateChanged`

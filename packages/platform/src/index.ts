@@ -141,6 +141,15 @@ const events = {
 export const hostWindowStateChanged: InboundEventa<HostWindowState> =
   defineInboundEventa<HostWindowState>("kirie:platform:host-window:state-changed");
 
+/**
+ * Host-window-relative pointer position changes.
+ * Subscribe first. Then call `getPointerPosition()` once to start host observation.
+ */
+export const hostWindowPointerPositionChanged: InboundEventa<HostWindowPointerPosition> =
+  defineInboundEventa<HostWindowPointerPosition>(
+    "kirie:platform:host-window:pointer-position-changed",
+  );
+
 const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChanged>(
   "kirie:platform:global-shortcut:state-changed",
 );

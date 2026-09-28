@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { GlobalShortcut, GlobalShortcutKeyEvent, HostWindowState } from "@gd-kirie/platform";
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { backRequested, createPlatformClient, hostWindowStateChanged, notificationActivated } from "@gd-kirie/platform";
+import { backRequested, createPlatformClient, hostWindowPointerPositionChanged, hostWindowStateChanged, notificationActivated } from "@gd-kirie/platform";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
-import { useRafFn } from "@vueuse/core";
+import { useIntervalFn } from "@vueuse/core";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 const escapeShortcut: GlobalShortcut = {
@@ -46,8 +46,11 @@ const busy = ref("");
 const actionResult = ref("");
 let escapeRegistered = false;
 let stopWindowState: (() => void) | undefined;
+let stopPointerPosition: (() => void) | undefined;
 let stopNotificationActivation: (() => void) | undefined;
 let stopBackRequest: (() => void) | undefined;
+let boundsRequest: Promise<void> | undefined;
+let telemetryActive = true;
 
 const pointerStyle = computed(() => ({
   left: `${Math.max(0, Math.min(100, ((windowBounds.value.x + pointer.value.x - displayBounds.value.x) / displayBounds.value.width) * 100))}%`,
@@ -63,17 +66,33 @@ const windowStyle = computed(() => ({
   height: `${(windowBounds.value.height / Math.max(displayBounds.value.height, 1)) * 100}%`,
 }));
 
-async function refreshTelemetry(): Promise<void> {
+function refreshBounds(): void {
   if (!platform) {
     return;
   }
 
-  platform.hostWindow.getPointerPosition().then(position => pointer.value = position)
-  platform.hostWindow.getBounds().then(bounds => windowBounds.value = bounds)
-  platform.hostWindow.getCurrentDisplayBounds().then(bounds => displayBounds.value = bounds)
+  if (boundsRequest) {
+    return;
+  }
+
+  boundsRequest = Promise.all([
+    platform.hostWindow.getBounds(),
+    platform.hostWindow.getCurrentDisplayBounds(),
+  ])
+    .then(([window, display]) => {
+      if (!telemetryActive) {
+        return;
+      }
+
+      windowBounds.value = window;
+      displayBounds.value = display;
+    }, console.error)
+    .finally(() => {
+      boundsRequest = undefined;
+    });
 }
 
-useRafFn(refreshTelemetry);
+useIntervalFn(refreshBounds, 250, { immediateCallback: true });
 
 onMounted(async () => {
   if (!eventa || !platform) {
@@ -92,6 +111,11 @@ onMounted(async () => {
       if (body)
         windowState.value = body;
     });
+    stopPointerPosition = eventa.context.on(hostWindowPointerPositionChanged, ({ body }) => {
+      if (body)
+        pointer.value = body;
+    });
+    pointer.value = await platform.hostWindow.getPointerPosition();
     windowState.value = await platform.hostWindow.getState();
   } catch (error) {
     console.error(error);
@@ -212,10 +236,12 @@ async function showNotification(): Promise<void> {
 }
 
 onBeforeUnmount(async () => {
+  telemetryActive = false;
   try {
     stopNotificationActivation?.();
     stopBackRequest?.();
     stopWindowState?.();
+    stopPointerPosition?.();
     if (pointerPassthrough.value || escapeRegistered) {
       await disablePointerPassthrough();
     }
@@ -264,7 +290,7 @@ onBeforeUnmount(async () => {
             </span>
           </div>
           <div
-            class="pointer-dot absolute z-20 h-3 w-3 rounded-full bg-emerald-500 transition-all duration-150 ease-out"
+            class="pointer-dot absolute z-20 h-3 w-3 rounded-full bg-emerald-500"
             :style="pointerStyle">
             <span class="absolute left-4 top-3 whitespace-nowrap font-mono text-xs text-emerald-700">
               {{ pointer.x }}, {{ pointer.y }}

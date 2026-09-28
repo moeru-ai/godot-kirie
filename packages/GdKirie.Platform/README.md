@@ -32,6 +32,14 @@ focus, visibility, or size change. The browser must request the first state
 snapshot before the host emits changes. This prevents state events before the
 WebView is ready. Duplicate snapshots are not emitted.
 
+Pointer observation uses a snapshot-first lifecycle. The browser subscribes to
+the change event. Then it calls `getPointerPosition()` once. The host samples
+[`DisplayServer.mouse_get_position()`](https://docs.godotengine.org/en/4.7/classes/class_displayserver.html#class-displayserver-method-mouse-get-position)
+on `SceneTree.ProcessFrame` and emits
+`kirie:platform:host-window:pointer-position-changed` only when the position or
+inside state changes. Observation continues while the WebView is unfocused or
+the native window is click-through.
+
 ## Global shortcuts
 
 Global shortcuts are implemented on macOS and Windows. macOS uses Carbon
