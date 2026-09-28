@@ -65,6 +65,9 @@ internal static class PlatformEvents
     public static readonly InvokeEventDefinition<PointerPositionPayload, EmptyPayload> GetPointerPosition =
         new($"{HostWindowPrefix}:get-pointer-position");
 
+    public static readonly EventDefinition<PointerPositionPayload> PointerPositionChanged =
+        new($"{HostWindowPrefix}:pointer-position-changed");
+
     public static readonly InvokeEventDefinition<WindowStatePayload, EmptyPayload> GetState =
         new($"{HostWindowPrefix}:get-state");
 

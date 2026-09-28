@@ -122,7 +122,7 @@ The implemented Platform capabilities are:
 - opening the current application's data directory
 - host-window bounds snapshots in screen coordinates
 - current-display bounds snapshots in screen coordinates
-- unscaled pixel position snapshots relative to the host window
+- unscaled pixel position snapshots and change events relative to the host window
 - pointer passthrough
 - native move and resize gestures
 - always-on-top

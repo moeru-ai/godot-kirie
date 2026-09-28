@@ -10,11 +10,13 @@ public sealed class GdKiriePlatformHost : IDisposable
 {
     private readonly Window _window;
     private readonly SceneTree _sceneTree;
+    private readonly Action<PointerPositionPayload> _emitPointerPositionChanged;
     private readonly Action<WindowStatePayload> _emitWindowStateChanged;
     private readonly Action _emitBackRequested;
     private readonly GlobalShortcutManager _globalShortcuts;
     private readonly Guid _notificationHostId;
     private readonly List<IDisposable> _registrations = [];
+    private PointerPositionPayload? _lastPointerPosition;
     private WindowStatePayload? _lastWindowState;
     private bool _windowsPointerPassthrough;
     private bool _disposed;
@@ -23,6 +25,8 @@ public sealed class GdKiriePlatformHost : IDisposable
     {
         _window = window;
         _sceneTree = window.GetTree();
+        _emitPointerPositionChanged = position =>
+            context.Emit(PlatformEvents.PointerPositionChanged, position);
         _emitWindowStateChanged = state => context.Emit(PlatformEvents.StateChanged, state);
         _emitBackRequested = () => context.Emit(PlatformEvents.BackRequested, new EmptyPayload());
         _globalShortcuts = new GlobalShortcutManager(
@@ -71,7 +75,7 @@ public sealed class GdKiriePlatformHost : IDisposable
             }));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.GetPointerPosition,
-            (EmptyPayload _, CancellationToken _) => Task.FromResult(GetPointerPosition())));
+            (EmptyPayload _, CancellationToken _) => Task.FromResult(SnapshotPointerPosition())));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.GetState,
             (EmptyPayload _, CancellationToken _) => Task.FromResult(SnapshotWindowState())));
@@ -119,7 +123,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _window.SizeChanged += RefreshWindowState;
         _window.VisibilityChanged += RefreshWindowState;
         _window.GoBackRequested += OnGoBackRequested;
-        _sceneTree.ProcessFrame += RefreshWindowState;
+        _sceneTree.ProcessFrame += RefreshObservedState;
         _window.TreeExiting += Dispose;
     }
 
@@ -142,7 +146,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         _window.SizeChanged -= RefreshWindowState;
         _window.VisibilityChanged -= RefreshWindowState;
         _window.GoBackRequested -= OnGoBackRequested;
-        _sceneTree.ProcessFrame -= RefreshWindowState;
+        _sceneTree.ProcessFrame -= RefreshObservedState;
         _window.TreeExiting -= Dispose;
 
         List<Exception> cleanupErrors = [];
@@ -200,7 +204,7 @@ public sealed class GdKiriePlatformHost : IDisposable
         }
     }
 
-    private PointerPositionPayload GetPointerPosition()
+    private PointerPositionPayload CapturePointerPosition()
     {
         var relativePosition = DisplayServer.MouseGetPosition() - _window.Position;
         var size = _window.Size;
@@ -211,6 +215,29 @@ public sealed class GdKiriePlatformHost : IDisposable
                 && relativePosition.Y >= 0
                 && relativePosition.X < size.X
                 && relativePosition.Y < size.Y);
+    }
+
+    private PointerPositionPayload SnapshotPointerPosition()
+    {
+        _lastPointerPosition = CapturePointerPosition();
+        return _lastPointerPosition;
+    }
+
+    private void RefreshPointerPosition()
+    {
+        if (_lastPointerPosition is null)
+        {
+            return;
+        }
+
+        var position = CapturePointerPosition();
+        if (position == _lastPointerPosition)
+        {
+            return;
+        }
+
+        _lastPointerPosition = position;
+        _emitPointerPositionChanged(position);
     }
 
     private WindowStatePayload CaptureWindowState()
@@ -242,6 +269,12 @@ public sealed class GdKiriePlatformHost : IDisposable
 
         _lastWindowState = state;
         _emitWindowStateChanged(state);
+    }
+
+    private void RefreshObservedState()
+    {
+        RefreshPointerPosition();
+        RefreshWindowState();
     }
 
     private void OnGoBackRequested()

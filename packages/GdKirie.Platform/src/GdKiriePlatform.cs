@@ -41,6 +41,9 @@ public static class GdKiriePlatform
                 PlatformEvents.GetPointerPosition,
                 PlatformJsonContext.Default.PointerPositionPayload,
                 PlatformJsonContext.Default.EmptyPayload)
+            .RegisterEvent(
+                PlatformEvents.PointerPositionChanged,
+                PlatformJsonContext.Default.PointerPositionPayload)
             .RegisterInvoke(
                 PlatformEvents.GetState,
                 PlatformJsonContext.Default.WindowStatePayload,

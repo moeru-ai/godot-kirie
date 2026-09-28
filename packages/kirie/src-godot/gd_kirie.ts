@@ -366,6 +366,9 @@ export class GdKirie extends Object {
 
     this._plugin_singleton = cef_backend;
     cef_backend.name = "KirieCefWebView";
+    // TODO(godot-cef#227): Re-evaluate accelerated OSR pointer-motion jitter after
+    // godot-cef implements a synchronized CEF-to-Godot GPU texture handoff.
+    // https://github.com/dsh0416/godot-cef/issues/227
     const preload_script = GdKirie.GODOT_CEF_PRELOAD_SCRIPT.replace(
       "%s",
       JSON.stringify(this._desktop_platform_os()),
