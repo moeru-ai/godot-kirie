@@ -316,7 +316,8 @@ function writeDownloadProgress(
 
 async function extractZip(archivePath: string, outputDir: string): Promise<void> {
   if (process.platform === "win32") {
-    await execa("tar", ["-xf", archivePath, "-C", outputDir], { stdio: "inherit" });
+    const tarExecutable = path.join(process.env.SystemRoot!, "System32", "tar.exe");
+    await execa(tarExecutable, ["-xf", archivePath, "-C", outputDir], { stdio: "inherit" });
     return;
   }
 
