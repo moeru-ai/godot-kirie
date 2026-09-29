@@ -33,7 +33,9 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
     "vitest": "catalog:"
   },
   "publishConfig": {
