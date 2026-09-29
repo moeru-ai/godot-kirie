@@ -227,7 +227,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     simulatorId,
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),
-    ...(options.appArgs ?? []),
+    ...(options.appArgs ?? []).map((argument) => (argument === "--" ? "++" : argument)),
   ];
   const launchDeadline = Date.now() + 20_000;
 
@@ -320,7 +320,7 @@ export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<v
     "--console",
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),
-    ...(options.appArgs ?? []),
+    ...(options.appArgs ?? []).map((argument) => (argument === "--" ? "++" : argument)),
   );
 
   await execa("xcrun", launchArgs, {
