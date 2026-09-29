@@ -196,6 +196,7 @@ describe("runDev", () => {
         cwd: project,
         launchOptions: createKirieDevLaunchOptions("http://127.0.0.1:5173/"),
         simulatorId: "booted",
+        terminateExisting: true,
       });
     } finally {
       process.env.PATH = originalPath;
@@ -219,10 +220,11 @@ describe("runDev", () => {
       "subsystem == \"ai.moeru.kirie.examples.basic-kirie-cli\"",
     ]);
 
-    expect(launchRun?.argv.slice(0, 5)).toEqual([
+    expect(launchRun?.argv.slice(0, 6)).toEqual([
       "simctl",
       "launch",
       "--console",
+      "--terminate-running-process",
       "booted",
       "ai.moeru.kirie.examples.basic-kirie-cli",
     ]);

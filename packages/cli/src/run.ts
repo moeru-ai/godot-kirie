@@ -65,7 +65,6 @@ export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 
 const androidDeviceWaitTimeoutMs = 10_000;
 const simulatorLookupTimeoutMs = 30_000;
-const simulatorTerminateTimeoutMs = 30_000;
 
 export async function runDesktop(options: RunDesktopOptions = {}): Promise<void> {
   const config = await loadKirieConfig({
@@ -194,19 +193,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         await readIosAppBundleId(path.resolve(config.cwd, options.appPath)) :
         readIosBundleId(config.godot.project));
 
-  if (options.terminateExisting) {
-    const termination = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
-      cwd: config.cwd,
-      reject: false,
-      stderr: "ignore",
-      stdout: "ignore",
-      timeout: simulatorTerminateTimeoutMs,
-    });
-    if (termination.timedOut) {
-      throw new Error(`Timed out terminating iOS app on simulator ${simulatorId}: ${bundleId}`);
-    }
-  }
-
   if (options.appPath) {
     await execa(
       "xcrun",
@@ -222,6 +208,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     "simctl",
     "launch",
     "--console",
+    ...(options.terminateExisting ? ["--terminate-running-process"] : []),
     simulatorId,
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),
