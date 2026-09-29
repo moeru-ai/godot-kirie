@@ -230,30 +230,58 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     ...(options.appArgs ?? []),
   ];
   const launchDeadline = Date.now() + 20_000;
-
-  while (true) {
-    const launch = execa("xcrun", launchArgs, {
+  const logs = execa(
+    "xcrun",
+    [
+      "simctl",
+      "spawn",
+      simulatorId,
+      "log",
+      "stream",
+      "--style",
+      "compact",
+      "--level",
+      "info",
+      "--predicate",
+      `subsystem == "${bundleId}"`,
+    ],
+    {
       buffer: { stdout: false, stderr: true },
       cwd: config.cwd,
-    });
-    launch.stdout?.pipe(process.stdout, { end: false });
-    launch.stderr?.pipe(process.stderr, { end: false });
+      reject: false,
+    },
+  );
+  logs.stdout?.pipe(process.stdout, { end: false });
+  logs.stderr?.pipe(process.stderr, { end: false });
 
-    try {
-      await launch;
-      return;
-    } catch (error) {
-      const simulatorNotReady =
-        error instanceof Error &&
-        /\bBusy\b.+\binstalling or uninstalling\b|\bNotFound\b.+\bunknown to FrontBoard\b/s.test(
-          error.message,
-        );
-      if (!simulatorNotReady || Date.now() >= launchDeadline) {
-        throw error;
+  try {
+    while (true) {
+      const launch = execa("xcrun", launchArgs, {
+        buffer: { stdout: false, stderr: true },
+        cwd: config.cwd,
+      });
+      launch.stdout?.pipe(process.stdout, { end: false });
+      launch.stderr?.pipe(process.stderr, { end: false });
+
+      try {
+        await launch;
+        return;
+      } catch (error) {
+        const simulatorNotReady =
+          error instanceof Error &&
+          /\bBusy\b.+\binstalling or uninstalling\b|\bNotFound\b.+\bunknown to FrontBoard\b/s.test(
+            error.message,
+          );
+        if (!simulatorNotReady || Date.now() >= launchDeadline) {
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
     }
+  } finally {
+    logs.kill("SIGTERM");
+    await logs;
   }
 }
 

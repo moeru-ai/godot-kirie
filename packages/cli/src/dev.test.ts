@@ -201,7 +201,23 @@ describe("runDev", () => {
       process.env.PATH = originalPath;
     }
 
-    const [launchRun] = await readFakeXcrunInvocations(project);
+    const invocations = await readFakeXcrunInvocations(project);
+    const logRun = invocations.find((invocation) => invocation.argv[1] === "spawn");
+    const launchRun = invocations.find((invocation) => invocation.argv[1] === "launch");
+
+    expect(logRun?.argv).toEqual([
+      "simctl",
+      "spawn",
+      "booted",
+      "log",
+      "stream",
+      "--style",
+      "compact",
+      "--level",
+      "info",
+      "--predicate",
+      "subsystem == \"ai.moeru.kirie.examples.basic-kirie-cli\"",
+    ]);
 
     expect(launchRun?.argv.slice(0, 5)).toEqual([
       "simctl",
@@ -301,14 +317,16 @@ async function installFakeXcrun(project: string): Promise<void> {
   await fs.writeFile(
     fakeXcrunPath,
     `#!/usr/bin/env node
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync } from "node:fs";
 
 const file = "${FAKE_XCRUN_INVOCATIONS_FILE}";
-const invocations = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
 const argv = process.argv.slice(2);
 
-invocations.push({ argv, cwd: process.cwd() });
-writeFileSync(file, JSON.stringify(invocations));
+appendFileSync(file, JSON.stringify({ argv, cwd: process.cwd() }) + "\\n");
+
+if (argv.includes("stream")) {
+  setInterval(() => {}, 1000);
+}
 `,
   );
   await fs.chmod(fakeXcrunPath, 0o755);
@@ -316,5 +334,8 @@ writeFileSync(file, JSON.stringify(invocations));
 
 async function readFakeXcrunInvocations(project: string): Promise<XcrunInvocation[]> {
   const invocationsFile = path.join(project, FAKE_XCRUN_INVOCATIONS_FILE);
-  return JSON.parse(await fs.readFile(invocationsFile, "utf8")) as XcrunInvocation[];
+  return (await fs.readFile(invocationsFile, "utf8"))
+    .trim()
+    .split("\n")
+    .map((invocation) => JSON.parse(invocation) as XcrunInvocation);
 }
