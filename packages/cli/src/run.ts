@@ -63,9 +63,10 @@ export interface RunIosDeviceOptions {
 
 export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 
+const androidDeviceWaitTimeoutMs = 30_000;
+const simulatorInstallTimeoutMs = 120_000;
 const simulatorLookupTimeoutMs = 30_000;
 const simulatorTerminateTimeoutMs = 30_000;
-const simulatorInstallTimeoutMs = 120_000;
 
 export async function runDesktop(options: RunDesktopOptions = {}): Promise<void> {
   const config = await loadKirieConfig({
@@ -93,6 +94,12 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   const adbArgs = options.device ? ["-s", options.device] : [];
   const packageName =
     options.packageName ?? readAndroidPackageName(config.godot.project, options.preset);
+
+  await execa("adb", [...adbArgs, "wait-for-device"], {
+    cwd: config.cwd,
+    stdio: "inherit",
+    timeout: androidDeviceWaitTimeoutMs,
+  });
 
   if (!options.skipInstall) {
     await execa(

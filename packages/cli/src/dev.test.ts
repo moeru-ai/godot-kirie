@@ -147,11 +147,16 @@ describe("runDev", () => {
     }
 
     const adbInvocations = await readFakeAdbInvocations(project);
+    const waitForDeviceRun = adbInvocations.findIndex(
+      (invocation) => invocation.argv[0] === "wait-for-device",
+    );
+    const installRun = adbInvocations.findIndex((invocation) => invocation.argv[0] === "install");
     const reverseRun = adbInvocations.find((invocation) => invocation.argv[0] === "reverse");
     const launchRun = adbInvocations.find((invocation) =>
       invocation.argv.some((arg) => arg.endsWith("/com.godot.game.GodotAppLauncher")),
     );
 
+    expect(waitForDeviceRun).toBeLessThan(installRun);
     expect(reverseRun?.argv).toHaveLength(3);
     expect(reverseRun?.argv[1]).toMatch(/^tcp:\d+$/);
     expect(reverseRun?.argv[2]).toBe(reverseRun?.argv[1]);
