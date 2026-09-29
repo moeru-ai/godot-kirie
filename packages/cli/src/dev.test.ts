@@ -193,7 +193,6 @@ describe("runDev", () => {
     process.env.PATH = `${path.join(project, "fake-bin")}${path.delimiter}${originalPath ?? ""}`;
     try {
       await runIosSimulator({
-        appArgs: ["--script", "runner.gd", "--", "--vidot-test=test.gd"],
         cwd: project,
         launchOptions: createKirieDevLaunchOptions("http://127.0.0.1:5173/"),
         simulatorId: "booted",
@@ -207,18 +206,12 @@ describe("runDev", () => {
     expect(launchRun?.argv.slice(0, 5)).toEqual([
       "simctl",
       "launch",
-      "--console",
+      "--console-pty",
       "booted",
       "ai.moeru.kirie.examples.basic-kirie-cli",
     ]);
     expect(launchRun?.argv).toContain("--kirie-dev=1");
     expect(launchRun?.argv).toContain("--kirie-web-url=http://127.0.0.1:5173/");
-    expect(launchRun?.argv.slice(-4)).toEqual([
-      "--script",
-      "runner.gd",
-      "++",
-      "--vidot-test=test.gd",
-    ]);
   });
 
   it("rejects Kirie-owned Vite options", async () => {

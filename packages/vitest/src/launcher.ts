@@ -116,6 +116,7 @@ async function runIos(projectPath: string, staged: StagedLaunch): Promise<void> 
       ...staged.args,
     ],
     staged.filePaths,
+    true,
   );
 }
 
