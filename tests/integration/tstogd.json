@@ -1,0 +1,12 @@
+{
+  "lib": true,
+  "tsDir": "src",
+  "gdDir": "scripts/vidot",
+  "typingsDir": "src/_typings",
+  "disableGodotLint": true,
+  "externalPackages": [
+    {
+      "from": "../../packages/kirie"
+    }
+  ]
+}

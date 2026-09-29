@@ -97,9 +97,6 @@ jobs:
       - name: Build iOS debug XCFramework
         run: mise run build:ios-debug-xcframework
 
-      - name: Build integration App
-        run: mise run build:integration-ios
-
       - name: Start iOS Simulator
         timeout-minutes: 5
         run: |
@@ -110,7 +107,4 @@ jobs:
 
       - name: Run integration tests
         timeout-minutes: 15
-        run: |
-          mise run --skip-deps test:integration-ios -- ipc_round_trip_probe
-          mise run --skip-deps test:integration-ios -- webview_lifecycle_probe
-          mise run --skip-deps test:integration-ios -- res_asset_loading_probe
+        run: mise run test:integration-ios

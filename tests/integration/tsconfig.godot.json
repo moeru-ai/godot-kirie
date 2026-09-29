@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "customConditions": ["godot"],
+    "lib": ["ES2015.Promise"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": [
+    "node_modules/typescript-to-gdscript/typings",
+    "src/**/*.ts",
+    "src/_typings/**/*.d.ts"
+  ]
+}

@@ -33,7 +33,14 @@ export interface RunAndroidOptions {
   skipInstall?: boolean;
 }
 
+export interface RunDesktopOptions {
+  cwd?: string;
+  godotArgs?: string[];
+  godotCommand?: string;
+}
+
 export interface RunIosSimulatorOptions {
+  appArgs?: string[];
   appPath?: string;
   bundleId?: string;
   config?: ResolvedKirieConfig;
@@ -44,6 +51,7 @@ export interface RunIosSimulatorOptions {
 }
 
 export interface RunIosDeviceOptions {
+  appArgs?: string[];
   appPath?: string;
   bundleId?: string;
   config?: ResolvedKirieConfig;
@@ -55,9 +63,24 @@ export interface RunIosDeviceOptions {
 
 export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 
+const androidDeviceWaitTimeoutMs = 10_000;
 const simulatorLookupTimeoutMs = 30_000;
-const simulatorTerminateTimeoutMs = 30_000;
-const simulatorInstallTimeoutMs = 120_000;
+
+export async function runDesktop(options: RunDesktopOptions = {}): Promise<void> {
+  const config = await loadKirieConfig({
+    command: "build",
+    cwd: options.cwd,
+  });
+
+  await execa(
+    options.godotCommand ?? config.godot.command,
+    [...config.godot.args, "--path", config.godot.project, ...(options.godotArgs ?? [])],
+    {
+      cwd: config.godot.project,
+      stdio: "inherit",
+    },
+  );
+}
 
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
   const config =
@@ -69,6 +92,12 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   const adbArgs = options.device ? ["-s", options.device] : [];
   const packageName =
     options.packageName ?? readAndroidPackageName(config.godot.project, options.preset);
+
+  await execa("adb", [...adbArgs, "wait-for-device"], {
+    cwd: config.cwd,
+    stdio: "inherit",
+    timeout: androidDeviceWaitTimeoutMs,
+  });
 
   if (!options.skipInstall) {
     await execa(
@@ -164,19 +193,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
         await readIosAppBundleId(path.resolve(config.cwd, options.appPath)) :
         readIosBundleId(config.godot.project));
 
-  if (options.terminateExisting) {
-    const termination = await execa("xcrun", ["simctl", "terminate", simulatorId, bundleId], {
-      cwd: config.cwd,
-      reject: false,
-      stderr: "ignore",
-      stdout: "ignore",
-      timeout: simulatorTerminateTimeoutMs,
-    });
-    if (termination.timedOut) {
-      throw new Error(`Timed out terminating iOS app on simulator ${simulatorId}: ${bundleId}`);
-    }
-  }
-
   if (options.appPath) {
     await execa(
       "xcrun",
@@ -184,7 +200,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       {
         cwd: config.cwd,
         stdio: "inherit",
-        timeout: simulatorInstallTimeoutMs,
       },
     );
   }
@@ -193,41 +208,72 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     "simctl",
     "launch",
     "--console",
+    ...(options.terminateExisting ? ["--terminate-running-process"] : []),
     simulatorId,
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),
+    ...(options.appArgs ?? []),
   ];
   const launchDeadline = Date.now() + 20_000;
-
-  while (true) {
-    const launch = execa("xcrun", launchArgs, {
+  const logs = execa(
+    "xcrun",
+    [
+      "simctl",
+      "spawn",
+      simulatorId,
+      "log",
+      "stream",
+      "--style",
+      "compact",
+      "--level",
+      "info",
+      "--predicate",
+      `subsystem == "${bundleId}"`,
+    ],
+    {
       buffer: { stdout: false, stderr: true },
       cwd: config.cwd,
-    });
-    launch.stdout?.pipe(process.stdout, { end: false });
-    launch.stderr?.pipe(process.stderr, { end: false });
+      reject: false,
+    },
+  );
+  logs.stdout?.pipe(process.stdout, { end: false });
+  logs.stderr?.pipe(process.stderr, { end: false });
 
-    try {
-      await launch;
-      return;
-    } catch (error) {
-      const simulatorNotReady =
-        error instanceof Error &&
-        /\bBusy\b.+\binstalling or uninstalling\b|\bNotFound\b.+\bunknown to FrontBoard\b/s.test(
-          error.message,
-        );
-      if (!simulatorNotReady || Date.now() >= launchDeadline) {
-        throw error;
+  try {
+    while (true) {
+      const launch = execa("xcrun", launchArgs, {
+        buffer: { stdout: false, stderr: true },
+        cwd: config.cwd,
+      });
+      launch.stdout?.pipe(process.stdout, { end: false });
+      launch.stderr?.pipe(process.stderr, { end: false });
+
+      try {
+        await launch;
+        return;
+      } catch (error) {
+        const simulatorNotReady =
+          error instanceof Error &&
+          /\bBusy\b.+\binstalling or uninstalling\b|\bNotFound\b.+\bunknown to FrontBoard\b/s.test(
+            error.message,
+          );
+        if (!simulatorNotReady || Date.now() >= launchDeadline) {
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
     }
+  } finally {
+    logs.kill("SIGTERM");
+    await logs;
   }
 }
 
 export async function runIos(options: RunIosOptions = {}): Promise<void> {
   if (!options.device || (await isIosSimulatorDevice(options.device, options.cwd))) {
     return runIosSimulator({
+      appArgs: options.appArgs,
       appPath: options.appPath,
       bundleId: options.bundleId,
       config: options.config,
@@ -283,7 +329,12 @@ export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<v
   if (options.terminateExisting) {
     launchArgs.push("--terminate-existing");
   }
-  launchArgs.push("--console", bundleId, ...iosLaunchOptionArgs(options.launchOptions));
+  launchArgs.push(
+    "--console",
+    bundleId,
+    ...iosLaunchOptionArgs(options.launchOptions),
+    ...(options.appArgs ?? []),
+  );
 
   await execa("xcrun", launchArgs, {
     cwd: config.cwd,

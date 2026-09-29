@@ -69,6 +69,8 @@ example, and regression-test areas:
 - `packages/build`: public build and export automation API for scripts
 - `packages/cli`: Kirie command-line tools for development sessions, export,
   install, and launch workflows
+- [`@gd-kirie/vitest`](packages/vitest/README.md): ViDot launch adapter for
+  Kirie desktop, Android, and iOS tests
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - [`GdKirie.Platform`](packages/GdKirie.Platform/README.md): Godot host for the
   Platform Eventa contract
@@ -78,11 +80,9 @@ example, and regression-test areas:
 - `tests/integration`: exported-app platform integration tests
 - `scripts/build.ts`: mise task entrypoint re-exports
 - `scripts/build-kirie.ts`: Kirie addon artifact and packaging tasks
-- `scripts/build-integration.ts`: platform integration export tasks
 - `scripts/build-examples.ts`: example build, install, and launch tasks
 - `scripts/build-shared.ts`: repo-local task glue around CLI and package build
   primitives
-- `scripts/integration-runner.ts`: platform integration test launchers
 - `docs`: project notes and design decisions
   - `docs/dreams`: exploratory notes for ideas outside the current milestone
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/test_runner.gd" id="1_7ee8v"]
+[ext_resource type="Script" path="res://scripts/vidot/mobile_test_runner.gd" id="1"]
 
-[node name="IntegrationTestRunner" type="Node"]
-script = ExtResource("1_7ee8v")
+[node name="IntegrationTests" type="Node"]
+script = ExtResource("1")

@@ -1,14 +1,14 @@
 {
-  "name": "kirie",
-  "version": "0.6.5",
+  "name": "@gd-kirie/vitest",
+  "version": "0.6.4",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/moeru-ai/godot-kirie.git",
-    "directory": "packages/cli"
+    "directory": "packages/vitest"
   },
   "bin": {
-    "kirie": "./kirie.js"
+    "kirie-vitest": "./src/launcher.ts"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,31 +18,32 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",
-    "test:run": "vitest run --no-file-parallelism --test-timeout 30000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@gd-kirie/build": "workspace:*",
-    "citty": "catalog:",
+    "@vidot/vitest": "^0.2.0",
     "execa": "catalog:",
-    "giget": "3.3.0",
-    "jszip": "3.10.1",
-    "takanawa-node": "0.9.0",
-    "vite": "catalog:"
+    "kirie": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
     "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org",
+    "bin": {
+      "kirie-vitest": "./dist/launcher.js"
+    },
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",

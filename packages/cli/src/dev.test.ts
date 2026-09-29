@@ -147,11 +147,16 @@ describe("runDev", () => {
     }
 
     const adbInvocations = await readFakeAdbInvocations(project);
+    const waitForDeviceRun = adbInvocations.findIndex(
+      (invocation) => invocation.argv[0] === "wait-for-device",
+    );
+    const installRun = adbInvocations.findIndex((invocation) => invocation.argv[0] === "install");
     const reverseRun = adbInvocations.find((invocation) => invocation.argv[0] === "reverse");
     const launchRun = adbInvocations.find((invocation) =>
       invocation.argv.some((arg) => arg.endsWith("/com.godot.game.GodotAppLauncher")),
     );
 
+    expect(waitForDeviceRun).toBeLessThan(installRun);
     expect(reverseRun?.argv).toHaveLength(3);
     expect(reverseRun?.argv[1]).toMatch(/^tcp:\d+$/);
     expect(reverseRun?.argv[2]).toBe(reverseRun?.argv[1]);
@@ -191,17 +196,35 @@ describe("runDev", () => {
         cwd: project,
         launchOptions: createKirieDevLaunchOptions("http://127.0.0.1:5173/"),
         simulatorId: "booted",
+        terminateExisting: true,
       });
     } finally {
       process.env.PATH = originalPath;
     }
 
-    const [launchRun] = await readFakeXcrunInvocations(project);
+    const invocations = await readFakeXcrunInvocations(project);
+    const logRun = invocations.find((invocation) => invocation.argv[1] === "spawn");
+    const launchRun = invocations.find((invocation) => invocation.argv[1] === "launch");
 
-    expect(launchRun?.argv.slice(0, 5)).toEqual([
+    expect(logRun?.argv).toEqual([
+      "simctl",
+      "spawn",
+      "booted",
+      "log",
+      "stream",
+      "--style",
+      "compact",
+      "--level",
+      "info",
+      "--predicate",
+      "subsystem == \"ai.moeru.kirie.examples.basic-kirie-cli\"",
+    ]);
+
+    expect(launchRun?.argv.slice(0, 6)).toEqual([
       "simctl",
       "launch",
       "--console",
+      "--terminate-running-process",
       "booted",
       "ai.moeru.kirie.examples.basic-kirie-cli",
     ]);
@@ -296,14 +319,16 @@ async function installFakeXcrun(project: string): Promise<void> {
   await fs.writeFile(
     fakeXcrunPath,
     `#!/usr/bin/env node
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync } from "node:fs";
 
 const file = "${FAKE_XCRUN_INVOCATIONS_FILE}";
-const invocations = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
 const argv = process.argv.slice(2);
 
-invocations.push({ argv, cwd: process.cwd() });
-writeFileSync(file, JSON.stringify(invocations));
+appendFileSync(file, JSON.stringify({ argv, cwd: process.cwd() }) + "\\n");
+
+if (argv.includes("stream")) {
+  setInterval(() => {}, 1000);
+}
 `,
   );
   await fs.chmod(fakeXcrunPath, 0o755);
@@ -311,5 +336,8 @@ writeFileSync(file, JSON.stringify(invocations));
 
 async function readFakeXcrunInvocations(project: string): Promise<XcrunInvocation[]> {
   const invocationsFile = path.join(project, FAKE_XCRUN_INVOCATIONS_FILE);
-  return JSON.parse(await fs.readFile(invocationsFile, "utf8")) as XcrunInvocation[];
+  return (await fs.readFile(invocationsFile, "utf8"))
+    .trim()
+    .split("\n")
+    .map((invocation) => JSON.parse(invocation) as XcrunInvocation);
 }

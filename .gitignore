@@ -24,6 +24,9 @@ tests/integration/web/
 examples/basic-kirie-cli/src-godot/generated/
 examples/basic-kirie-cli/src-godot/_typings/
 packages/kirie/src-godot/_typings/
+tests/integration/scripts/vidot/
+tests/integration/src/_typings/
+tests/integration/tstogd_modules/
 packages/kirie/addon/addons/kirie/*.gd
 *.apk
 *.aab

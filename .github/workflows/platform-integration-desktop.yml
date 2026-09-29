@@ -87,9 +87,6 @@ jobs:
       - name: Install Godot CEF addon
         run: mise run install:godot-cef tests/integration
 
-      - name: Build integration web fixture
-        run: mise run build:integration-web
-
       - name: Import integration project
         timeout-minutes: 3
         run: |
@@ -101,9 +98,4 @@ jobs:
 
       - name: Run integration tests
         timeout-minutes: 8
-        env:
-          KIRIE_DESKTOP_SKIP_IMPORT: "true"
-        run: |
-          mise run test:integration-desktop ipc_round_trip_probe
-          mise run test:integration-desktop webview_lifecycle_probe
-          mise run test:integration-desktop res_asset_loading_probe
+        run: mise run test:integration-desktop

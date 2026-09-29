@@ -163,12 +163,11 @@ Do not duplicate those documents here.
   `mise run build:native-artifacts`.
 - Use `mise run build:addon-pack` to build the public addon archive and
   `mise run check:addon-pack` to validate an already staged addon tree.
-- Use `mise run build:integration-android` and
-  `mise run build:integration-ios` for integration exports.
+- Use `mise run test:integration-desktop`, `mise run test:integration-android`,
+  and `mise run test:integration-ios` for platform integration suites.
 - Keep repository task TypeScript executable by Node's built-in type stripping.
   Do not add a TypeScript runtime loader or non-erasable syntax to
-  `scripts/build*.ts`, `scripts/integration-runner.ts`, or
-  `scripts/run-build-task.js`.
+  `scripts/build*.ts` or `scripts/run-build-task.js`.
 
 ## Validation
 

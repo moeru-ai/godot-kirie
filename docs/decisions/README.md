@@ -38,3 +38,5 @@ architecture documentation.
   — accepted, 2026-09-22
 - [ADR-0007: Use WinRT toasts for Windows desktop notifications](0007-use-winrt-toasts-for-windows-desktop-notifications.md)
   — proposed, 2026-09-22
+- [ADR-0008: Run integration tests through ViDot and a unified Kirie launcher](0008-run-integration-tests-through-vidot-and-a-unified-kirie-launcher.md)
+  — accepted, 2026-09-27
