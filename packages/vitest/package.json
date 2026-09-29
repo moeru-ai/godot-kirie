@@ -7,15 +7,15 @@
     "url": "https://github.com/moeru-ai/godot-kirie.git",
     "directory": "packages/vitest"
   },
+  "bin": {
+    "kirie-vitest": "./src/launcher.ts"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./src/index.ts"
     }
-  },
-  "imports": {
-    "#launcher": "./src/launcher.ts"
   },
   "files": [
     "dist",
@@ -39,14 +39,14 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org",
+    "bin": {
+      "kirie-vitest": "./dist/launcher.js"
+    },
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
-    },
-    "imports": {
-      "#launcher": "./dist/launcher.js"
     }
   }
 }
