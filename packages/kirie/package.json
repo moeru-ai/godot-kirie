@@ -3,6 +3,11 @@
   "version": "0.6.5",
   "private": true,
   "type": "module",
+  "exports": {
+    "./kirie-node": {
+      "godot": "./src-godot/kirie_node.ts"
+    }
+  },
   "scripts": {
     "build": "pnpm run generate:godot",
     "generate:godot": "pnpm run typecheck && tstogd convert --no-check",

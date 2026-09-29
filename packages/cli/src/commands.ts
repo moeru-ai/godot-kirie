@@ -7,7 +7,7 @@ import { DoctorTarget, runDoctor } from "./doctor/index.ts";
 import { runExport } from "./export.ts";
 import { runInit } from "./init.ts";
 import { exportIosApp } from "./ios.ts";
-import { isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
+import { isIosSimulatorDevice, runAndroid, runDesktop, runIos } from "./run.ts";
 
 const exportArgs = {
   build: { description: "Build local inputs before export.", type: "boolean" },
@@ -73,6 +73,11 @@ const androidRunArgs = {
   "launch-option": { description: "Launch option as key=value.", type: "string" },
   "no-logcat": { description: "Do not attach Android logcat after launch.", type: "boolean" },
   "skip-install": { description: "Launch an already-installed Android export.", type: "boolean" },
+} as const;
+
+const desktopRunArgs = {
+  ...projectArgs,
+  godot: { description: "Godot executable override.", type: "string" },
 } as const;
 
 const devArgs = {
@@ -345,7 +350,9 @@ export const mainCommand: CommandDef = defineCommand({
       },
     }),
     run: defineCommand({
-      meta: { description: "Install and launch an exported Kirie app.", name: "run" },
+      args: desktopRunArgs,
+      default: "desktop",
+      meta: { description: "Launch a Kirie project or exported app.", name: "run" },
       subCommands: {
         android: defineCommand({
           args: androidRunArgs,
@@ -362,11 +369,22 @@ export const mainCommand: CommandDef = defineCommand({
               skipInstall: args["skip-install"],
             }),
         }),
+        desktop: defineCommand({
+          args: desktopRunArgs,
+          meta: { description: "Launch a Kirie project on desktop.", name: "desktop" },
+          run: ({ args, rawArgs }) =>
+            runDesktop({
+              cwd: args.project,
+              godotArgs: parseUserArgs(rawArgs),
+              godotCommand: args.godot,
+            }),
+        }),
         ios: defineCommand({
           args: iosRunArgs,
           meta: { description: "Install and launch an iOS export.", name: "ios" },
-          run: ({ args }) =>
+          run: ({ args, rawArgs }) =>
             runIos({
+              appArgs: parseUserArgs(rawArgs),
               appPath: args.app,
               cwd: args.project,
               device: args.device,

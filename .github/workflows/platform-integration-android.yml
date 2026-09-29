@@ -67,9 +67,6 @@ jobs:
       - name: Build Android AAR
         run: mise run build:android-aar
 
-      - name: Build integration APK
-        run: mise run build:integration-android
-
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -78,8 +75,6 @@ jobs:
 
       - name: Run integration tests
         uses: reactivecircus/android-emulator-runner@v2
-        env:
-          KIRIE_INTEGRATION_APP_PREINSTALLED: "1"
         with:
           api-level: 35
           target: google_apis
@@ -88,7 +83,4 @@ jobs:
           emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim
           script: |
             set -e
-            adb install -r tests/integration/dist/kirie/android/debug.apk
-            mise run --skip-deps test:integration-android -- ipc_round_trip_probe
-            mise run --skip-deps test:integration-android -- webview_lifecycle_probe
-            mise run --skip-deps test:integration-android -- res_asset_loading_probe
+            mise run test:integration-android

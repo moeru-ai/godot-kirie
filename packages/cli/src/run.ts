@@ -33,7 +33,14 @@ export interface RunAndroidOptions {
   skipInstall?: boolean;
 }
 
+export interface RunDesktopOptions {
+  cwd?: string;
+  godotArgs?: string[];
+  godotCommand?: string;
+}
+
 export interface RunIosSimulatorOptions {
+  appArgs?: string[];
   appPath?: string;
   bundleId?: string;
   config?: ResolvedKirieConfig;
@@ -44,6 +51,7 @@ export interface RunIosSimulatorOptions {
 }
 
 export interface RunIosDeviceOptions {
+  appArgs?: string[];
   appPath?: string;
   bundleId?: string;
   config?: ResolvedKirieConfig;
@@ -58,6 +66,22 @@ export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 const simulatorLookupTimeoutMs = 30_000;
 const simulatorTerminateTimeoutMs = 30_000;
 const simulatorInstallTimeoutMs = 120_000;
+
+export async function runDesktop(options: RunDesktopOptions = {}): Promise<void> {
+  const config = await loadKirieConfig({
+    command: "build",
+    cwd: options.cwd,
+  });
+
+  await execa(
+    options.godotCommand ?? config.godot.command,
+    [...config.godot.args, "--path", config.godot.project, ...(options.godotArgs ?? [])],
+    {
+      cwd: config.godot.project,
+      stdio: "inherit",
+    },
+  );
+}
 
 export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
   const config =
@@ -196,6 +220,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
     simulatorId,
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),
+    ...(options.appArgs ?? []),
   ];
   const launchDeadline = Date.now() + 20_000;
 
@@ -228,6 +253,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
 export async function runIos(options: RunIosOptions = {}): Promise<void> {
   if (!options.device || (await isIosSimulatorDevice(options.device, options.cwd))) {
     return runIosSimulator({
+      appArgs: options.appArgs,
       appPath: options.appPath,
       bundleId: options.bundleId,
       config: options.config,
@@ -283,7 +309,12 @@ export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<v
   if (options.terminateExisting) {
     launchArgs.push("--terminate-existing");
   }
-  launchArgs.push("--console", bundleId, ...iosLaunchOptionArgs(options.launchOptions));
+  launchArgs.push(
+    "--console",
+    bundleId,
+    ...iosLaunchOptionArgs(options.launchOptions),
+    ...(options.appArgs ?? []),
+  );
 
   await execa("xcrun", launchArgs, {
     cwd: config.cwd,

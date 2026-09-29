@@ -1,0 +1,21 @@
+{
+  "name": "@gd-kirie/integration-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:godot": "tstogd convert src/integration_probe.ts --project-root . --tsconfig tsconfig.godot.json --no-check",
+    "test": "pnpm run typecheck && pnpm run build:godot && vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.godot.json --noEmit"
+  },
+  "dependencies": {
+    "@gd-kirie/kirie": "workspace:*"
+  },
+  "devDependencies": {
+    "@gd-kirie/vitest": "workspace:*",
+    "@types/node": "catalog:",
+    "@vidot/vitest": "^0.2.0",
+    "typescript": "catalog:",
+    "typescript-to-gdscript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

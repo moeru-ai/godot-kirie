@@ -280,9 +280,14 @@ kirie build dotnet
 kirie export android
 kirie export ios
 kirie doctor
+kirie run
+kirie run desktop
 kirie run android
 kirie run ios
 ```
+
+`kirie run` and `kirie run desktop` launch the Godot project on desktop. Both
+commands accept raw Godot arguments after `--`.
 
 `kirie run android` installs the exported APK by default. Its `--skip-install`
 option launches an already-installed APK, as used by platform integration CI.

@@ -6,20 +6,11 @@ import { exportIosApp as exportCliIosApp } from "../packages/cli/src/ios.ts";
 export const rootDir = process.cwd();
 export const scriptsDir = path.join(rootDir, "scripts");
 export const distDir = "dist";
-export const integrationProjectDir = "tests/integration";
-export const integrationDistDir = "dist/integration";
 export const godotSourceRoot = path.join(rootDir, "godot");
 
 interface AndroidDebugExportOptions {
   projectDir: string;
   userArgs?: string[];
-}
-
-export async function buildWebPackage(filter: string): Promise<void> {
-  await execa("pnpm", ["-F", filter, "run", "build"], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
 }
 
 export async function runKirieCli(args: string[]): Promise<void> {
