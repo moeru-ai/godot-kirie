@@ -63,8 +63,7 @@ export interface RunIosDeviceOptions {
 
 export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 
-const androidDeviceWaitTimeoutMs = 30_000;
-const simulatorInstallTimeoutMs = 120_000;
+const androidDeviceWaitTimeoutMs = 10_000;
 const simulatorLookupTimeoutMs = 30_000;
 const simulatorTerminateTimeoutMs = 30_000;
 
@@ -215,7 +214,6 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
       {
         cwd: config.cwd,
         stdio: "inherit",
-        timeout: simulatorInstallTimeoutMs,
       },
     );
   }
