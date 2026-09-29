@@ -206,7 +206,7 @@ describe("runDev", () => {
     expect(launchRun?.argv.slice(0, 5)).toEqual([
       "simctl",
       "launch",
-      "--console-pty",
+      "--console",
       "booted",
       "ai.moeru.kirie.examples.basic-kirie-cli",
     ]);

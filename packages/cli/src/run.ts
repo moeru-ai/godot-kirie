@@ -223,7 +223,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   const launchArgs = [
     "simctl",
     "launch",
-    "--console-pty",
+    "--console",
     simulatorId,
     bundleId,
     ...iosLaunchOptionArgs(options.launchOptions),

@@ -98,6 +98,15 @@ async function runIos(projectPath: string, staged: StagedLaunch): Promise<void> 
   const device = process.env.IOS_DEVICE_ID;
   const deviceArgs = device ? ["--device", device] : [];
   const appPath = device ? "dist/kirie/ios/device_debug.app" : "dist/kirie/ios/debug.app";
+  const runnerPath = path.join(staged.stagingPath, "runner.gd");
+  const runner = await fs.readFile(runnerPath, "utf8");
+  await fs.writeFile(
+    runnerPath,
+    runner.replace(
+      "print(self.EVENT_PREFIX + JSON.stringify(event))",
+      "printerr(self.EVENT_PREFIX + JSON.stringify(event))",
+    ),
+  );
 
   await runKirie(
     ["export", "ios", "--project", projectPath, "--no-build", ...deviceArgs],

@@ -113,6 +113,10 @@ templates do not enable extended options. The integration project's main scene
 therefore attaches the staged ViDot runner to its `SceneTree` on mobile exports.
 See the [Godot command-line tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html).
 
+On iOS, Godot sends `print` and `printerr` at different Apple unified-log
+levels. The adapter stages the runner with `printerr` so `simctl` streams the
+ViDot events. See Godot's [OsLogLogger implementation](https://github.com/godotengine/godot/blob/4.7.2-stable/drivers/apple/os_log_logger.cpp).
+
 The Android package name is `ai.moeru.kirie.integrationtests`.
 
 The fixture disables Android Swappy frame pacing for Godot 4.7.2. That Godot

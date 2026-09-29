@@ -25,7 +25,7 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "test:run": "vitest run --test-timeout 30000",
+    "test:run": "vitest run --no-file-parallelism --test-timeout 30000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
