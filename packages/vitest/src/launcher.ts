@@ -16,6 +16,10 @@ interface ParsedLaunch {
   target: KirieTestTarget;
 }
 
+interface ProjectPackage {
+  name: string;
+}
+
 interface StagedLaunch {
   args: string[];
   filePaths: Map<string, string>;
@@ -163,6 +167,11 @@ async function stageLaunch(projectPath: string, args: string[]): Promise<StagedL
   await fs.rm(stagingPath, { force: true, recursive: true });
   await fs.mkdir(stagingPath, { recursive: true });
 
+  const projectPackage = JSON.parse(
+    await fs.readFile(path.join(projectPath, "package.json"), "utf8"),
+  ) as ProjectPackage;
+  const projectModulePrefix = `res://tstogd_modules/${projectPackage.name}/`;
+
   const stagedArgs = [...args];
   const filePaths = new Map<string, string>();
   const runnerIndex = stagedArgs.indexOf("--script");
@@ -184,7 +193,8 @@ async function stageLaunch(projectPath: string, args: string[]): Promise<StagedL
     const sourcePath = argument.slice("--vidot-test=".length);
     const stagedPath = path.join(stagingPath, `test-${testIndex}.gd`);
     const stagedResourcePath = resourcePath(projectPath, stagedPath);
-    await fs.copyFile(sourcePath, stagedPath);
+    const source = await fs.readFile(sourcePath, "utf8");
+    await fs.writeFile(stagedPath, source.replaceAll(projectModulePrefix, "res://"));
     stagedArgs[index] = `--vidot-test=${stagedResourcePath}`;
     filePaths.set(stagedResourcePath, path.resolve(sourcePath));
     testIndex++;
