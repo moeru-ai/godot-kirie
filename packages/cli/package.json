@@ -15,9 +15,6 @@
   "exports": {
     ".": {
       "import": "./src/index.ts"
-    },
-    "./cli": {
-      "import": "./src/cli.ts"
     }
   },
   "files": [
@@ -50,9 +47,6 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
-      },
-      "./cli": {
-        "import": "./dist/cli.js"
       }
     }
   }
