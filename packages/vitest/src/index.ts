@@ -11,8 +11,7 @@ export interface KirieTestOptions {
 }
 
 export function kirie(options: KirieTestOptions): PoolRunnerInitializer {
-  const launcherExtension = import.meta.url.endsWith(".ts") ? "ts" : "js";
-  const launcherPath = fileURLToPath(new URL(`./launcher.${launcherExtension}`, import.meta.url));
+  const launcherPath = fileURLToPath(import.meta.resolve("#launcher"));
 
   return vidot({
     projectPath: options.projectPath,

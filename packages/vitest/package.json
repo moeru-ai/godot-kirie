@@ -14,6 +14,9 @@
       "import": "./src/index.ts"
     }
   },
+  "imports": {
+    "#launcher": "./src/launcher.ts"
+  },
   "files": [
     "dist",
     "README.md"
@@ -41,6 +44,9 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
       }
+    },
+    "imports": {
+      "#launcher": "./dist/launcher.js"
     }
   }
 }
