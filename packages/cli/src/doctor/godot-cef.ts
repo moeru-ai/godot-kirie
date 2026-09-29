@@ -364,23 +364,27 @@ async function renameGodotCefAddon(source: string, destination: string): Promise
   // NOTICE:
   // Windows file scanners can hold newly copied native binaries.
   // The lock makes fs.rename fail with EPERM, EACCES, or EBUSY.
-  // Context: https://github.com/npm/cli/pull/9028
+  // Context: https://github.com/isaacs/node-graceful-fs/blob/main/polyfills.js
   // Remove this retry only if Node handles transient Windows rename errors.
-  for (let retryCount = 0; ; retryCount += 1) {
+  const retryStartedAt = Date.now();
+  let retryDelay = 0;
+
+  for (;;) {
     try {
       await fs.rename(source, destination);
       return;
     } catch (error) {
       const canRetry =
         process.platform === "win32" &&
-        retryCount < 5 &&
+        Date.now() - retryStartedAt < 60_000 &&
         isNodeError(error) &&
         (error.code === "EACCES" || error.code === "EBUSY" || error.code === "EPERM");
       if (!canRetry) {
         throw error;
       }
 
-      await delay(500 * 2 ** retryCount);
+      retryDelay = Math.min(retryDelay + 10, 100);
+      await delay(retryDelay);
     }
   }
 }
