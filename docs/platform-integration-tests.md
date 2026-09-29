@@ -36,6 +36,8 @@ tests/integration/
     webview.test.ts
   src-web/
     src/main.ts
+  scripts/
+    mobile_test_runner.gd
 ```
 
 `integration_probe.ts` is TypeScript source. The test script imports its class.
@@ -105,6 +107,11 @@ mise run test:integration-android
 The adapter stages the generated tests, invokes `kirie export android`, and
 then invokes `kirie run android`. The CLI installs the APK, clears app data and
 logcat, starts the app, and streams its log output.
+
+Godot classifies `--script` as an extended command-line option. Standard export
+templates do not enable extended options. The integration project's main scene
+therefore attaches the staged ViDot runner to its `SceneTree` on mobile exports.
+See the [Godot command-line tutorial](https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html).
 
 The Android package name is `ai.moeru.kirie.integrationtests`.
 
