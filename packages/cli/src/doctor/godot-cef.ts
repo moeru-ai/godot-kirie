@@ -1,8 +1,8 @@
 import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
 import fs from "node:fs/promises";
 import os from "node:os";
-
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { execa } from "execa";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
@@ -184,7 +184,7 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
     const stagedAddon = path.join(stagingRoot, path.basename(installDir));
     await fs.cp(extractedAddon, stagedAddon, { recursive: true });
     await fs.rm(installDir, { force: true, recursive: true });
-    await fs.rename(stagedAddon, installDir);
+    await renameGodotCefAddon(stagedAddon, installDir);
     const checksumPath = path.join(projectDir, GODOT_CEF_CHECKSUM_PATH);
     await fs.mkdir(path.dirname(checksumPath), { recursive: true });
     await fs.writeFile(checksumPath, `${config.sha256}\n`);
@@ -316,23 +316,8 @@ function writeDownloadProgress(
 
 async function extractZip(archivePath: string, outputDir: string): Promise<void> {
   if (process.platform === "win32") {
-    await execa(
-      "powershell",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        "Expand-Archive -LiteralPath $env:KIRIE_GODOT_CEF_ARCHIVE -DestinationPath $env:KIRIE_GODOT_CEF_EXTRACT_DIR -Force",
-      ],
-      {
-        env: {
-          ...process.env,
-          KIRIE_GODOT_CEF_ARCHIVE: archivePath,
-          KIRIE_GODOT_CEF_EXTRACT_DIR: outputDir,
-        },
-        stdio: "inherit",
-      },
-    );
+    const tarExecutable = path.join(process.env.SystemRoot!, "System32", "tar.exe");
+    await execa(tarExecutable, ["-xf", archivePath, "-C", outputDir], { stdio: "inherit" });
     return;
   }
 
@@ -373,6 +358,35 @@ function resolveResourcePath(projectDir: string, resourcePath: string): string {
 function formatBytes(bytes: number): string {
   const mebibytes = bytes / (1024 * 1024);
   return `${mebibytes.toFixed(1)} MiB`;
+}
+
+async function renameGodotCefAddon(source: string, destination: string): Promise<void> {
+  // NOTICE:
+  // Windows file scanners can hold newly copied native binaries.
+  // The lock makes fs.rename fail with EPERM, EACCES, or EBUSY.
+  // Context: https://github.com/isaacs/node-graceful-fs/blob/main/polyfills.js
+  // Remove this retry only if Node handles transient Windows rename errors.
+  const retryStartedAt = Date.now();
+  let retryDelay = 0;
+
+  for (;;) {
+    try {
+      await fs.rename(source, destination);
+      return;
+    } catch (error) {
+      const canRetry =
+        process.platform === "win32" &&
+        Date.now() - retryStartedAt < 60_000 &&
+        isNodeError(error) &&
+        (error.code === "EACCES" || error.code === "EBUSY" || error.code === "EPERM");
+      if (!canRetry) {
+        throw error;
+      }
+
+      retryDelay = Math.min(retryDelay + 10, 100);
+      await delay(retryDelay);
+    }
+  }
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {
