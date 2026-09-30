@@ -1,16 +1,15 @@
-import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
+import type { DownloadFileOptions, DownloadProgressOutput } from "../archive.ts";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { execa } from "execa";
 
-import { downloadAddonArchive, installAddonArchive, isAddonCurrent } from "../init.ts";
+import { downloadFile, extractZip } from "../archive.ts";
+import { installAddon, isAddonCurrent } from "../init.ts";
 
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
 const GODOT_CEF_CHECKSUM_PATH = ".godot/kirie/godot-cef.sha256";
 const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
-const PROGRESS_BAR_WIDTH = 24;
 
 export interface GodotCefConfig {
   addonPath: string;
@@ -25,12 +24,6 @@ export interface GodotCefCheckResult {
   valid: boolean;
 }
 
-export interface DownloadProgressOutput {
-  columns?: number;
-  isTTY?: boolean;
-  write: (text: string) => unknown;
-}
-
 export interface InstallGodotCefOptions {
   download?: (options: DownloadFileOptions) => Promise<void>;
   extractArchive?: (archivePath: string, outputDir: string) => Promise<void>;
@@ -43,13 +36,6 @@ interface GodotCefConfigFile {
   class_name?: unknown;
   sha256?: unknown;
   version?: unknown;
-}
-
-interface DownloadFileOptions {
-  expectedSha256: string;
-  output: DownloadProgressOutput;
-  outputPath: string;
-  url: string;
 }
 
 export async function readGodotCefConfig(projectDir: string): Promise<GodotCefConfig> {
@@ -139,7 +125,7 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
   await assertGodotProject(projectDir);
 
   if (!(await isAddonCurrent(projectDir))) {
-    await installAddonArchive(await downloadAddonArchive(), projectDir);
+    await installAddon(projectDir, options.output);
   }
 
   const config = await readGodotCefConfig(projectDir);
@@ -204,132 +190,6 @@ export async function installGodotCef(options: InstallGodotCefOptions): Promise<
   console.log(`Installed Godot CEF ${config.version} at ${installDir}`);
 }
 
-function formatDownloadProgress(
-  downloadedBytes: number,
-  totalBytes: number,
-  speed: number,
-): string {
-  const downloaded = formatBytes(downloadedBytes);
-  const speedText = `${formatBytes(speed)}/s`;
-  if (totalBytes === 0) {
-    return `${downloaded} ${speedText}`;
-  }
-
-  const progress = Math.min(downloadedBytes / totalBytes, 1);
-  const completeWidth = Math.round(progress * PROGRESS_BAR_WIDTH);
-  const bar = `${"=".repeat(completeWidth)}${" ".repeat(PROGRESS_BAR_WIDTH - completeWidth)}`;
-  const percent = `${(progress * 100).toFixed(1)}%`.padStart(6);
-  return `[${bar}] ${percent} ${speedText} ${downloaded}/${formatBytes(totalBytes)}`;
-}
-
-async function downloadFile(options: DownloadFileOptions): Promise<void> {
-  // Load the native addon only for the fixer so unsupported hosts can still use other CLI commands.
-  const { DownloadTask, TakanawaError, TakanawaStatus } = await import("takanawa-node");
-  const task = new DownloadTask({
-    hash: {
-      expected: options.expectedSha256,
-      kind: "sha256",
-    },
-    targetPath: options.outputPath,
-    url: options.url,
-  });
-
-  let speed = 0;
-  let lastProgressLength = 0;
-  let progressListener: DownloadListenerHandle | undefined;
-  let speedListener: DownloadListenerHandle | undefined;
-  let resolveCompletion!: (snapshot: DownloadSnapshot) => void;
-  let rejectCompletion!: (error: Error) => void;
-  const completion = new Promise<DownloadSnapshot>((resolve, reject) => {
-    resolveCompletion = resolve;
-    rejectCompletion = reject;
-  });
-
-  try {
-    progressListener = await task.addProgressListener((snapshot) => {
-      lastProgressLength = writeDownloadProgress(
-        options.output,
-        Number(snapshot.downloadedBytes),
-        Number(snapshot.contentLen),
-        speed,
-        lastProgressLength,
-      );
-
-      if (snapshot.phase === "completed") {
-        resolveCompletion(snapshot);
-      } else if (snapshot.phase === "failed") {
-        const message =
-          snapshot.lastErrorCode === TakanawaStatus.HashMismatch ?
-            `Godot CEF checksum mismatch: expected ${options.expectedSha256}` :
-              (snapshot.lastError ?? "Takanawa download failed");
-        rejectCompletion(new TakanawaError(message, snapshot.lastErrorCode));
-      }
-    });
-    speedListener = await task.addSpeedListener((snapshot) => {
-      speed = snapshot.bytesPerSecond;
-      lastProgressLength = writeDownloadProgress(
-        options.output,
-        Number(snapshot.receivedBytes),
-        Number(snapshot.contentLen),
-        speed,
-        lastProgressLength,
-      );
-    });
-
-    await task.start();
-    const snapshot = await completion;
-    writeDownloadProgress(
-      options.output,
-      Number(snapshot.downloadedBytes),
-      Number(snapshot.contentLen),
-      speed,
-      lastProgressLength,
-      true,
-    );
-  } catch (error) {
-    if (options.output.isTTY && lastProgressLength > 0) {
-      options.output.write("\n");
-    }
-    throw error;
-  } finally {
-    await Promise.all([progressListener?.remove(), speedListener?.remove(), task.close()]);
-  }
-}
-
-function writeDownloadProgress(
-  output: DownloadProgressOutput,
-  downloadedBytes: number,
-  totalBytes: number,
-  speed: number,
-  previousLength: number,
-  complete: boolean = false,
-): number {
-  const progress = formatDownloadProgress(downloadedBytes, totalBytes, speed);
-  if (!output.isTTY) {
-    if (complete) {
-      output.write(`Downloaded ${progress}\n`);
-    }
-    return progress.length;
-  }
-
-  const availableWidth = Math.max((output.columns ?? 80) - 1, 1);
-  const line = progress.slice(0, availableWidth);
-  output.write(
-    `\r${line}${" ".repeat(Math.max(previousLength - line.length, 0))}${complete ? "\n" : ""}`,
-  );
-  return line.length;
-}
-
-async function extractZip(archivePath: string, outputDir: string): Promise<void> {
-  if (process.platform === "win32") {
-    const tarExecutable = path.join(process.env.SystemRoot!, "System32", "tar.exe");
-    await execa(tarExecutable, ["-xf", archivePath, "-C", outputDir], { stdio: "inherit" });
-    return;
-  }
-
-  await execa("unzip", ["-q", archivePath, "-d", outputDir], { stdio: "inherit" });
-}
-
 async function assertGodotProject(projectDir: string): Promise<void> {
   try {
     const projectStat = await fs.stat(path.join(projectDir, "project.godot"));
@@ -359,11 +219,6 @@ function resolveResourcePath(projectDir: string, resourcePath: string): string {
     throw new Error(`Godot CEF path must stay inside the Godot project: ${resourcePath}`);
   }
   return resolved;
-}
-
-function formatBytes(bytes: number): string {
-  const mebibytes = bytes / (1024 * 1024);
-  return `${mebibytes.toFixed(1)} MiB`;
 }
 
 async function renameGodotCefAddon(source: string, destination: string): Promise<void> {

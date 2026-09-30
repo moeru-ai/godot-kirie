@@ -1,11 +1,13 @@
 import type { Stats } from "node:fs";
+import type { DownloadProgressOutput } from "./archive.ts";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import { downloadTemplate } from "giget";
-import JSZip from "jszip";
-
 import packageJson from "../package.json" with { type: "json" };
+
+import { downloadFile, extractZip } from "./archive.ts";
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
 export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
@@ -41,15 +43,12 @@ export async function runInit(options: InitOptions): Promise<void> {
     await fs.mkdir(stagedProject);
 
     const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
-    const [, addonArchive] = await Promise.all([
-      downloadTemplate(templateSource, {
-        dir: stagedProject,
-        registry: false,
-      }),
-      downloadAddonArchive(),
-    ]);
+    await downloadTemplate(templateSource, {
+      dir: stagedProject,
+      registry: false,
+    });
 
-    await installAddonArchive(addonArchive, stagedProject);
+    await installAddon(stagedProject);
     await applyProjectName(stagedProject, path.basename(target));
     await installStagedProject(stagedProject, target, temporaryRoot, existingTarget);
   } finally {
@@ -61,16 +60,6 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
   console.log("  pnpm kirie doctor");
-}
-
-export async function downloadAddonArchive(): Promise<Uint8Array> {
-  const url = `https://github.com/moeru-ai/godot-kirie/releases/download/v${packageJson.version}/kirie-addon.zip`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download Kirie addon v${packageJson.version}: ${response.status} ${response.statusText}`);
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
 }
 
 export async function isAddonCurrent(projectDir: string): Promise<boolean> {
@@ -103,24 +92,30 @@ export async function isAddonCurrent(projectDir: string): Promise<boolean> {
   }
 }
 
-export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {
-  const zip = await JSZip.loadAsync(archive);
-  const addonPrefix = "addons/kirie/";
-  const addonFiles = Object.values(zip.files).filter(
-    (file) => !file.dir && file.name.startsWith(addonPrefix),
-  );
+export async function installAddon(
+  projectDir: string,
+  output: DownloadProgressOutput = process.stderr,
+): Promise<void> {
+  const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "kirie-addon-"));
+  const archivePath = path.join(temporaryRoot, "kirie-addon.zip");
+  const extractDir = path.join(temporaryRoot, "extract");
+  const url = `https://github.com/moeru-ai/godot-kirie/releases/download/v${packageJson.version}/kirie-addon.zip`;
 
-  if (!addonFiles.some((file) => file.name === `${addonPrefix}plugin.cfg`)) {
-    throw new Error("Kirie addon archive does not contain addons/kirie/plugin.cfg.");
-  }
+  try {
+    console.log(`Downloading Kirie addon ${packageJson.version} from ${url}`);
+    await downloadFile({ output, outputPath: archivePath, url });
+    await fs.mkdir(extractDir);
+    await extractZip(archivePath, extractDir);
 
-  const addonDestination = path.join(destination, "addons", "kirie");
-  await fs.rm(addonDestination, { force: true, recursive: true });
+    if (!(await isAddonCurrent(extractDir))) {
+      throw new Error(`Kirie addon archive does not contain a complete v${packageJson.version} addon.`);
+    }
 
-  for (const file of addonFiles) {
-    const outputPath = path.join(addonDestination, file.name.slice(addonPrefix.length));
-    await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, await file.async("uint8array"));
+    const addonDestination = path.join(projectDir, "addons", "kirie");
+    await fs.rm(addonDestination, { force: true, recursive: true });
+    await fs.cp(path.join(extractDir, "addons", "kirie"), addonDestination, { recursive: true });
+  } finally {
+    await fs.rm(temporaryRoot, { force: true, recursive: true });
   }
 }
 
