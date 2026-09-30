@@ -5,6 +5,8 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { execa } from "execa";
 
+import { downloadAddonArchive, installAddonArchive, isAddonCurrent } from "../init.ts";
+
 const GODOT_CEF_CONFIG_PATH = "addons/kirie/godot_cef.json";
 const GODOT_CEF_CHECKSUM_PATH = ".godot/kirie/godot-cef.sha256";
 const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
@@ -135,6 +137,10 @@ export async function assertGodotCefInstalled(projectDir: string): Promise<void>
 export async function installGodotCef(options: InstallGodotCefOptions): Promise<void> {
   const projectDir = path.resolve(options.projectDir);
   await assertGodotProject(projectDir);
+
+  if (!(await isAddonCurrent(projectDir))) {
+    await installAddonArchive(await downloadAddonArchive(), projectDir);
+  }
 
   const config = await readGodotCefConfig(projectDir);
   const current = await checkGodotCef(projectDir);

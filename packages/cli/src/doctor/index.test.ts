@@ -349,8 +349,9 @@ async function createTempDir(prefix: string): Promise<string> {
 
 async function installGodotCefConfig(project: string, sha256: string): Promise<void> {
   const kirieAddon = path.join(project, "addons", "kirie");
+  const addonSource = await fs.realpath(kirieAddon);
   await fs.rm(kirieAddon, { force: true, recursive: true });
-  await fs.mkdir(kirieAddon, { recursive: true });
+  await fs.cp(addonSource, kirieAddon, { recursive: true });
   await fs.writeFile(
     path.join(kirieAddon, "godot_cef.json"),
     `${JSON.stringify({

@@ -8,7 +8,6 @@ import JSZip from "jszip";
 import packageJson from "../package.json" with { type: "json" };
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
-const KIRIE_REPOSITORY = "moeru-ai/godot-kirie";
 export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
 
 export interface InitOptions {
@@ -42,13 +41,12 @@ export async function runInit(options: InitOptions): Promise<void> {
     await fs.mkdir(stagedProject);
 
     const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
-    const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${packageJson.version}/kirie-addon.zip`;
     const [, addonArchive] = await Promise.all([
       downloadTemplate(templateSource, {
         dir: stagedProject,
         registry: false,
       }),
-      downloadArchive(addonUrl, `Kirie addon v${packageJson.version}`),
+      downloadAddonArchive(),
     ]);
 
     await installAddonArchive(addonArchive, stagedProject);
@@ -63,6 +61,46 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
   console.log("  pnpm kirie doctor");
+}
+
+export async function downloadAddonArchive(): Promise<Uint8Array> {
+  const url = `https://github.com/moeru-ai/godot-kirie/releases/download/v${packageJson.version}/kirie-addon.zip`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download Kirie addon v${packageJson.version}: ${response.status} ${response.statusText}`);
+  }
+
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+export async function isAddonCurrent(projectDir: string): Promise<boolean> {
+  const addonDir = path.join(projectDir, "addons", "kirie");
+  try {
+    const pluginConfig = await fs.readFile(path.join(addonDir, "plugin.cfg"), "utf8");
+    const installedVersion = /^\s*version\s*=\s*"([^"]+)"\s*$/m.exec(pluginConfig)?.[1];
+    if (installedVersion !== packageJson.version) {
+      return false;
+    }
+    for (const file of [
+      "plugin.gd",
+      "export_plugin.gd",
+      "gd_kirie.gd",
+      "kirie_node.gd",
+      "pointer_input_forwarder.gd",
+      "godot_cef_config.gd",
+      "godot_cef.json",
+    ]) {
+      if (!(await fs.stat(path.join(addonDir, file))).isFile()) {
+        return false;
+      }
+    }
+    return true;
+  } catch (error) {
+    if (isNodeError(error) && (error.code === "ENOENT" || error.code === "ENOTDIR" || error.code === "EISDIR")) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {
@@ -159,15 +197,6 @@ async function inspectTarget(target: string, cwd: string, overwrite: boolean): P
   }
 
   return true;
-}
-
-async function downloadArchive(url: string, description: string): Promise<Uint8Array> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download ${description}: ${response.status} ${response.statusText}`);
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
 }
 
 async function installStagedProject(
