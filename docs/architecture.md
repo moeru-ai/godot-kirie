@@ -613,20 +613,35 @@ if it is missing, fail before export or run and print
 `pnpm kirie doctor --fix godot-cef`. Android and iOS workflows must not require
 a Godot CEF download.
 
-Downloaded Godot CEF addons should use the standard Godot addon layout:
+Downloaded Godot CEF addons use the standard Godot addon layout:
 
 ```text
 addons/godot_cef/
 ```
 
-This lets Godot load the Godot CEF GDExtension normally. Project instances of
-that directory should be ignored and not committed. The CLI downloads the
-pinned release with progress reporting and checksum verification, verifies the
-archive layout, and only then installs it. After installation, the CLI writes
-the verified archive checksum to `.godot/kirie/godot-cef.sha256`. This cache is
-local to the Godot project. `kirie doctor` compares it with the configured
-checksum without another download. The fixer replaces the installation target
-when the checksum is missing or different. The public installer command is:
+This lets Godot load the Godot CEF GDExtension normally. Git ignores project
+instances of that directory.
+
+The CLI uses one configuration structure and installation path for Kirie and
+Godot CEF. Each configuration defines the version, download URL, SHA-256,
+archive directory, installation directory, and required files. Kirie's expected
+SHA comes from the matching GitHub Release asset's
+[`digest`](https://docs.github.com/en/rest/releases/assets#get-a-release-asset).
+Godot CEF's expected SHA comes from `godot_cef.json`. Kirie checks require
+network access to GitHub. Missing release metadata stops installation.
+
+Both downloads require SHA-256 verification before extraction. The installer
+checks the required files before it replaces the addon. It then writes the
+verified archive SHA to `.godot/kirie/addons.json`, under `kirie` or `godot-cef`.
+Each update preserves the other addon's record. Installation checks compare
+the recorded SHA with the expected SHA and check the required files.
+They do not hash installed file contents.
+
+The fixer reinstalls an addon when its record is missing, invalid, or different,
+or required files are missing. It rebuilds malformed JSON records.
+The old `godot-cef.sha256` record is no longer read. Existing projects
+without the unified record require one installation to create it.
+The public installer command repairs Kirie first, then installs Godot CEF:
 
 ```sh
 pnpm kirie doctor --fix godot-cef

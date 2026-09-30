@@ -11,7 +11,7 @@ export interface DownloadProgressOutput {
 }
 
 export interface DownloadFileOptions {
-  expectedSha256?: string;
+  expectedSha256: string;
   output: DownloadProgressOutput;
   outputPath: string;
   url: string;
@@ -39,7 +39,7 @@ export async function downloadFile(options: DownloadFileOptions): Promise<void> 
   // Load the native addon only when a command downloads an archive.
   const { DownloadTask, TakanawaError, TakanawaStatus } = await import("takanawa-node");
   const task = new DownloadTask({
-    hash: options.expectedSha256 ? { expected: options.expectedSha256, kind: "sha256" } : undefined,
+    hash: { expected: options.expectedSha256, kind: "sha256" },
     targetPath: options.outputPath,
     url: options.url,
   });

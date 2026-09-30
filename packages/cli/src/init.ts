@@ -1,13 +1,10 @@
 import type { Stats } from "node:fs";
-import type { DownloadProgressOutput } from "./archive.ts";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 
 import { downloadTemplate } from "giget";
-import packageJson from "../package.json" with { type: "json" };
 
-import { downloadFile, extractZip } from "./archive.ts";
+import { Addon, installAddon } from "./doctor/addons.ts";
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
 export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
@@ -48,7 +45,7 @@ export async function runInit(options: InitOptions): Promise<void> {
       registry: false,
     });
 
-    await installAddon(stagedProject);
+    await installAddon({ addon: Addon.Kirie, projectDir: stagedProject });
     await applyProjectName(stagedProject, path.basename(target));
     await installStagedProject(stagedProject, target, temporaryRoot, existingTarget);
   } finally {
@@ -60,63 +57,6 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
   console.log("  pnpm kirie doctor");
-}
-
-export async function isAddonCurrent(projectDir: string): Promise<boolean> {
-  const addonDir = path.join(projectDir, "addons", "kirie");
-  try {
-    const pluginConfig = await fs.readFile(path.join(addonDir, "plugin.cfg"), "utf8");
-    const installedVersion = /^\s*version\s*=\s*"([^"]+)"\s*$/m.exec(pluginConfig)?.[1];
-    if (installedVersion !== packageJson.version) {
-      return false;
-    }
-    for (const file of [
-      "plugin.gd",
-      "export_plugin.gd",
-      "gd_kirie.gd",
-      "kirie_node.gd",
-      "pointer_input_forwarder.gd",
-      "godot_cef_config.gd",
-      "godot_cef.json",
-    ]) {
-      if (!(await fs.stat(path.join(addonDir, file))).isFile()) {
-        return false;
-      }
-    }
-    return true;
-  } catch (error) {
-    if (isNodeError(error) && (error.code === "ENOENT" || error.code === "ENOTDIR" || error.code === "EISDIR")) {
-      return false;
-    }
-    throw error;
-  }
-}
-
-export async function installAddon(
-  projectDir: string,
-  output: DownloadProgressOutput = process.stderr,
-): Promise<void> {
-  const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "kirie-addon-"));
-  const archivePath = path.join(temporaryRoot, "kirie-addon.zip");
-  const extractDir = path.join(temporaryRoot, "extract");
-  const url = `https://github.com/moeru-ai/godot-kirie/releases/download/v${packageJson.version}/kirie-addon.zip`;
-
-  try {
-    console.log(`Downloading Kirie addon ${packageJson.version} from ${url}`);
-    await downloadFile({ output, outputPath: archivePath, url });
-    await fs.mkdir(extractDir);
-    await extractZip(archivePath, extractDir);
-
-    if (!(await isAddonCurrent(extractDir))) {
-      throw new Error(`Kirie addon archive does not contain a complete v${packageJson.version} addon.`);
-    }
-
-    const addonDestination = path.join(projectDir, "addons", "kirie");
-    await fs.rm(addonDestination, { force: true, recursive: true });
-    await fs.cp(path.join(extractDir, "addons", "kirie"), addonDestination, { recursive: true });
-  } finally {
-    await fs.rm(temporaryRoot, { force: true, recursive: true });
-  }
 }
 
 export async function applyProjectName(project: string, projectName: string): Promise<void> {

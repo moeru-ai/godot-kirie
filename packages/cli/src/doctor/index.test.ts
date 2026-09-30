@@ -12,7 +12,7 @@ import {
   installKirieConfigFixture,
   installProjectFixture,
 } from "../test-project.ts";
-import { installGodotCef } from "./godot-cef.ts";
+import { Addon, installAddon } from "./addons.ts";
 import {
   checkAndroidSdk,
   checkGodotCefPrerequisite,
@@ -22,6 +22,7 @@ import {
 } from "./index.ts";
 
 const cliPath = fileURLToPath(import.meta.resolve("../cli.ts"));
+const releaseFixtureUrl = import.meta.resolve("../../test-fixtures/fake-kirie-release.js");
 const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
 
@@ -93,12 +94,12 @@ describe("doctor command", () => {
 
     const fixThenTarget = await execa(
       process.execPath,
-      [cliPath, "doctor", "--fix", "godot-cef", "--project", project],
+      ["--import", releaseFixtureUrl, cliPath, "doctor", "--fix", "godot-cef", "--project", project],
       { cwd: path.dirname(project) },
     );
     const targetThenFix = await execa(
       process.execPath,
-      [cliPath, "doctor", "godot-cef", "--fix", "--project", project],
+      ["--import", releaseFixtureUrl, cliPath, "doctor", "godot-cef", "--fix", "--project", project],
       { cwd: path.dirname(project) },
     );
 
@@ -118,7 +119,7 @@ describe("doctor command", () => {
 
     const result = await execa(
       process.execPath,
-      [cliPath, "doctor", "--fix", "--project", project],
+      ["--import", releaseFixtureUrl, cliPath, "doctor", "--fix", "--project", project],
       {
         cwd: path.dirname(project),
         env: {
@@ -150,7 +151,8 @@ describe("Godot CEF doctor support", () => {
     const expectedSha256 = crypto.createHash("sha256").update(archive).digest("hex");
     await installGodotCefConfig(project, expectedSha256);
 
-    await installGodotCef({
+    await installAddon({
+      addon: Addon.GodotCef,
       download: (options) => fs.writeFile(options.outputPath, archive),
       extractArchive: async (archivePath, outputDir) => {
         await expect(fs.readFile(archivePath)).resolves.toEqual(archive);
@@ -164,7 +166,11 @@ describe("Godot CEF doctor support", () => {
     await expect(
       fs.stat(path.join(project, "addons", "godot_cef", "godot_cef.gdextension")),
     ).resolves.toBeDefined();
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    const installedAddons = JSON.parse(
+      await fs.readFile(path.join(project, ".godot", "kirie", "addons.json"), "utf8"),
+    );
+    expect(installedAddons[Addon.GodotCef]).toBe(expectedSha256);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
   it("leaves no addon or staging directory after a checksum failure", async () => {
@@ -172,7 +178,8 @@ describe("Godot CEF doctor support", () => {
     await installGodotCefConfig(project, "0".repeat(64));
 
     await expect(
-      installGodotCef({
+      installAddon({
+        addon: Addon.GodotCef,
         download: async () => {
           throw new Error("Godot CEF checksum mismatch");
         },
@@ -184,7 +191,7 @@ describe("Godot CEF doctor support", () => {
     await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
   it("does not install an archive with the wrong layout", async () => {
@@ -193,7 +200,8 @@ describe("Godot CEF doctor support", () => {
     await installGodotCefConfig(project, crypto.createHash("sha256").update(archive).digest("hex"));
 
     await expect(
-      installGodotCef({
+      installAddon({
+        addon: Addon.GodotCef,
         download: async (options) => fs.writeFile(options.outputPath, archive),
         extractArchive: async (_archivePath, outputDir) => {
           await fs.mkdir(path.join(outputDir, "unexpected"), { recursive: true });
@@ -201,12 +209,12 @@ describe("Godot CEF doctor support", () => {
         output: { isTTY: false, write: () => true },
         projectDir: project,
       }),
-    ).rejects.toThrow("Godot CEF archive does not contain dist/addons/godot_cef");
+    ).rejects.toThrow("Godot CEF archive does not contain a valid addon at dist/addons/godot_cef");
 
     await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 });
 
@@ -349,9 +357,8 @@ async function createTempDir(prefix: string): Promise<string> {
 
 async function installGodotCefConfig(project: string, sha256: string): Promise<void> {
   const kirieAddon = path.join(project, "addons", "kirie");
-  const addonSource = await fs.realpath(kirieAddon);
   await fs.rm(kirieAddon, { force: true, recursive: true });
-  await fs.cp(addonSource, kirieAddon, { recursive: true });
+  await fs.mkdir(kirieAddon, { recursive: true });
   await fs.writeFile(
     path.join(kirieAddon, "godot_cef.json"),
     `${JSON.stringify({
@@ -363,9 +370,9 @@ async function installGodotCefConfig(project: string, sha256: string): Promise<v
   );
 }
 
-async function listGodotCefStagingDirs(project: string): Promise<string[]> {
-  const projectParent = await fs.readdir(path.dirname(project));
-  return projectParent.filter((entry) => entry.startsWith(".kirie-godot-cef-stage-"));
+async function listAddonStagingDirs(project: string): Promise<string[]> {
+  const addons = await fs.readdir(path.join(project, "addons"));
+  return addons.filter((entry) => entry.startsWith(".kirie-addon-stage-"));
 }
 
 function resolveTemplatesDir(homeDir: string, version: string): string {

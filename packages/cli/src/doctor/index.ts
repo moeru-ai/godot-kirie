@@ -4,7 +4,7 @@ import path from "node:path";
 import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
-import { checkGodotCef, installGodotCef } from "./godot-cef.ts";
+import { Addon, checkAddon, installAddon } from "./addons.ts";
 
 export const DoctorCheckStatus = {
   Fail: "fail",
@@ -74,7 +74,8 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
     }));
 
   if (options.fix) {
-    await installGodotCef({ projectDir: config.godot.project });
+    await installAddon({ addon: Addon.Kirie, projectDir: config.godot.project });
+    await installAddon({ addon: Addon.GodotCef, projectDir: config.godot.project });
   }
 
   const checks = options.target ?
@@ -134,7 +135,7 @@ export async function runDoctorChecks(options: {
 
 export async function checkGodotCefPrerequisite(projectDir: string): Promise<DoctorCheckResult> {
   try {
-    const result = await checkGodotCef(projectDir);
+    const result = await checkAddon(projectDir, Addon.GodotCef);
     if (!result.valid) {
       return {
         message: result.message,
