@@ -11,13 +11,12 @@ For a CLI-managed Godot project, install the pinned Kirie addon with:
 pnpm kirie doctor --fix kirie-addon
 ```
 
-Use `pnpm kirie doctor --fix` to install Kirie and the desktop Godot CEF
-backend together. `kirie init <target> <template>` generates the template;
-then run `pnpm install` and `pnpm kirie doctor --fix` in the generated project.
-Plain `pnpm kirie doctor` checks prerequisites without downloading anything.
+Use `pnpm kirie doctor --fix` to include the desktop Godot CEF backend.
+After `kirie init`, run `pnpm install` and `pnpm kirie doctor --fix` in the
+generated project.
 
 For manual installation, download `kirie-addon.zip` from a GitHub Release
-asset and extract it into the root of your Godot project. The final layout should be:
+asset and extract it into your Godot project root. The final layout should be:
 
 ```text
 res://addons/kirie/

@@ -25,14 +25,9 @@ The goal of this package is to keep the Godot addon tree and native sources
 close together while package-published JavaScript lives in the sibling
 workspace packages.
 
-Kirie and Godot CEF release versions are pinned by the CLI in
-`packages/cli/src/addon-versions.ts`, alongside CEF's archive checksum.
-`pnpm kirie doctor --fix` installs both addons through the shared installer in
-`packages/cli/src/doctor/addons.ts`. Select `kirie-addon` or `godot-cef` to
-repair only that addon. Projects created with `kirie init` must run doctor
-afterward to install their addons. The Godot-side CEF class, path, and setup
-command remain centralized in `src-godot/godot_cef_config.ts`, without a JSON
-configuration file.
+Run `pnpm kirie doctor --fix` to install Kirie and Godot CEF. Select
+`kirie-addon` or `godot-cef` to repair only that addon. See
+[installation instructions](../../README.md#installation).
 
 ## C# binding
 
