@@ -25,6 +25,10 @@ The goal of this package is to keep the Godot addon tree and native sources
 close together while package-published JavaScript lives in the sibling
 workspace packages.
 
+Run `pnpm kirie doctor --fix` to install Kirie and Godot CEF. Select
+`kirie-addon` or `godot-cef` to repair only that addon. See
+[installation instructions](../../README.md#installation).
+
 ## C# binding
 
 `addon/addons/kirie/csharp/KirieClient.cs` exposes Kirie signals as idiomatic

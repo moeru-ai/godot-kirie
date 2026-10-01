@@ -1,14 +1,10 @@
-import type { Stats } from "node:fs";
+import { lstatSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
 import { downloadTemplate } from "giget";
-import JSZip from "jszip";
-
-import packageJson from "../package.json" with { type: "json" };
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
-const KIRIE_REPOSITORY = "moeru-ai/godot-kirie";
 export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
 
 export interface InitOptions {
@@ -31,7 +27,7 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const target = path.resolve(cwd, options.target);
-  const existingTarget = await inspectTarget(target, cwd, options.overwrite ?? false);
+  const existingTarget = inspectTarget(target, cwd, options.overwrite ?? false);
   const targetParent = path.dirname(target);
   await fs.mkdir(targetParent, { recursive: true });
 
@@ -42,16 +38,10 @@ export async function runInit(options: InitOptions): Promise<void> {
     await fs.mkdir(stagedProject);
 
     const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
-    const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${packageJson.version}/kirie-addon.zip`;
-    const [, addonArchive] = await Promise.all([
-      downloadTemplate(templateSource, {
-        dir: stagedProject,
-        registry: false,
-      }),
-      downloadArchive(addonUrl, `Kirie addon v${packageJson.version}`),
-    ]);
-
-    await installAddonArchive(addonArchive, stagedProject);
+    await downloadTemplate(templateSource, {
+      dir: stagedProject,
+      registry: false,
+    });
     await applyProjectName(stagedProject, path.basename(target));
     await installStagedProject(stagedProject, target, temporaryRoot, existingTarget);
   } finally {
@@ -62,28 +52,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log("\nNext steps:");
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
-  console.log("  pnpm kirie doctor");
-}
-
-export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {
-  const zip = await JSZip.loadAsync(archive);
-  const addonPrefix = "addons/kirie/";
-  const addonFiles = Object.values(zip.files).filter(
-    (file) => !file.dir && file.name.startsWith(addonPrefix),
-  );
-
-  if (!addonFiles.some((file) => file.name === `${addonPrefix}plugin.cfg`)) {
-    throw new Error("Kirie addon archive does not contain addons/kirie/plugin.cfg.");
-  }
-
-  const addonDestination = path.join(destination, "addons", "kirie");
-  await fs.rm(addonDestination, { force: true, recursive: true });
-
-  for (const file of addonFiles) {
-    const outputPath = path.join(addonDestination, file.name.slice(addonPrefix.length));
-    await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, await file.async("uint8array"));
-  }
+  console.log("  pnpm kirie doctor --fix");
 }
 
 export async function applyProjectName(project: string, projectName: string): Promise<void> {
@@ -130,19 +99,14 @@ function assertTemplateName(template: string): void {
   }
 }
 
-async function inspectTarget(target: string, cwd: string, overwrite: boolean): Promise<boolean> {
+function inspectTarget(target: string, cwd: string, overwrite: boolean): boolean {
   if (target === path.parse(target).root) {
     throw new Error("Cannot initialize a Kirie project at a filesystem root.");
   }
 
-  let stat: Stats;
-  try {
-    stat = await fs.lstat(target);
-  } catch (error) {
-    if (isNodeError(error) && error.code === "ENOENT") {
-      return false;
-    }
-    throw error;
+  const stat = lstatSync(target, { throwIfNoEntry: false });
+  if (!stat) {
+    return false;
   }
 
   if (stat.isSymbolicLink()) {
@@ -159,15 +123,6 @@ async function inspectTarget(target: string, cwd: string, overwrite: boolean): P
   }
 
   return true;
-}
-
-async function downloadArchive(url: string, description: string): Promise<Uint8Array> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download ${description}: ${response.status} ${response.statusText}`);
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
 }
 
 async function installStagedProject(
@@ -198,8 +153,4 @@ function toValidPackageName(projectName: string): string {
     .replace(/\s+/g, "-")
     .replace(/^[._]/, "")
     .replace(/[^a-z\d\-~]+/g, "-");
-}
-
-function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error;
 }

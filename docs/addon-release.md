@@ -41,8 +41,10 @@ hooks, so users do not need a separate project-local `.gdip` shim.
 
 ## User Install Flow
 
-Users should download `kirie-addon.zip` from a GitHub Release asset, not the
-repository source archive.
+For CLI installation, see [README.md](../README.md#installation).
+
+For manual installation, download `kirie-addon.zip` from a GitHub Release
+asset, not the repository source archive.
 
 The zip is rooted at:
 

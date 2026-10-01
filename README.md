@@ -5,8 +5,18 @@ low-level Godot WebView plugin and IPC core.
 
 ## Installation
 
-Download `kirie-addon.zip` from a GitHub Release asset and extract it into the
-root of your Godot project. The final layout should be:
+For a CLI-managed Godot project, install the pinned Kirie addon with:
+
+```sh
+pnpm kirie doctor --fix kirie-addon
+```
+
+Use `pnpm kirie doctor --fix` to include the desktop Godot CEF backend.
+After `kirie init`, run `pnpm install` and `pnpm kirie doctor --fix` in the
+generated project.
+
+For manual installation, download `kirie-addon.zip` from a GitHub Release
+asset and extract it into your Godot project root. The final layout should be:
 
 ```text
 res://addons/kirie/

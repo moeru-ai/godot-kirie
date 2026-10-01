@@ -4,7 +4,7 @@ import path from "node:path";
 import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
-import { checkGodotCef, installGodotCef } from "./godot-cef.ts";
+import { checkGodotCef, checkKirieAddon, installGodotCef, installKirieAddon } from "./addons.ts";
 
 export const DoctorCheckStatus = {
   Fail: "fail",
@@ -15,6 +15,7 @@ export type DoctorCheckStatus = (typeof DoctorCheckStatus)[keyof typeof DoctorCh
 
 export const DoctorTarget = {
   GodotCef: "godot-cef",
+  KirieAddon: "kirie-addon",
 } as const;
 export type DoctorTarget = (typeof DoctorTarget)[keyof typeof DoctorTarget];
 
@@ -74,11 +75,18 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
     }));
 
   if (options.fix) {
-    await installGodotCef({ projectDir: config.godot.project });
+    if (!options.target || options.target === DoctorTarget.KirieAddon) {
+      await installKirieAddon({ projectDir: config.godot.project });
+    }
+    if (!options.target || options.target === DoctorTarget.GodotCef) {
+      await installGodotCef({ projectDir: config.godot.project });
+    }
   }
 
   const checks = options.target ?
-      [await checkGodotCefPrerequisite(config.godot.project)] :
+      [await (options.target === DoctorTarget.KirieAddon ?
+          checkKirieAddonPrerequisite(config.godot.project) :
+          checkGodotCefPrerequisite(config.godot.project))] :
       await runDoctorChecks({
         config,
         env: options.env,
@@ -128,8 +136,30 @@ export async function runDoctorChecks(options: {
     godotCommand.check,
     exportTemplates,
     await checkAndroidSdk(options.env),
+    await checkKirieAddonPrerequisite(options.config.godot.project),
     await checkGodotCefPrerequisite(options.config.godot.project),
   ];
+}
+
+export async function checkKirieAddonPrerequisite(projectDir: string): Promise<DoctorCheckResult> {
+  try {
+    const result = await checkKirieAddon(projectDir);
+    return {
+      message: result.valid ?
+        result.message :
+        `${result.message} (run: pnpm kirie doctor --fix kirie-addon)`,
+      name: "Kirie addon",
+      status: result.valid ? DoctorCheckStatus.Ok : DoctorCheckStatus.Fail,
+    };
+  } catch (error) {
+    const failure = error instanceof Error ? error : new Error(String(error), { cause: error });
+    return {
+      error: failure,
+      message: failure.message,
+      name: "Kirie addon",
+      status: DoctorCheckStatus.Fail,
+    };
+  }
 }
 
 export async function checkGodotCefPrerequisite(projectDir: string): Promise<DoctorCheckResult> {

@@ -56,6 +56,9 @@ running on macOS, Windows, or Linux:
 mise x -- pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
 ```
 
+For projects created with `kirie init`, run `pnpm install` and
+`pnpm kirie doctor --fix` after initialization to install both addons.
+
 Start the CLI-managed Vite server and Godot project:
 
 ```sh

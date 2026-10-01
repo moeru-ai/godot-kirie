@@ -2,7 +2,7 @@ import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
 import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
-import { assertGodotCefInstalled } from "./doctor/godot-cef.ts";
+import { assertGodotCefInstalled } from "./doctor/addons.ts";
 import { runExport } from "./export.ts";
 import { exportIosApp } from "./ios.ts";
 import { createKirieDevLaunchOptions, isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";

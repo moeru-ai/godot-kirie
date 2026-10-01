@@ -17,6 +17,11 @@ export default defineConfig({
   execute: (operation) => {
     const releaseVersions = [
       {
+        file: "packages/cli/src/addon-versions.ts",
+        pattern: /KIRIE_ADDON_VERSION = "[^"]+"/,
+        replacement: `KIRIE_ADDON_VERSION = "${operation.state.newVersion}"`,
+      },
+      {
         file: "packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj",
         pattern: /<Version>[^<]+<\/Version>/,
         replacement: `<Version>${operation.state.newVersion}</Version>`,
