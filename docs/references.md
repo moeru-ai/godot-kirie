@@ -147,7 +147,7 @@ packaging, or platform WebView bridge details.
   loading behavior.
 - [Godot CEF releases](https://github.com/dsh0416/godot-cef/releases)
   Desktop artifact source for Kirie. The current pin lives in
-  `addons/kirie/godot_cef.json`.
+  `packages/cli/src/addon-versions.ts`.
 - [RFC 8949: Concise Binary Object Representation](https://www.rfc-editor.org/rfc/rfc8949.html)
   Stable CBOR specification used as the primary reference for Kirie IPC v1
   packet encoding.

@@ -5,7 +5,7 @@ import path from "node:path";
 import { downloadTemplate } from "giget";
 import JSZip from "jszip";
 
-import packageJson from "../package.json" with { type: "json" };
+import { KIRIE_ADDON_VERSION } from "./addon-versions.ts";
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
 const KIRIE_REPOSITORY = "moeru-ai/godot-kirie";
@@ -42,13 +42,13 @@ export async function runInit(options: InitOptions): Promise<void> {
     await fs.mkdir(stagedProject);
 
     const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
-    const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${packageJson.version}/kirie-addon.zip`;
+    const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${KIRIE_ADDON_VERSION}/kirie-addon.zip`;
     const [, addonArchive] = await Promise.all([
       downloadTemplate(templateSource, {
         dir: stagedProject,
         registry: false,
       }),
-      downloadArchive(addonUrl, `Kirie addon v${packageJson.version}`),
+      downloadArchive(addonUrl, `Kirie addon v${KIRIE_ADDON_VERSION}`),
     ]);
 
     await installAddonArchive(addonArchive, stagedProject);

@@ -25,6 +25,11 @@ The goal of this package is to keep the Godot addon tree and native sources
 close together while package-published JavaScript lives in the sibling
 workspace packages.
 
+Desktop Godot CEF release versions and checksums are pinned by the CLI in
+`packages/cli/src/addon-versions.ts`. Install the pinned backend with
+`pnpm kirie doctor --fix godot-cef`. The addon uses `CefTexture` and the standard
+`res://addons/godot_cef` path directly, without a JSON configuration file.
+
 ## C# binding
 
 `addon/addons/kirie/csharp/KirieClient.cs` exposes Kirie signals as idiomatic

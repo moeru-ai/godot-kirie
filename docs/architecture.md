@@ -427,8 +427,9 @@ configuration.
 `kirie init <target> <template> [--overwrite]` initializes a new project from
 the named folder under `templates/` in the pinned `moeru-ai/kirie-templates`
 commit. It then downloads `kirie-addon.zip` from the `moeru-ai/godot-kirie`
-release matching the CLI version. The command is non-interactive and does not
-migrate or repair existing projects. It only sets the generated
+release pinned by `KIRIE_ADDON_VERSION` in `packages/cli/src/addon-versions.ts`.
+The release hook keeps this pin aligned with the CLI version. The command is
+non-interactive and does not migrate or repair existing projects. It only sets the generated
 `package.json.name` and `src-web/index.html` title; template-owned Godot
 configuration is copied unchanged. The initial `basic` template is pinned at
 commit `f0dc158c8ee1f6316cc493dc0dd51a39de847892`. `kirie doctor` is read-only
@@ -607,8 +608,12 @@ platform-information object.
 
 Desktop Godot CEF binaries are external downloaded artifacts, not part of the
 default `kirie-addon.zip`. Kirie's pinned Godot CEF version and artifact
-checksum live in `addons/kirie/godot_cef.json`. `kirie doctor` reports a missing
-Godot CEF addon as an optional warning. Desktop run or export flows require it;
+checksum live in `packages/cli/src/addon-versions.ts`, alongside the Kirie addon
+version. Godot CEF diagnosis and installation do not require the Kirie addon
+to be installed first. The Godot runtime uses the fixed `CefTexture` class and
+the export plugin checks `res://addons/godot_cef`; neither reads a version
+configuration file. `kirie doctor` reports a missing Godot CEF addon as an
+optional warning. Desktop run or export flows require it;
 if it is missing, fail before export or run and print
 `pnpm kirie doctor --fix godot-cef`. Android and iOS workflows must not require
 a Godot CEF download.
@@ -624,9 +629,9 @@ that directory should be ignored and not committed. The CLI downloads the
 pinned release with progress reporting and checksum verification, verifies the
 archive layout, and only then installs it. After installation, the CLI writes
 the verified archive checksum to `.godot/kirie/godot-cef.sha256`. This cache is
-local to the Godot project. `kirie doctor` compares it with the configured
-checksum without another download. The fixer replaces the installation target
-when the checksum is missing or different. The public installer command is:
+local to the Godot project. `kirie doctor` compares it with the checksum pinned
+in the CLI without another download. The fixer replaces the installation
+target when the checksum is missing or different. The public installer command is:
 
 ```sh
 pnpm kirie doctor --fix godot-cef

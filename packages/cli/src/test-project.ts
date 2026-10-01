@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { GODOT_CEF_SHA256 } from "./addon-versions.ts";
+
 const basicKirieCliExample = fileURLToPath(
   import.meta.resolve("../../../examples/basic-kirie-cli"),
 );
@@ -57,12 +59,9 @@ export async function installGodotCefFixture(project: string): Promise<void> {
   await fs.mkdir(addonDir, { recursive: true });
   await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
 
-  const config = JSON.parse(
-    await fs.readFile(path.join(project, "addons", "kirie", "godot_cef.json"), "utf8"),
-  ) as { sha256: string };
   const cacheDir = path.join(project, ".godot", "kirie");
   await fs.mkdir(cacheDir, { recursive: true });
-  await fs.writeFile(path.join(cacheDir, "godot-cef.sha256"), `${config.sha256}\n`);
+  await fs.writeFile(path.join(cacheDir, "godot-cef.sha256"), `${GODOT_CEF_SHA256}\n`);
 }
 
 export async function installProjectFixture(

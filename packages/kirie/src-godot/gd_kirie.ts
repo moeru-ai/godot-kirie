@@ -1,4 +1,3 @@
-import { type GodotCefConfig, KirieGodotCefConfig } from "./godot_cef_config";
 import { _PointerInputForwarder } from "./pointer_input_forwarder";
 
 export class GdKirie extends Object {
@@ -24,7 +23,6 @@ export class GdKirie extends Object {
   }
 
   _plugin_singleton: TSOnly<GodotObject> | null = null;
-  _godot_cef_config: GodotCefConfig | null = null;
   _view_id = this.get_instance_id();
   _pointer_input_forwarder = new _PointerInputForwarder();
 
@@ -326,28 +324,16 @@ export class GdKirie extends Object {
   }
 
   _is_godot_cef_backend(): boolean {
-    if (this._godot_cef_config === null) {
-      return false;
-    }
-
-    const cef_class_name = this._godot_cef_config.class_name;
     return (
       this._plugin_singleton !== null &&
-      cef_class_name !== "" &&
-      this._plugin_singleton.is_class(cef_class_name)
+      this._plugin_singleton.is_class(GdKirie.GODOT_CEF_CLASS_NAME)
     );
   }
 
   _initialize_desktop_cef_backend(): void {
-    const config = KirieGodotCefConfig.load();
-    if (config === null) {
-      return;
-    }
-
-    this._godot_cef_config = config;
-    const cef_class_name = config.class_name;
+    const cef_class_name = GdKirie.GODOT_CEF_CLASS_NAME;
     if (!ClassDB.class_exists(cef_class_name)) {
-      const message = `Kirie desktop backend requires Godot CEF ${config.version} to be installed and registered in [native_extensions]. Install it with: ${config.setup_command}`;
+      const message = "Kirie desktop backend requires Godot CEF to be installed and registered in [native_extensions]. Install it with: pnpm kirie doctor --fix godot-cef";
       push_error(message);
       const tree = Engine.get_main_loop();
       if (tree instanceof SceneTree) {
@@ -664,6 +650,7 @@ export class GdKirie extends Object {
 
 export namespace GdKirie {
   export const PLUGIN_SINGLETON_NAME = "Kirie";
+  export const GODOT_CEF_CLASS_NAME = "CefTexture";
   export const GODOT_CEF_PRELOAD_SCRIPT =
     "\nglobalThis.kirie ??= {};\nglobalThis.kirie.platform = Object.freeze({\n  os: %s,\n  backend: \"godot-cef\",\n});\n";
 }

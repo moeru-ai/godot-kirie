@@ -56,6 +56,10 @@ running on macOS, Windows, or Linux:
 mise x -- pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
 ```
 
+The CLI pins the CEF version and archive checksum in
+`packages/cli/src/addon-versions.ts`. This command can install CEF even when
+`addons/kirie` is missing; the Kirie addon is still required to run the example.
+
 Start the CLI-managed Vite server and Godot project:
 
 ```sh
