@@ -1,4 +1,4 @@
-import type { Stats } from "node:fs";
+import { lstatSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -27,7 +27,7 @@ export async function runInit(options: InitOptions): Promise<void> {
 
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const target = path.resolve(cwd, options.target);
-  const existingTarget = await inspectTarget(target, cwd, options.overwrite ?? false);
+  const existingTarget = inspectTarget(target, cwd, options.overwrite ?? false);
   const targetParent = path.dirname(target);
   await fs.mkdir(targetParent, { recursive: true });
 
@@ -99,19 +99,14 @@ function assertTemplateName(template: string): void {
   }
 }
 
-async function inspectTarget(target: string, cwd: string, overwrite: boolean): Promise<boolean> {
+function inspectTarget(target: string, cwd: string, overwrite: boolean): boolean {
   if (target === path.parse(target).root) {
     throw new Error("Cannot initialize a Kirie project at a filesystem root.");
   }
 
-  let stat: Stats;
-  try {
-    stat = await fs.lstat(target);
-  } catch (error) {
-    if (isNodeError(error) && error.code === "ENOENT") {
-      return false;
-    }
-    throw error;
+  const stat = lstatSync(target, { throwIfNoEntry: false });
+  if (!stat) {
+    return false;
   }
 
   if (stat.isSymbolicLink()) {
@@ -158,8 +153,4 @@ function toValidPackageName(projectName: string): string {
     .replace(/\s+/g, "-")
     .replace(/^[._]/, "")
     .replace(/[^a-z\d\-~]+/g, "-");
-}
-
-function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error;
 }

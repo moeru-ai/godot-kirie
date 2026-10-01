@@ -1,4 +1,5 @@
 import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
+import { lstatSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -58,17 +59,12 @@ export async function checkGodotCef(projectDir: string): Promise<AddonCheckResul
   const installDir = path.resolve(projectDir, GODOT_CEF_ADDON_PATH);
   const extensionPath = path.join(installDir, `${path.basename(installDir)}.gdextension`);
 
-  try {
-    await fs.lstat(installDir);
-  } catch (error) {
-    if (isNodeError(error) && error.code === "ENOENT") {
-      return {
-        installed: false,
-        message: "not installed; required for desktop development",
-        valid: true,
-      };
-    }
-    throw error;
+  if (!lstatSync(installDir, { throwIfNoEntry: false })) {
+    return {
+      installed: false,
+      message: "not installed; required for desktop development",
+      valid: true,
+    };
   }
 
   try {
@@ -110,13 +106,8 @@ export async function assertGodotCefInstalled(projectDir: string): Promise<void>
 
 export async function checkKirieAddon(projectDir: string): Promise<AddonCheckResult> {
   const installDir = path.resolve(projectDir, KIRIE_ADDON_PATH);
-  try {
-    await fs.lstat(installDir);
-  } catch (error) {
-    if (isNodeError(error) && error.code === "ENOENT") {
-      return { installed: false, message: "not installed", valid: false };
-    }
-    throw error;
+  if (!lstatSync(installDir, { throwIfNoEntry: false })) {
+    return { installed: false, message: "not installed", valid: false };
   }
 
   try {
@@ -176,7 +167,7 @@ export async function installKirieAddon(options: InstallAddonOptions): Promise<v
 
 async function installAddon(options: InstallAddonOptions, addon: AddonArchive): Promise<void> {
   const projectDir = path.resolve(options.projectDir);
-  await assertGodotProject(projectDir);
+  assertGodotProject(projectDir);
 
   const current = await addon.check(projectDir);
   if (current.installed && current.valid) {
@@ -377,16 +368,10 @@ async function extractZip(archivePath: string, outputDir: string): Promise<void>
   await execa("unzip", ["-q", archivePath, "-d", outputDir], { stdio: "inherit" });
 }
 
-async function assertGodotProject(projectDir: string): Promise<void> {
-  try {
-    const projectStat = await fs.stat(path.join(projectDir, "project.godot"));
-    if (projectStat.isFile()) {
-      return;
-    }
-  } catch (error) {
-    if (!isNodeError(error) || error.code !== "ENOENT") {
-      throw error;
-    }
+function assertGodotProject(projectDir: string): void {
+  const projectStat = statSync(path.join(projectDir, "project.godot"), { throwIfNoEntry: false });
+  if (projectStat?.isFile()) {
+    return;
   }
 
   throw new Error(`Godot project not found: ${projectDir}`);
