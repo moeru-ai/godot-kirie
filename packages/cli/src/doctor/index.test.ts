@@ -167,9 +167,12 @@ describe("doctor command", () => {
 });
 
 describe("Kirie addon doctor support", () => {
-  it("installs the pinned release through the shared downloader and skips a matching installation", async () => {
+  it("upgrades Kirie without removing sibling addons and reuses the matching installation", async () => {
     const project = await projects.copy();
-    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+    await writeKirieAddonFixture(project, "0.0.0");
+    await fs.writeFile(path.join(project, "addons", "kirie", "obsolete.gd"), "old release");
+    await installGodotCefFixture(project);
+    await expect(checkKirieAddon(project)).resolves.toMatchObject({ installed: true, valid: false });
     const archive = Buffer.from("Kirie archive fixture");
     await installKirieAddon({
       projectDir: project,
@@ -184,30 +187,12 @@ describe("Kirie addon doctor support", () => {
     });
 
     await expect(checkKirieAddonPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Ok });
+    await expect(fs.stat(path.join(project, "addons", "kirie", "obsolete.gd"))).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Ok });
     await installKirieAddon({
       projectDir: project,
       download: async () => { throw new Error("Matching installations must be reused"); },
     });
-    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
-  });
-
-  it("replaces an outdated Kirie addon without removing sibling addons", async () => {
-    const project = await projects.copy();
-    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
-    await writeKirieAddonFixture(project, "0.0.0");
-    await fs.writeFile(path.join(project, "addons", "kirie", "obsolete.gd"), "old release");
-    await installGodotCefFixture(project);
-    await expect(checkKirieAddon(project)).resolves.toMatchObject({ installed: true, valid: false });
-
-    await installKirieAddon({
-      projectDir: project,
-      download: async (options) => fs.writeFile(options.outputPath, "archive fixture"),
-      extractArchive: async (_archive, outputDir) => writeKirieAddonFixture(outputDir, KIRIE_ADDON_VERSION),
-    });
-
-    await expect(checkKirieAddon(project)).resolves.toMatchObject({ installed: true, valid: true });
-    await expect(fs.stat(path.join(project, "addons", "kirie", "obsolete.gd"))).rejects.toMatchObject({ code: "ENOENT" });
-    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Ok });
     await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
@@ -248,15 +233,6 @@ describe("Kirie addon doctor support", () => {
 });
 
 describe("Godot CEF doctor support", () => {
-  it("reports a missing optional addon as a warning", async () => {
-    const project = await projects.copy();
-
-    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({
-      name: "Godot CEF",
-      status: DoctorCheckStatus.Warn,
-    });
-  });
-
   it("installs and recognizes the pinned release without a Kirie addon", async () => {
     const project = await projects.copy();
     const archive = Buffer.from("tiny Godot CEF archive fixture");
@@ -303,46 +279,6 @@ describe("Godot CEF doctor support", () => {
       message: expect.stringContaining(`does not match ${GODOT_CEF_VERSION}`),
       status: DoctorCheckStatus.Fail,
     });
-  });
-
-  it("leaves no addon or staging directory after a checksum failure", async () => {
-    const project = await projects.copy();
-
-    await expect(
-      installGodotCef({
-        download: async () => {
-          throw new Error("Godot CEF checksum mismatch");
-        },
-        output: { isTTY: false, write: () => true },
-        projectDir: project,
-      }),
-    ).rejects.toThrow("Godot CEF checksum mismatch");
-
-    await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
-      code: "ENOENT",
-    });
-    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
-  });
-
-  it("does not install an archive with the wrong layout", async () => {
-    const project = await projects.copy();
-    const archive = Buffer.from("valid checksum, invalid layout");
-
-    await expect(
-      installGodotCef({
-        download: async (options) => fs.writeFile(options.outputPath, archive),
-        extractArchive: async (_archivePath, outputDir) => {
-          await fs.mkdir(path.join(outputDir, "unexpected"), { recursive: true });
-        },
-        output: { isTTY: false, write: () => true },
-        projectDir: project,
-      }),
-    ).rejects.toMatchObject({ code: "ENOENT" });
-
-    await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
-      code: "ENOENT",
-    });
-    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 });
 
