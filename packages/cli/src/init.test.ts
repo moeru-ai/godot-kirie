@@ -2,13 +2,24 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { applyProjectName } from "./init.ts";
+import { applyProjectName, runInit } from "./init.ts";
+
+vi.mock("giget", () => ({
+  downloadTemplate: vi.fn(async (_source: string, options: { dir: string }) => {
+    await fs.mkdir(path.join(options.dir, "src-web"));
+    await fs.writeFile(path.join(options.dir, "package.json"), "{\"name\":\"template\"}\n");
+    await fs.writeFile(path.join(options.dir, "project.godot"), "config_version=5\n");
+    await fs.writeFile(path.join(options.dir, "src-web", "index.html"), "<title>Template</title>\n");
+  }),
+}));
 
 const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   await Promise.all(
     temporaryDirectories.splice(0).map((directory) =>
       fs.rm(directory, {
@@ -17,6 +28,23 @@ afterEach(async () => {
       }),
     ),
   );
+});
+
+describe("runInit", () => {
+  it("creates a template project when addon releases are unavailable and directs users to doctor", async () => {
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "kirie-init-test-"));
+    temporaryDirectories.push(cwd);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Addon releases are unavailable")));
+    const output = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({ cwd, target: "my-app", template: "basic" });
+
+    const project = path.join(cwd, "my-app");
+    await expect(fs.readFile(path.join(project, "project.godot"), "utf8")).resolves.toContain("config_version=5");
+    await expect(fs.readFile(path.join(project, "package.json"), "utf8")).resolves.toContain("\"name\": \"my-app\"");
+    await expect(fs.stat(path.join(project, "addons", "kirie"))).rejects.toMatchObject({ code: "ENOENT" });
+    expect(output).toHaveBeenCalledWith("  pnpm kirie doctor --fix");
+  });
 });
 
 describe("applyProjectName", () => {

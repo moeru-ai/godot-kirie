@@ -5,19 +5,20 @@ import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { GODOT_CEF_SHA256, GODOT_CEF_VERSION } from "../addon-versions.ts";
+import { GODOT_CEF_SHA256, GODOT_CEF_VERSION, KIRIE_ADDON_VERSION } from "../addon-versions.ts";
 import {
   createBasicKirieCliProjectTracker,
   installGodotCefFixture,
   installKirieConfigFixture,
   installProjectFixture,
 } from "../test-project.ts";
-import { installGodotCef } from "./godot-cef.ts";
+import { checkKirieAddon, installGodotCef, installKirieAddon } from "./addons.ts";
 import {
   checkAndroidSdk,
   checkGodotCefPrerequisite,
   checkGodotCommand,
   checkGodotExportTemplates,
+  checkKirieAddonPrerequisite,
   DoctorCheckStatus,
 } from "./index.ts";
 
@@ -35,6 +36,7 @@ afterEach(async () => {
 describe("doctor command", () => {
   it("checks Godot export templates and the Android SDK from the CLI", async () => {
     const project = await projects.copy();
+    await writeKirieAddonFixture(project, KIRIE_ADDON_VERSION);
     const homeDir = await createTempDir("kirie-doctor-home-");
     const sdk = await createTempDir("kirie-doctor-sdk-");
     await fs.mkdir(resolveTemplatesDir(homeDir, "4.5.stable"), { recursive: true });
@@ -55,6 +57,7 @@ describe("doctor command", () => {
     expect(result.stdout).toContain("ok Godot export templates:");
     expect(result.stdout).toContain(`ok Android SDK: ANDROID_HOME=${sdk}`);
     expect(result.stdout).toContain("warn Godot CEF: not installed");
+    expect(result.stdout).toContain("ok Kirie addon:");
   });
 
   it("checks only Godot CEF even when the Kirie addon is missing", async () => {
@@ -78,6 +81,32 @@ describe("doctor command", () => {
     await expect(
       execa(process.execPath, [cliPath, "doctor", "--project", project, "unknown"]),
     ).rejects.toThrow("Unknown doctor target: unknown");
+  });
+
+  it("reports a missing Kirie addon without downloading it", async () => {
+    const project = await projects.copy();
+    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+
+    const result = await execa(process.execPath, [cliPath, "doctor", "kirie-addon", "--project", project], {
+      reject: false,
+    });
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("fail Kirie addon: not installed");
+    expect(result.stdout).toContain("pnpm kirie doctor --fix kirie-addon");
+    expect(result.stdout).not.toContain("Godot CEF:");
+    await expect(fs.stat(path.join(project, "addons", "kirie"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("repairs only the selected Kirie addon target", async () => {
+    const project = await projects.copy();
+    await writeKirieAddonFixture(project, KIRIE_ADDON_VERSION);
+    const result = await execa(process.execPath, [cliPath, "doctor", "--fix", "kirie-addon", "--project", project]);
+
+    expect(result.stdout).toContain("Kirie addon is already installed");
+    expect(result.stdout).toContain("ok Kirie addon:");
+    expect(result.stdout).not.toContain("Godot CEF");
+    await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("rejects extra doctor targets", async () => {
@@ -109,6 +138,7 @@ describe("doctor command", () => {
 
   it("applies every supported fixer when the fix target is omitted", async () => {
     const project = await projects.copy();
+    await writeKirieAddonFixture(project, KIRIE_ADDON_VERSION);
     const homeDir = await createTempDir("kirie-doctor-home-");
     const sdk = await createTempDir("kirie-doctor-sdk-");
     await fs.mkdir(resolveTemplatesDir(homeDir, "4.5.stable"), { recursive: true });
@@ -131,7 +161,89 @@ describe("doctor command", () => {
     );
 
     expect(result.stdout).toContain("Godot CEF is already installed");
+    expect(result.stdout).toContain("Kirie addon is already installed");
     expect(result.stdout).toContain("ok Godot CEF:");
+  });
+});
+
+describe("Kirie addon doctor support", () => {
+  it("installs the pinned release through the shared downloader and skips a matching installation", async () => {
+    const project = await projects.copy();
+    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+    const archive = Buffer.from("Kirie archive fixture");
+    await installKirieAddon({
+      projectDir: project,
+      download: async (options) => {
+        expect(options.url).toBe(`https://github.com/moeru-ai/godot-kirie/releases/download/v${KIRIE_ADDON_VERSION}/kirie-addon.zip`);
+        await fs.writeFile(options.outputPath, archive);
+      },
+      extractArchive: async (archivePath, outputDir) => {
+        await expect(fs.readFile(archivePath)).resolves.toEqual(archive);
+        await writeKirieAddonFixture(outputDir, KIRIE_ADDON_VERSION);
+      },
+    });
+
+    await expect(checkKirieAddonPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Ok });
+    await installKirieAddon({
+      projectDir: project,
+      download: async () => { throw new Error("Matching installations must be reused"); },
+    });
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("replaces an outdated Kirie addon without removing sibling addons", async () => {
+    const project = await projects.copy();
+    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+    await writeKirieAddonFixture(project, "0.0.0");
+    await fs.writeFile(path.join(project, "addons", "kirie", "obsolete.gd"), "old release");
+    await installGodotCefFixture(project);
+    await expect(checkKirieAddon(project)).resolves.toMatchObject({ installed: true, valid: false });
+
+    await installKirieAddon({
+      projectDir: project,
+      download: async (options) => fs.writeFile(options.outputPath, "archive fixture"),
+      extractArchive: async (_archive, outputDir) => writeKirieAddonFixture(outputDir, KIRIE_ADDON_VERSION),
+    });
+
+    await expect(checkKirieAddon(project)).resolves.toMatchObject({ installed: true, valid: true });
+    await expect(fs.stat(path.join(project, "addons", "kirie", "obsolete.gd"))).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(checkGodotCefPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Ok });
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it.each(["wrong version", "missing script", "download failure"])("preserves the previous addon after %s", async (failure) => {
+    const project = await projects.copy();
+    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+    await writeKirieAddonFixture(project, "0.0.0");
+    const previousConfig = await fs.readFile(path.join(project, "addons", "kirie", "plugin.cfg"), "utf8");
+
+    await expect(installKirieAddon({
+      projectDir: project,
+      download: async (options) => {
+        if (failure === "download failure") {
+          throw new Error("Download failed");
+        }
+        await fs.writeFile(options.outputPath, "archive fixture");
+      },
+      extractArchive: async (_archive, outputDir) => {
+        await writeKirieAddonFixture(outputDir, failure === "wrong version" ? "0.0.0" : KIRIE_ADDON_VERSION);
+        if (failure === "missing script") {
+          await fs.rm(path.join(outputDir, "addons", "kirie", "plugin.gd"));
+        }
+      },
+    })).rejects.toThrow();
+
+    await expect(fs.readFile(path.join(project, "addons", "kirie", "plugin.cfg"), "utf8")).resolves.toBe(previousConfig);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("reports an incomplete installation even when its plugin version matches", async () => {
+    const project = await projects.copy();
+    await fs.rm(path.join(project, "addons", "kirie"), { force: true, recursive: true });
+    await writeKirieAddonFixture(project, KIRIE_ADDON_VERSION);
+    await fs.rm(path.join(project, "addons", "kirie", "kirie_node.gd"));
+
+    await expect(checkKirieAddonPrerequisite(project)).resolves.toMatchObject({ status: DoctorCheckStatus.Fail });
   });
 });
 
@@ -179,7 +291,7 @@ describe("Godot CEF doctor support", () => {
       },
       projectDir: project,
     });
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
   it("reports an installed addon from a different release as a failure", async () => {
@@ -209,7 +321,7 @@ describe("Godot CEF doctor support", () => {
     await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
   it("does not install an archive with the wrong layout", async () => {
@@ -225,12 +337,12 @@ describe("Godot CEF doctor support", () => {
         output: { isTTY: false, write: () => true },
         projectDir: project,
       }),
-    ).rejects.toThrow("Godot CEF archive does not contain dist/addons/godot_cef");
+    ).rejects.toMatchObject({ code: "ENOENT" });
 
     await expect(fs.stat(path.join(project, "addons", "godot_cef"))).rejects.toMatchObject({
       code: "ENOENT",
     });
-    await expect(listGodotCefStagingDirs(project)).resolves.toEqual([]);
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 });
 
@@ -371,9 +483,19 @@ async function createTempDir(prefix: string): Promise<string> {
   return dir;
 }
 
-async function listGodotCefStagingDirs(project: string): Promise<string[]> {
+async function writeKirieAddonFixture(project: string, version: string): Promise<void> {
+  const directory = path.join(project, "addons", "kirie");
+  await fs.rm(directory, { force: true, recursive: true });
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(directory, "plugin.cfg"), `[plugin]\nversion="${version}"\nscript="plugin.gd"\n`);
+  for (const file of ["plugin.gd", "kirie_node.gd", "gd_kirie.gd"]) {
+    await fs.writeFile(path.join(directory, file), "extends RefCounted\n");
+  }
+}
+
+async function listAddonStagingDirs(project: string): Promise<string[]> {
   const projectParent = await fs.readdir(path.dirname(project));
-  return projectParent.filter((entry) => entry.startsWith(".kirie-godot-cef-stage-"));
+  return projectParent.filter((entry) => entry.startsWith(".kirie-addon-stage-"));
 }
 
 function resolveTemplatesDir(homeDir: string, version: string): string {

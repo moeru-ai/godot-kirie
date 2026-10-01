@@ -3,12 +3,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { downloadTemplate } from "giget";
-import JSZip from "jszip";
-
-import { KIRIE_ADDON_VERSION } from "./addon-versions.ts";
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
-const KIRIE_REPOSITORY = "moeru-ai/godot-kirie";
 export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
 
 export interface InitOptions {
@@ -42,16 +38,10 @@ export async function runInit(options: InitOptions): Promise<void> {
     await fs.mkdir(stagedProject);
 
     const templateSource = `github:${KIRIE_TEMPLATES_REPOSITORY}/templates/${options.template}#${templatesCommit}`;
-    const addonUrl = `https://github.com/${KIRIE_REPOSITORY}/releases/download/v${KIRIE_ADDON_VERSION}/kirie-addon.zip`;
-    const [, addonArchive] = await Promise.all([
-      downloadTemplate(templateSource, {
-        dir: stagedProject,
-        registry: false,
-      }),
-      downloadArchive(addonUrl, `Kirie addon v${KIRIE_ADDON_VERSION}`),
-    ]);
-
-    await installAddonArchive(addonArchive, stagedProject);
+    await downloadTemplate(templateSource, {
+      dir: stagedProject,
+      registry: false,
+    });
     await applyProjectName(stagedProject, path.basename(target));
     await installStagedProject(stagedProject, target, temporaryRoot, existingTarget);
   } finally {
@@ -62,28 +52,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log("\nNext steps:");
   console.log(`  cd ${target}`);
   console.log("  pnpm install");
-  console.log("  pnpm kirie doctor");
-}
-
-export async function installAddonArchive(archive: Uint8Array, destination: string): Promise<void> {
-  const zip = await JSZip.loadAsync(archive);
-  const addonPrefix = "addons/kirie/";
-  const addonFiles = Object.values(zip.files).filter(
-    (file) => !file.dir && file.name.startsWith(addonPrefix),
-  );
-
-  if (!addonFiles.some((file) => file.name === `${addonPrefix}plugin.cfg`)) {
-    throw new Error("Kirie addon archive does not contain addons/kirie/plugin.cfg.");
-  }
-
-  const addonDestination = path.join(destination, "addons", "kirie");
-  await fs.rm(addonDestination, { force: true, recursive: true });
-
-  for (const file of addonFiles) {
-    const outputPath = path.join(addonDestination, file.name.slice(addonPrefix.length));
-    await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, await file.async("uint8array"));
-  }
+  console.log("  pnpm kirie doctor --fix");
 }
 
 export async function applyProjectName(project: string, projectName: string): Promise<void> {
@@ -159,15 +128,6 @@ async function inspectTarget(target: string, cwd: string, overwrite: boolean): P
   }
 
   return true;
-}
-
-async function downloadArchive(url: string, description: string): Promise<Uint8Array> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download ${description}: ${response.status} ${response.statusText}`);
-  }
-
-  return new Uint8Array(await response.arrayBuffer());
 }
 
 async function installStagedProject(

@@ -1,3 +1,4 @@
+import { KirieGodotCefConfig } from "./godot_cef_config";
 import { _PointerInputForwarder } from "./pointer_input_forwarder";
 
 export class GdKirie extends Object {
@@ -326,14 +327,14 @@ export class GdKirie extends Object {
   _is_godot_cef_backend(): boolean {
     return (
       this._plugin_singleton !== null &&
-      this._plugin_singleton.is_class(GdKirie.GODOT_CEF_CLASS_NAME)
+      this._plugin_singleton.is_class(KirieGodotCefConfig.CLASS_NAME)
     );
   }
 
   _initialize_desktop_cef_backend(): void {
-    const cef_class_name = GdKirie.GODOT_CEF_CLASS_NAME;
+    const cef_class_name = KirieGodotCefConfig.CLASS_NAME;
     if (!ClassDB.class_exists(cef_class_name)) {
-      const message = "Kirie desktop backend requires Godot CEF to be installed and registered in [native_extensions]. Install it with: pnpm kirie doctor --fix godot-cef";
+      const message = `Kirie desktop backend requires Godot CEF to be installed and registered in [native_extensions]. Install it with: ${KirieGodotCefConfig.SETUP_COMMAND}`;
       push_error(message);
       const tree = Engine.get_main_loop();
       if (tree instanceof SceneTree) {
@@ -650,7 +651,6 @@ export class GdKirie extends Object {
 
 export namespace GdKirie {
   export const PLUGIN_SINGLETON_NAME = "Kirie";
-  export const GODOT_CEF_CLASS_NAME = "CefTexture";
   export const GODOT_CEF_PRELOAD_SCRIPT =
     "\nglobalThis.kirie ??= {};\nglobalThis.kirie.platform = Object.freeze({\n  os: %s,\n  backend: \"godot-cef\",\n});\n";
 }

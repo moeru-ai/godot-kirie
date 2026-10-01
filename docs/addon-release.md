@@ -41,8 +41,19 @@ hooks, so users do not need a separate project-local `.gdip` shim.
 
 ## User Install Flow
 
-Users should download `kirie-addon.zip` from a GitHub Release asset, not the
-repository source archive.
+For CLI-managed projects, install the pinned addon from the Godot project with:
+
+```sh
+pnpm kirie doctor --fix kirie-addon
+```
+
+Use `pnpm kirie doctor --fix` to install both Kirie and the desktop Godot CEF
+backend. `kirie init` only generates the template and instructs users to run
+doctor afterward. Downloads and installation are owned by the CLI's
+`src/doctor/addons.ts`; release pins live in `src/addon-versions.ts`.
+
+For manual installation, download `kirie-addon.zip` from a GitHub Release
+asset, not the repository source archive.
 
 The zip is rooted at:
 

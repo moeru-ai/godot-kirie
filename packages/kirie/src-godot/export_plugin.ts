@@ -1,3 +1,5 @@
+import { KirieGodotCefConfig } from "./godot_cef_config";
+
 interface KirieExportOption {
   option: { name: string; type: Variant.Type };
   default_value: boolean;
@@ -282,11 +284,11 @@ export class _ExportPlugin extends EditorExportPlugin {
   }
 
   _assert_godot_cef_available(): void {
-    if (DirAccess.dir_exists_absolute("res://addons/godot_cef")) {
+    if (DirAccess.dir_exists_absolute(KirieGodotCefConfig.ADDON_PATH)) {
       return;
     }
 
-    const message = "[Kirie][export] desktop export requires Godot CEF at res://addons/godot_cef. Install it with: pnpm kirie doctor --fix godot-cef";
+    const message = `[Kirie][export] desktop export requires Godot CEF at ${KirieGodotCefConfig.ADDON_PATH}. Install it with: ${KirieGodotCefConfig.SETUP_COMMAND}`;
     assert(false, message);
   }
 }

@@ -247,8 +247,8 @@ function parseDoctorTarget(
   if (!rawTarget) {
     return undefined;
   }
-  if (rawTarget === DoctorTarget.GodotCef) {
-    return DoctorTarget.GodotCef;
+  if (rawTarget === DoctorTarget.GodotCef || rawTarget === DoctorTarget.KirieAddon) {
+    return rawTarget;
   }
   throw new Error(`Unknown doctor target: ${rawTarget}`);
 }
