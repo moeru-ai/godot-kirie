@@ -5,7 +5,7 @@ import path from "node:path";
 import { downloadTemplate } from "giget";
 
 const KIRIE_TEMPLATES_REPOSITORY = "moeru-ai/kirie-templates";
-export const KIRIE_TEMPLATES_COMMIT = "347de65bceedd3e7d7e67ade71f595914aef9d7a";
+export const KIRIE_TEMPLATES_COMMIT = "9fc4b6f8789eb31a32c7d9e19bbd77da16c7508f";
 
 export interface InitOptions {
   cwd?: string;

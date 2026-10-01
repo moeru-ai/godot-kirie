@@ -1,4 +1,4 @@
-export const KIRIE_ADDON_VERSION = "0.6.5";
+export const KIRIE_ADDON_VERSION = "0.7.0";
 
 export const GODOT_CEF_VERSION = "1.16.1";
 export const GODOT_CEF_SHA256 =
