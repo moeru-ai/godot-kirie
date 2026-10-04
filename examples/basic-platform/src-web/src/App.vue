@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { GlobalShortcut, GlobalShortcutKeyEvent, HostWindowState } from "@gd-kirie/platform";
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { backRequested, createPlatformClient, hostWindowPointerPositionChanged, hostWindowStateChanged, notificationActivated } from "@gd-kirie/platform";
+import { backRequested, createPlatformClient, hostWindowPointerPositionChanged, hostWindowStateChanged, notificationActivated, trayMenuItemActivated } from "@gd-kirie/platform";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
 import { useIntervalFn } from "@vueuse/core";
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
@@ -17,6 +17,7 @@ const escapeShortcut: GlobalShortcut = {
 
 const eventa = window.kirie ? createContext() : undefined;
 const platform = eventa ? createPlatformClient(eventa.context) : undefined;
+const trayAvailable = window.kirie?.platform.os === "macos" || window.kirie?.platform.os === "windows";
 const previewOffset = platform ? 0 : 0.15;
 const pointer = ref({
   x: platform ? 0 : -Math.round(window.screen.width / 12),
@@ -49,6 +50,7 @@ let stopWindowState: (() => void) | undefined;
 let stopPointerPosition: (() => void) | undefined;
 let stopNotificationActivation: (() => void) | undefined;
 let stopBackRequest: (() => void) | undefined;
+let stopTrayActivation: (() => void) | undefined;
 let boundsRequest: Promise<void> | undefined;
 let telemetryActive = true;
 
@@ -107,6 +109,12 @@ onMounted(async () => {
     stopBackRequest = eventa.context.on(backRequested, () => {
       actionResult.value = "System Back requested";
     });
+    if (trayAvailable) {
+      stopTrayActivation = eventa.context.on(trayMenuItemActivated, ({ body }) => {
+        if (body)
+          actionResult.value = `Activated tray item ${body.id}`;
+      });
+    }
     stopWindowState = eventa.context.on(hostWindowStateChanged, ({ body }) => {
       if (body)
         windowState.value = body;
@@ -117,6 +125,8 @@ onMounted(async () => {
     });
     pointer.value = await platform.hostWindow.getPointerPosition();
     windowState.value = await platform.hostWindow.getState();
+    if (trayAvailable)
+      await platform.tray.updateItem({ id: "webview", text: "WebView connected", checked: true });
   } catch (error) {
     console.error(error);
   }
@@ -240,6 +250,7 @@ onBeforeUnmount(async () => {
   try {
     stopNotificationActivation?.();
     stopBackRequest?.();
+    stopTrayActivation?.();
     stopWindowState?.();
     stopPointerPosition?.();
     if (pointerPassthrough.value || escapeRegistered) {

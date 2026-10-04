@@ -4,6 +4,9 @@ A compact desktop example for `@gd-kirie/platform` and `GdKirie.Platform`. It
 visualizes display, window, and pointer coordinates. It also exercises window
 controls, pointer passthrough, global shortcuts, external URLs, the application
 data directory, desktop notifications, and Android system Back requests.
+On macOS and Windows, C# creates a tray and menu. The browser updates its
+checkable WebView item through Eventa, and item activation reaches both C# and
+the browser.
 
 The Esc global-shortcut backend is available on macOS and Windows. On Linux,
 registration fails visibly and pointer passthrough is left disabled.

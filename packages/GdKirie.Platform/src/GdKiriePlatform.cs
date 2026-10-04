@@ -85,6 +85,28 @@ public static class GdKiriePlatform
             .RegisterEvent(
                 PlatformEvents.BackRequested,
                 PlatformJsonContext.Default.EmptyPayload)
+            .RegisterInvoke(
+                PlatformEvents.ConfigureTray,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.TrayConfiguration)
+            .RegisterInvoke(
+                PlatformEvents.SetTrayMenu,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.TrayMenuItemArray)
+            .RegisterInvoke(
+                PlatformEvents.UpdateTrayMenuItem,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.TrayMenuItemUpdate)
+            .RegisterInvoke(
+                PlatformEvents.DestroyTray,
+                PlatformJsonContext.Default.EmptyPayload,
+                PlatformJsonContext.Default.EmptyPayload)
+            .RegisterEvent(
+                PlatformEvents.TrayMenuItemActivated,
+                PlatformJsonContext.Default.TrayMenuItemActivatedPayload)
+            .RegisterEvent(
+                PlatformEvents.TrayPressed,
+                PlatformJsonContext.Default.TrayPressedPayload)
             .RegisterEvent(
                 PlatformEvents.StateChanged,
                 PlatformJsonContext.Default.WindowStatePayload);

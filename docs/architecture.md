@@ -129,6 +129,7 @@ The implemented Platform capabilities are:
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
 - desktop notifications with click activation on [macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md) and [Windows 10 version 1607 or later](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md)
+- system trays and native popup menus on macOS and Windows
 - [Android system Back requests](decisions/0005-add-android-system-back-to-the-platform-layer.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
@@ -154,6 +155,11 @@ ID on the publishing host's Eventa context. A click for a disposed host is ignor
 Windows registration and its per-executable identity are recorded in
 [ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
 Linux notification backends remain pending work.
+
+System trays wrap Godot `StatusIndicator` and `PopupMenu`. C# and browser
+Eventa calls share the host-owned tray, and activations are reported through
+both C# events and exported Eventa contracts. Browser icons use `res://`
+resource references. Linux support follows Godot's status-indicator backend.
 
 Android system Back is forwarded from the bound window's
 `Window.GoBackRequested` signal. The browser subscribes to the exported

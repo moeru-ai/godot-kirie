@@ -78,10 +78,52 @@ export interface NotificationsClient {
   show: (notification: DesktopNotification) => Promise<void>;
 }
 
+export type TrayMenuItemType = "item" | "check" | "radio" | "multistate" | "separator" | "submenu";
+
+export interface TrayConfiguration {
+  icon: string;
+  tooltip?: string;
+  visible?: boolean;
+}
+
+export interface TrayMenuItem {
+  id: string;
+  text: string;
+  type?: TrayMenuItemType;
+  icon?: string;
+  accelerator?: number;
+  disabled?: boolean;
+  checked?: boolean;
+  state?: number;
+  maxStates?: number;
+  tooltip?: string;
+  indent?: number;
+  children?: TrayMenuItem[];
+}
+
+export interface TrayMenuItemUpdate extends Omit<Partial<TrayMenuItem>, "id" | "type" | "children"> {
+  id: string;
+  clearIcon?: boolean;
+}
+
+export interface TrayPressed {
+  mouseButton: number;
+  x: number;
+  y: number;
+}
+
+export interface TrayClient {
+  configure: (configuration: TrayConfiguration) => Promise<void>;
+  setMenu: (items: TrayMenuItem[]) => Promise<void>;
+  updateItem: (update: TrayMenuItemUpdate) => Promise<void>;
+  destroy: () => Promise<void>;
+}
+
 export interface PlatformClient {
   hostWindow: HostWindowClient;
   globalShortcuts: GlobalShortcutsClient;
   notifications: NotificationsClient;
+  tray: TrayClient;
   openExternalUrl: (url: string) => Promise<void>;
   openApplicationDataDirectory: () => Promise<string>;
 }
@@ -132,6 +174,14 @@ const events = {
   openApplicationDataDirectory: defineInvokeEventa<string, EmptyPayload>(
     "kirie:platform:open-application-data-directory",
   ),
+  configureTray: defineInvokeEventa<EmptyPayload, TrayConfiguration>(
+    "kirie:platform:tray:configure",
+  ),
+  setTrayMenu: defineInvokeEventa<EmptyPayload, TrayMenuItem[]>("kirie:platform:tray:set-menu"),
+  updateTrayMenuItem: defineInvokeEventa<EmptyPayload, TrayMenuItemUpdate>(
+    "kirie:platform:tray:update-item",
+  ),
+  destroyTray: defineInvokeEventa<EmptyPayload, EmptyPayload>("kirie:platform:tray:destroy"),
 };
 
 /**
@@ -167,6 +217,14 @@ export const notificationActivated: InboundEventa<DesktopNotificationActivated> 
  */
 export const backRequested: InboundEventa<EmptyPayload> = defineInboundEventa<EmptyPayload>(
   "kirie:platform:back:requested",
+);
+
+export const trayMenuItemActivated: InboundEventa<{ id: string }> = defineInboundEventa(
+  "kirie:platform:tray:menu-item-activated",
+);
+
+export const trayPressed: InboundEventa<TrayPressed> = defineInboundEventa(
+  "kirie:platform:tray:pressed",
 );
 
 function globalShortcutKey(shortcut: GlobalShortcut): string {
@@ -267,6 +325,20 @@ export function createPlatformClient(context: KirieEventaContext): PlatformClien
     notifications: {
       async show(notification) {
         await invokes.showNotification(notification);
+      },
+    },
+    tray: {
+      async configure(configuration) {
+        await invokes.configureTray(configuration);
+      },
+      async setMenu(items) {
+        await invokes.setTrayMenu(items);
+      },
+      async updateItem(update) {
+        await invokes.updateTrayMenuItem(update);
+      },
+      async destroy() {
+        await invokes.destroyTray({});
       },
     },
   };

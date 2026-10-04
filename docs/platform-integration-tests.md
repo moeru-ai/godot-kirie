@@ -95,6 +95,10 @@ mise run test:integration-desktop
 The adapter invokes `kirie run desktop`. The CLI starts Godot with the ViDot
 runner and `--headless`.
 
+The headless suite cannot validate a visible system tray or native menu. Run
+the `basic-platform` example as an exported Windows or macOS application for
+tray creation, updates, activation, and cleanup acceptance.
+
 ## Android
 
 Build the Android addon artifact, then run the suite:
