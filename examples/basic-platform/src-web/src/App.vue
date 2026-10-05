@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { GlobalShortcut, GlobalShortcutKeyEvent, HostWindowState } from "@gd-kirie/platform";
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { backRequested, createPlatformClient, hostWindowPointerPositionChanged, hostWindowStateChanged, notificationActivated, trayMenuItemActivated } from "@gd-kirie/platform";
+import { backRequested, createPlatformClient, hostWindowPointerPositionChanged, hostWindowStateChanged, notificationActivated } from "@gd-kirie/platform";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
 import { useIntervalFn } from "@vueuse/core";
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 const escapeShortcut: GlobalShortcut = {
   keycode: 4_194_305,
@@ -17,7 +17,6 @@ const escapeShortcut: GlobalShortcut = {
 
 const eventa = window.kirie ? createContext() : undefined;
 const platform = eventa ? createPlatformClient(eventa.context) : undefined;
-const trayAvailable = window.kirie?.platform.os === "macos" || window.kirie?.platform.os === "windows";
 const previewOffset = platform ? 0 : 0.15;
 const pointer = ref({
   x: platform ? 0 : -Math.round(window.screen.width / 12),
@@ -50,7 +49,6 @@ let stopWindowState: (() => void) | undefined;
 let stopPointerPosition: (() => void) | undefined;
 let stopNotificationActivation: (() => void) | undefined;
 let stopBackRequest: (() => void) | undefined;
-let stopTrayActivation: (() => void) | undefined;
 let boundsRequest: Promise<void> | undefined;
 let telemetryActive = true;
 
@@ -109,12 +107,6 @@ onMounted(async () => {
     stopBackRequest = eventa.context.on(backRequested, () => {
       actionResult.value = "System Back requested";
     });
-    if (trayAvailable) {
-      stopTrayActivation = eventa.context.on(trayMenuItemActivated, ({ body }) => {
-        if (body)
-          actionResult.value = `Activated tray item ${body.id}`;
-      });
-    }
     stopWindowState = eventa.context.on(hostWindowStateChanged, ({ body }) => {
       if (body)
         windowState.value = body;
@@ -125,8 +117,6 @@ onMounted(async () => {
     });
     pointer.value = await platform.hostWindow.getPointerPosition();
     windowState.value = await platform.hostWindow.getState();
-    if (trayAvailable)
-      await platform.tray.updateItem({ id: "webview", text: "WebView connected", checked: true });
   } catch (error) {
     console.error(error);
   }
@@ -147,7 +137,7 @@ function handleEscape(event: GlobalShortcutKeyEvent): void {
     return;
   }
 
-  disablePointerPassthrough()
+  disablePointerPassthrough();
 }
 
 async function enablePointerPassthrough(): Promise<void> {
@@ -179,7 +169,7 @@ async function disablePointerPassthrough(): Promise<void> {
 
 function togglePointerPassthrough(): Promise<void> {
   const enabled = !pointerPassthrough.value;
-  return enabled ? enablePointerPassthrough() : disablePointerPassthrough()
+  return enabled ? enablePointerPassthrough() : disablePointerPassthrough();
 }
 
 function centerWindow(): Promise<void> {
@@ -250,7 +240,6 @@ onBeforeUnmount(async () => {
   try {
     stopNotificationActivation?.();
     stopBackRequest?.();
-    stopTrayActivation?.();
     stopWindowState?.();
     stopPointerPosition?.();
     if (pointerPassthrough.value || escapeRegistered) {
@@ -269,8 +258,12 @@ onBeforeUnmount(async () => {
     <div class="mx-auto max-w-5xl flex flex-col gap-5">
       <header class="flex items-end justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Kirie Platform</h1>
-          <p class="mt-1 text-sm text-neutral-500">Host window controls and live pointer telemetry</p>
+          <h1 class="text-2xl font-semibold tracking-tight">
+            Kirie Platform
+          </h1>
+          <p class="mt-1 text-sm text-neutral-500">
+            Host window controls and live pointer telemetry
+          </p>
         </div>
         <p class="font-mono text-xs text-neutral-500">
           {{ windowState.visible ? "visible" : "hidden" }} ·
@@ -282,27 +275,32 @@ onBeforeUnmount(async () => {
       <section class="rounded-2xl border-2 border-neutral-200 bg-white/70 p-5 shadow-sm md:p-6">
         <div
           class="window-stage relative mx-auto w-full max-w-2xl overflow-hidden rounded-xl border-2 border-neutral-400 bg-neutral-100/70"
-          :style="displayStyle">
+          :style="displayStyle"
+        >
           <span class="absolute left-2 top-2 rounded-md bg-neutral-700 px-2 py-1 font-mono text-xs text-white">
             Display · x {{ displayBounds.x }} · y {{ displayBounds.y }}
           </span>
           <span
-            class="absolute bottom-2 right-2 rounded-md bg-white/90 px-2 py-1 font-mono text-xs text-neutral-600 shadow-sm">
+            class="absolute bottom-2 right-2 rounded-md bg-white/90 px-2 py-1 font-mono text-xs text-neutral-600 shadow-sm"
+          >
             {{ displayBounds.width }} × {{ displayBounds.height }}
           </span>
           <div class="absolute rounded-lg border-2 border-primary-500 bg-primary-50/50 shadow-sm" :style="windowStyle">
             <span
-              class="absolute left-2 top-2 whitespace-nowrap rounded-md bg-primary-500 px-2 py-1 font-mono text-xs text-white">
+              class="absolute left-2 top-2 whitespace-nowrap rounded-md bg-primary-500 px-2 py-1 font-mono text-xs text-white"
+            >
               Window · x {{ windowBounds.x }} · y {{ windowBounds.y }}
             </span>
             <span
-              class="absolute bottom-2 right-2 whitespace-nowrap rounded-md bg-white/90 px-2 py-1 font-mono text-xs text-neutral-600 shadow-sm">
+              class="absolute bottom-2 right-2 whitespace-nowrap rounded-md bg-white/90 px-2 py-1 font-mono text-xs text-neutral-600 shadow-sm"
+            >
               {{ windowBounds.width }} × {{ windowBounds.height }}
             </span>
           </div>
           <div
             class="pointer-dot absolute z-20 h-3 w-3 rounded-full bg-emerald-500"
-            :style="pointerStyle">
+            :style="pointerStyle"
+          >
             <span class="absolute left-4 top-3 whitespace-nowrap font-mono text-xs text-emerald-700">
               {{ pointer.x }}, {{ pointer.y }}
             </span>
@@ -310,20 +308,32 @@ onBeforeUnmount(async () => {
         </div>
 
         <div class="mt-5 grid gap-3 md:grid-cols-3">
-          <Button block :disabled="!platform || Boolean(busy)"
+          <Button
+            block :disabled="!platform || Boolean(busy)"
             :label="alwaysOnTop ? 'Disable always-on-top' : 'Enable always-on-top'" size="sm" :toggled="alwaysOnTop"
-            variant="secondary-muted" @click="toggleAlwaysOnTop" />
-          <Button block :disabled="!platform || Boolean(busy)"
+            variant="secondary-muted" @click="toggleAlwaysOnTop"
+          />
+          <Button
+            block :disabled="!platform || Boolean(busy)"
             :label="pointerPassthrough ? 'Disable passthrough' : 'Enable mouse passthrough'" size="sm"
-            :toggled="pointerPassthrough" variant="secondary-muted" @click="togglePointerPassthrough" />
-          <Button block :disabled="!platform || Boolean(busy)" label="Center window" size="sm" variant="primary"
-            @click="centerWindow" />
-          <Button block :disabled="!platform || Boolean(busy)" label="Open Kirie website" size="sm"
-            variant="secondary-muted" @click="openKirieWebsite" />
-          <Button block :disabled="!platform || Boolean(busy)" label="Open app data directory" size="sm"
-            variant="secondary-muted" @click="openApplicationDataDirectory" />
-          <Button block :disabled="!platform || Boolean(busy)" label="Show desktop notification" size="sm"
-            variant="secondary-muted" @click="showNotification" />
+            :toggled="pointerPassthrough" variant="secondary-muted" @click="togglePointerPassthrough"
+          />
+          <Button
+            block :disabled="!platform || Boolean(busy)" label="Center window" size="sm" variant="primary"
+            @click="centerWindow"
+          />
+          <Button
+            block :disabled="!platform || Boolean(busy)" label="Open Kirie website" size="sm"
+            variant="secondary-muted" @click="openKirieWebsite"
+          />
+          <Button
+            block :disabled="!platform || Boolean(busy)" label="Open app data directory" size="sm"
+            variant="secondary-muted" @click="openApplicationDataDirectory"
+          />
+          <Button
+            block :disabled="!platform || Boolean(busy)" label="Show desktop notification" size="sm"
+            variant="secondary-muted" @click="showNotification"
+          />
         </div>
         <p v-if="actionResult" class="mt-3 font-mono text-xs text-neutral-500">
           {{ actionResult }}
