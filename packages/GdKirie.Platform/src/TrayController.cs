@@ -72,33 +72,19 @@ public sealed record TrayMenuItemUpdate(
 }
 
 /// <summary>Owns one Godot status indicator and its popup menus.</summary>
-public sealed class TrayController : IDisposable
+public sealed class TrayController
 {
     private readonly Window _window;
-    private readonly Action<TrayMenuItemActivatedPayload> _emitItemActivated;
-    private readonly Action<TrayPressedPayload> _emitPressed;
-    private readonly Dictionary<string, (PopupMenu Menu, int Index)> _items = [];
-    private readonly Dictionary<long, string> _stableIds = [];
+    private readonly Dictionary<string, (PopupMenu Menu, int Index, long NativeId)> _items = [];
     private StatusIndicator? _indicator;
     private PopupMenu? _menu;
     private int _nextNativeId = 1;
     private bool _disposed;
 
-    internal TrayController(
-        Window window,
-        Action<TrayMenuItemActivatedPayload> emitItemActivated,
-        Action<TrayPressedPayload> emitPressed)
-    {
-        _window = window;
-        _emitItemActivated = emitItemActivated;
-        _emitPressed = emitPressed;
-    }
+    internal TrayController(Window window) => _window = window;
 
     /// <summary>Raised with the stable ID of an activated menu item.</summary>
     public event Action<string>? ItemActivated;
-
-    /// <summary>Raised when Godot reports a status-indicator press.</summary>
-    public event Action<long, Vector2I>? Pressed;
 
     /// <summary>Creates or updates the indicator from a resource reference.</summary>
     public void Configure(TrayConfiguration configuration) =>
@@ -121,7 +107,6 @@ public sealed class TrayController : IDisposable
         EnsureCreated();
         _menu!.Clear(true);
         _items.Clear();
-        _stableIds.Clear();
         BuildMenu(_menu, items);
         _indicator!.Menu = items.Count == 0 ? new NodePath() : _indicator.GetPathTo(_menu);
     }
@@ -136,7 +121,7 @@ public sealed class TrayController : IDisposable
             throw new KeyNotFoundException($"Tray menu item '{update.Id}' does not exist.");
         }
 
-        var (menu, index) = item;
+        var (menu, index, _) = item;
         if (update.Text is not null) menu.SetItemText(index, update.Text);
         if (update.Accelerator is not null) menu.SetItemAccelerator(index, (Key)update.Accelerator);
         if (update.Disabled is not null) menu.SetItemDisabled(index, update.Disabled.Value);
@@ -157,38 +142,33 @@ public sealed class TrayController : IDisposable
         if (_indicator is null) return;
 
         _indicator.Visible = false;
-        _indicator.Pressed -= OnPressed;
         _menu!.IdPressed -= OnItemPressed;
         _indicator.QueueFree();
         _indicator = null;
         _menu = null;
         _items.Clear();
-        _stableIds.Clear();
     }
 
-    /// <inheritdoc />
-    public void Dispose()
+    internal void Dispose()
     {
         if (_disposed) return;
         Destroy();
         _disposed = true;
         ItemActivated = null;
-        Pressed = null;
     }
 
     private void EnsureCreated()
     {
         EnsureMainThread();
         if (_indicator is not null) return;
-        if (!OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows())
+        if (!DisplayServer.HasFeature(DisplayServer.Feature.StatusIndicator))
         {
-            throw new PlatformNotSupportedException("System trays are supported on macOS and Windows.");
+            throw new PlatformNotSupportedException("The current display server does not support system trays.");
         }
 
         _menu = new PopupMenu { Name = "Menu" };
         _menu.IdPressed += OnItemPressed;
         _indicator = new StatusIndicator { Name = "KirieSystemTray", Visible = false };
-        _indicator.Pressed += OnPressed;
         _indicator.AddChild(_menu);
         _window.CallDeferred(Node.MethodName.AddChild, _indicator);
     }
@@ -221,8 +201,7 @@ public sealed class TrayController : IDisposable
             }
 
             var index = menu.ItemCount - 1;
-            _items.Add(item.Id, (menu, index));
-            _stableIds.Add(nativeId, item.Id);
+            _items.Add(item.Id, (menu, index, nativeId));
             var texture = item.Texture ?? (item.Icon is null ? null : LoadTexture(item.Icon));
             if (texture is not null) menu.SetItemIcon(index, texture);
             if (item.Disabled) menu.SetItemDisabled(index, true);
@@ -234,15 +213,14 @@ public sealed class TrayController : IDisposable
 
     private void OnItemPressed(long nativeId)
     {
-        if (!_stableIds.TryGetValue(nativeId, out var stableId)) return;
-        try { ItemActivated?.Invoke(stableId); }
-        finally { _emitItemActivated(new TrayMenuItemActivatedPayload(stableId)); }
-    }
-
-    private void OnPressed(long mouseButton, Vector2I position)
-    {
-        try { Pressed?.Invoke(mouseButton, position); }
-        finally { _emitPressed(new TrayPressedPayload(mouseButton, position.X, position.Y)); }
+        foreach (var (stableId, item) in _items)
+        {
+            if (item.NativeId == nativeId)
+            {
+                ItemActivated?.Invoke(stableId);
+                return;
+            }
+        }
     }
 
     private static Texture2D LoadTexture(string path)

@@ -38,10 +38,9 @@ public sealed class GdKiriePlatformHost : IDisposable
         _notificationHostId = Notifications.Attach(
             id => context.Emit(PlatformEvents.NotificationActivated, new NotificationActivatedPayload(id)),
             SynchronizationContext.Current);
-        Tray = new TrayController(
-            window,
-            payload => context.Emit(PlatformEvents.TrayMenuItemActivated, payload),
-            payload => context.Emit(PlatformEvents.TrayPressed, payload));
+        Tray = new TrayController(window);
+        Tray.ItemActivated += id =>
+            context.Emit(PlatformEvents.TrayMenuItemActivated, new TrayMenuItemActivatedPayload(id));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>

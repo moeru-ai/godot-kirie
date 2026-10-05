@@ -105,9 +105,6 @@ public static class GdKiriePlatform
                 PlatformEvents.TrayMenuItemActivated,
                 PlatformJsonContext.Default.TrayMenuItemActivatedPayload)
             .RegisterEvent(
-                PlatformEvents.TrayPressed,
-                PlatformJsonContext.Default.TrayPressedPayload)
-            .RegisterEvent(
                 PlatformEvents.StateChanged,
                 PlatformJsonContext.Default.WindowStatePayload);
     }

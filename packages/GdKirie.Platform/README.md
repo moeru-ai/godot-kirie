@@ -33,8 +33,8 @@ platform.Tray.ItemActivated += id => HandleTrayItem(id);
 
 IDs are unique across the menu tree. `SetMenu` replaces the tree and
 `UpdateItem` changes an item by ID. C# may pass a `Texture2D` directly or set
-`Texture` on a menu item. Disposing the host destroys the tray. Unsupported
-platforms fail with `PlatformNotSupportedException`.
+`Texture` on a menu item. Disposing the host destroys the tray. Display servers
+without Godot's status-indicator feature fail with `PlatformNotSupportedException`.
 
 `openExternalUrl()` accepts only absolute HTTP and HTTPS URLs. The host passes
 accepted URLs to

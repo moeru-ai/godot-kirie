@@ -106,12 +106,6 @@ export interface TrayMenuItemUpdate extends Omit<Partial<TrayMenuItem>, "id" | "
   clearIcon?: boolean;
 }
 
-export interface TrayPressed {
-  mouseButton: number;
-  x: number;
-  y: number;
-}
-
 export interface TrayClient {
   configure: (configuration: TrayConfiguration) => Promise<void>;
   setMenu: (items: TrayMenuItem[]) => Promise<void>;
@@ -221,10 +215,6 @@ export const backRequested: InboundEventa<EmptyPayload> = defineInboundEventa<Em
 
 export const trayMenuItemActivated: InboundEventa<{ id: string }> = defineInboundEventa(
   "kirie:platform:tray:menu-item-activated",
-);
-
-export const trayPressed: InboundEventa<TrayPressed> = defineInboundEventa(
-  "kirie:platform:tray:pressed",
 );
 
 function globalShortcutKey(shortcut: GlobalShortcut): string {

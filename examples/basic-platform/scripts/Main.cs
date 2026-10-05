@@ -20,7 +20,7 @@ public partial class Main : Node
         var registry = GdKiriePlatform.Register(new KirieEventaJsonRegistry());
         _eventa = _kirie.CreateEventaContext(registry);
         _platform = GdKiriePlatform.Attach(_eventa.Context, GetWindow());
-        if (OperatingSystem.IsMacOS() || OperatingSystem.IsWindows())
+        if (DisplayServer.HasFeature(DisplayServer.Feature.StatusIndicator))
         {
             _platform.Tray.Configure(new TrayConfiguration("res://icon.svg", "Kirie Platform"));
             _platform.Tray.SetMenu([

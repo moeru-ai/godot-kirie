@@ -42,8 +42,6 @@ internal sealed record NotificationActivatedPayload(string Id);
 
 internal sealed record TrayMenuItemActivatedPayload(string Id);
 
-internal sealed record TrayPressedPayload(long MouseButton, int X, int Y);
-
 internal static class PlatformEvents
 {
     private const string HostWindowPrefix = "kirie:platform:host-window";
@@ -118,9 +116,6 @@ internal static class PlatformEvents
     public static readonly EventDefinition<TrayMenuItemActivatedPayload> TrayMenuItemActivated =
         new($"{TrayPrefix}:menu-item-activated");
 
-    public static readonly EventDefinition<TrayPressedPayload> TrayPressed =
-        new($"{TrayPrefix}:pressed");
-
     public static readonly InvokeEventDefinition<EmptyPayload, string> OpenExternalUrl =
         new("kirie:platform:open-external-url");
 
@@ -143,5 +138,4 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(TrayMenuItem[]))]
 [JsonSerializable(typeof(TrayMenuItemUpdate))]
 [JsonSerializable(typeof(TrayMenuItemActivatedPayload))]
-[JsonSerializable(typeof(TrayPressedPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;

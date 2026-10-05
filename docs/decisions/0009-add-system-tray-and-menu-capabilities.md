@@ -58,15 +58,15 @@ Godot resources with `res://` paths, but they do not send PNG or SVG bytes,
 data URLs, or web URLs as image content.
 
 Every menu-item activation raises the C# activation event and emits the
-matching inbound Eventa contract with the same stable item ID. Status-indicator
-presses are forwarded through both entry points with the mouse button and
-position reported by Godot. Kirie preserves platform behavior rather than
-inventing uniform left-click, right-click, or double-click semantics.
+matching inbound Eventa contract with the same stable item ID. Kirie does not
+add a second raw status-indicator press API: Godot does not emit that signal
+while a menu is attached.
 
 Unsupported platforms fail at the capability boundary instead of silently
-creating an inert controller. Godot currently implements `StatusIndicator` on
-macOS and Windows. Linux support follows Godot's implementation when it becomes
-available; Kirie does not add a parallel native tray backend.
+creating an inert controller. Kirie checks the current display server's
+`StatusIndicator` feature instead of maintaining a platform list. Linux support
+therefore follows Godot's implementation when it becomes available; Kirie does
+not add a parallel native tray backend.
 
 This decision does not define what closing an application window does. Hiding,
 minimizing, removing a taskbar or Dock entry, keeping the process alive, and
