@@ -23,12 +23,7 @@ public partial class Main : Node
         _kirie.IpcError += GD.PushError;
 
         var initialUrl = _kirie.GetLaunchOption("kirie-web-url").Trim();
-        if (initialUrl.Length == 0)
-        {
-            initialUrl = "res://src-web/dist/index.html";
-        }
-
-        _kirie.CreateWebView(initialUrl);
+        _kirie.CreateWebView(initialUrl.Length == 0 ? "res://src-web/dist/index.html" : initialUrl);
     }
 
     public override void _ExitTree()
