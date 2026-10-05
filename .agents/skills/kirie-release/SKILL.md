@@ -13,10 +13,37 @@ Then release the main repository with a pin to that template commit.
 - Store the target in `KIRIE_RELEASE_VERSION` without a `v` prefix.
 - Use a clean checkout for each repository. Stop if a checkout contains unrelated changes.
 - Run language and package tools through mise.
-- Do not merge a release pull request.
-- Do not create a tag before a human merges the pull request.
 - Do not replace an existing remote tag.
-- Preserve the configured Git signer. Do not disable signing without explicit approval.
+- Preserve the configured Git signer in the default mode. Do not disable
+  signing there without explicit approval.
+
+## Merge authorization
+
+Choose the release mode from the user's authorization at the start of the task:
+
+- In the default mode, do not merge a release pull request. Wait for a human to
+  merge it, and do not create a tag before that merge.
+- In auto-merge mode, an explicit request to complete the release and merge it
+  automatically authorizes the normal release mutations in this workflow:
+  pushing the template commit to `kirie-templates/main`, pushing the release
+  branch, opening and merging the release pull request after required checks
+  pass, and pushing the release tag. Do not ask the user to reconfirm those
+  steps individually.
+
+Auto-merge authorization does not permit force pushes, replacing a tag,
+merging failed checks, bypassing branch protection, or skipping commit signing
+unless the user defines auto-merge mode as unattended. In unattended mode,
+first attempt the configured signer. If signing requires human interaction, the
+agent refuses, or the signer is unavailable, use `--no-gpg-sign` for the
+current release commits without changing Git's signing configuration or asking
+the user to return to the machine.
+
+Include the original auto-merge authorization and the exact in-scope release
+action in escalation justifications so automatic approval review can evaluate
+the full context. An automatic approval rejection does not revoke existing user
+authorization; retry with that concrete context when the rejection indicates
+missing authorization. If a higher-level policy still rejects the action,
+report that platform blocker instead of attempting an indirect workaround.
 
 ## 1. Update the template repository
 
@@ -61,7 +88,7 @@ If bumpp stops after file changes, examine the partial state before another run.
 5. Make sure that no generated artifact or unexpected lockfile change exists.
 6. Make sure that bumpp created no commit and no tag.
 7. Refresh the frozen dependency state with `mise x -- pnpm install --frozen-lockfile`.
-8. Run `mise run lint:biome`.
+8. Run `mise run lint`.
 9. Make sure that the publish dry run lists every public package at `KIRIE_RELEASE_VERSION`.
 
 If the dry run reports no new packages, stop.
@@ -75,12 +102,16 @@ This result usually means that workspace manifests did not change.
 4. Leave the pull request body empty unless the user requests text.
 5. Report the pull request URL.
 
-## 5. Wait for the human merge
+## 5. Merge the release pull request
 
-Stop after the pull request opens.
-Do not merge it and do not create the release tag.
+In the default mode, stop after the pull request opens. Resume only after GitHub
+reports the pull request state as `MERGED`.
 
-Resume only after GitHub reports the pull request state as `MERGED`.
+In auto-merge mode, monitor required checks and review feedback. Fix failures,
+push corrections, and continue monitoring until the pull request is mergeable
+and all required checks pass. Then merge it using the repository's normal merge
+method without asking for confirmation again.
+
 Record the pull request's full merge commit SHA as `MERGE_SHA`.
 
 ## 6. Create and push the release tag
