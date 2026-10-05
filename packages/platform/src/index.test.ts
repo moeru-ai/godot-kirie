@@ -1,5 +1,5 @@
 import type { KirieEventaContext } from "@gd-kirie/ipc-eventa";
-import type { HostWindowState } from "./index";
+import type { HostWindowState, TrayConfiguration } from "./index";
 import { createContext, defineEventa } from "@moeru/eventa";
 
 import { describe, expect, it } from "vitest";
@@ -85,5 +85,34 @@ describe("application data directory", () => {
     );
 
     await expect(platform.openApplicationDataDirectory()).resolves.toBe(path);
+  });
+});
+
+describe("system tray", () => {
+  it("configures the host tray through the Platform wire contract", async () => {
+    const context = createContext() as KirieEventaContext;
+    const platform = createPlatformClient(context);
+    const configuration = { icon: "res://icon.svg", tooltip: "AIRI", visible: true };
+
+    context.on(
+      defineEventa<{ content: TrayConfiguration; invokeId: string }>(
+        "kirie:platform:tray:configure-send",
+      ),
+      ({ body }) => {
+        if (!body) {
+          throw new Error("Platform tray request has no body.");
+        }
+
+        expect(body.content).toEqual(configuration);
+        context.emit(
+          defineEventa<{ content: Record<string, never>; invokeId: string }>(
+            `kirie:platform:tray:configure-receive-${body.invokeId}`,
+          ),
+          { content: {}, invokeId: body.invokeId },
+        );
+      },
+    );
+
+    await expect(platform.tray.configure(configuration)).resolves.toBeUndefined();
   });
 });

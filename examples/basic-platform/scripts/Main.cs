@@ -20,6 +20,16 @@ public partial class Main : Node
         var registry = GdKiriePlatform.Register(new KirieEventaJsonRegistry());
         _eventa = _kirie.CreateEventaContext(registry);
         _platform = GdKiriePlatform.Attach(_eventa.Context, GetWindow());
+        if (DisplayServer.HasFeature(DisplayServer.Feature.StatusIndicator))
+        {
+            _platform.Tray.Configure(new TrayConfiguration("res://icon.svg", "Kirie Platform"));
+            _platform.Tray.SetMenu([
+                new("webview", "Waiting for WebView", "check"),
+                new("separator", "", "separator"),
+                new("website", "Open Kirie website"),
+            ]);
+            _platform.Tray.ItemActivated += id => GD.Print($"Tray item activated in C#: {id}");
+        }
         _kirie.IpcError += GD.PushError;
 
         var initialUrl = _kirie.GetLaunchOption("kirie-web-url").Trim();

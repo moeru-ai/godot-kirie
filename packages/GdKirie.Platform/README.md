@@ -18,6 +18,24 @@ context or window. Attach and disposal run on Godot's main thread, and the
 bound window must be a native, non-embedded window already inside the scene
 tree. The host disposes automatically when the bound window exits the tree.
 
+## System tray
+
+On macOS and Windows, C# and Eventa calls update the same host-owned tray:
+
+```csharp
+platform.Tray.Configure(new TrayConfiguration("res://icon.svg", "AIRI"));
+platform.Tray.SetMenu([
+    new("show", "Show AIRI"),
+    new("enabled", "Enabled", "check", Checked: true),
+]);
+platform.Tray.ItemActivated += id => HandleTrayItem(id);
+```
+
+IDs are unique across the menu tree. `SetMenu` replaces the tree and
+`UpdateItem` changes an item by ID. C# may pass a `Texture2D` directly or set
+`Texture` on a menu item. Disposing the host destroys the tray. Display servers
+without Godot's status-indicator feature fail with `PlatformNotSupportedException`.
+
 `openExternalUrl()` accepts only absolute HTTP and HTTPS URLs. The host passes
 accepted URLs to
 [`OS.shell_open()`](https://docs.godotengine.org/en/4.7/classes/class_os.html#class-os-method-shell-open).

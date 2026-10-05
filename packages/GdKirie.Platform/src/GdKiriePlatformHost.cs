@@ -21,6 +21,9 @@ public sealed class GdKiriePlatformHost : IDisposable
     private bool _windowsPointerPassthrough;
     private bool _disposed;
 
+    /// <summary>Gets the host-owned system tray controller.</summary>
+    public TrayController Tray { get; }
+
     internal GdKiriePlatformHost(IEventContext context, Window window)
     {
         _window = window;
@@ -35,6 +38,9 @@ public sealed class GdKiriePlatformHost : IDisposable
         _notificationHostId = Notifications.Attach(
             id => context.Emit(PlatformEvents.NotificationActivated, new NotificationActivatedPayload(id)),
             SynchronizationContext.Current);
+        Tray = new TrayController(window);
+        Tray.ItemActivated += id =>
+            context.Emit(PlatformEvents.TrayMenuItemActivated, new TrayMenuItemActivatedPayload(id));
         _registrations.Add(context.RegisterInvokeHandler(
             PlatformEvents.BeginMove,
             (EmptyPayload _, CancellationToken _) =>
@@ -117,6 +123,18 @@ public sealed class GdKiriePlatformHost : IDisposable
             PlatformEvents.ShowNotification,
             (notification, cancellationToken) =>
                 Notifications.ShowAsync(_notificationHostId, notification, cancellationToken)));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.ConfigureTray,
+            (configuration, _) => Complete(() => Tray.Configure(configuration))));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.SetTrayMenu,
+            (items, _) => Complete(() => Tray.SetMenu(items))));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.UpdateTrayMenuItem,
+            (update, _) => Complete(() => Tray.UpdateItem(update))));
+        _registrations.Add(context.RegisterInvokeHandler(
+            PlatformEvents.DestroyTray,
+            (EmptyPayload _, CancellationToken _) => Complete(Tray.Destroy)));
 
         _window.FocusEntered += RefreshWindowState;
         _window.FocusExited += RefreshWindowState;
@@ -164,6 +182,15 @@ public sealed class GdKiriePlatformHost : IDisposable
 
         try
         {
+            Tray.Dispose();
+        }
+        catch (Exception error)
+        {
+            cleanupErrors.Add(error);
+        }
+
+        try
+        {
             _globalShortcuts.Dispose();
         }
         catch (Exception error)
@@ -202,6 +229,12 @@ public sealed class GdKiriePlatformHost : IDisposable
         {
             throw new AggregateException("Failed to release one or more Platform resources.", cleanupErrors);
         }
+    }
+
+    private static Task<EmptyPayload> Complete(Action action)
+    {
+        action();
+        return Task.FromResult(new EmptyPayload());
     }
 
     private PointerPositionPayload CapturePointerPosition()

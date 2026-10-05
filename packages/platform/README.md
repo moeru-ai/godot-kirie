@@ -28,6 +28,25 @@ Request/response capabilities are methods on the returned client. Host-initiated
 events are exported `@moeru/eventa` contracts; subscribe to them on the same
 context and the returned function unsubscribes.
 
+## System tray
+
+The macOS and Windows hosts expose the same tray used by C#. Browser icons are
+imported Godot resources referenced by `res://` paths:
+
+```ts
+await platform.tray.configure({ icon: "res://icon.svg", tooltip: "AIRI" });
+await platform.tray.setMenu([
+  { id: "show", text: "Show AIRI" },
+  { id: "enabled", text: "Enabled", type: "check", checked: true },
+]);
+const stop = context.on(trayMenuItemActivated, ({ body }) => console.log(body?.id));
+await platform.tray.updateItem({ id: "enabled", checked: false });
+```
+
+Menu types are `item`, `check`, `radio`, `multistate`, `separator`, and
+`submenu`. Raw image data and web URLs are not accepted. The tray survives
+browser reloads and is destroyed explicitly or with the Platform host.
+
 ## External URLs
 
 Use `openExternalUrl()` to open an absolute HTTP or HTTPS URL with the system
