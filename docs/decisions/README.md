@@ -42,3 +42,5 @@ architecture documentation.
   — accepted, 2026-09-27
 - [ADR-0009: Add system tray and menu capabilities to the Platform layer](0009-add-system-tray-and-menu-capabilities.md)
   — accepted, 2026-10-04
+- [ADR-0010: Introduce Kirie plugins and the core plugin](0010-introduce-kirie-plugins-and-the-core-plugin.md)
+  — proposed, 2026-10-08
