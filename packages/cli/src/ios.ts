@@ -20,7 +20,7 @@ export interface ExportIosAppOptions {
   xcodeProjectPath?: string;
 }
 
-export async function exportIosApp(options: ExportIosAppOptions): Promise<void> {
+export async function exportIosApp(options: ExportIosAppOptions) {
   const config =
     options.config ??
     (await loadKirieConfig({

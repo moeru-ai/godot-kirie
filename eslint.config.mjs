@@ -37,6 +37,7 @@ export default antfu(
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
       "ts/consistent-type-definitions": ["error", "interface"],
+      "ts/explicit-function-return-type": "off",
     },
   },
   {

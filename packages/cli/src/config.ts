@@ -35,7 +35,7 @@ export interface ResolvedKirieConfig {
   };
 }
 
-export function defineKirieConfig(config: KirieConfig): KirieConfig {
+export function defineKirieConfig(config: KirieConfig) {
   return config;
 }
 

@@ -3,7 +3,6 @@
     "allowImportingTsExtensions": true,
     "customConditions": ["node"],
     "declaration": true,
-    "isolatedDeclarations": true,
     "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",

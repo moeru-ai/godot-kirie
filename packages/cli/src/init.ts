@@ -14,7 +14,7 @@ export interface InitOptions {
   template: string;
 }
 
-export async function runInit(options: InitOptions): Promise<void> {
+export async function runInit(options: InitOptions) {
   const templatesCommit = KIRIE_TEMPLATES_COMMIT.trim();
   if (!templatesCommit) {
     throw new Error("Kirie templates commit is not configured for this release.");
@@ -55,7 +55,7 @@ export async function runInit(options: InitOptions): Promise<void> {
   console.log("  pnpm kirie doctor --fix");
 }
 
-export async function applyProjectName(project: string, projectName: string): Promise<void> {
+export async function applyProjectName(project: string, projectName: string) {
   const packageJsonPath = path.join(project, "package.json");
   const parsedPackageJson: unknown = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
   if (

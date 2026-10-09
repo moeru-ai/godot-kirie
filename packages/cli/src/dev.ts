@@ -24,7 +24,7 @@ export interface DevOptions extends StartViteDevServerOptions {
   terminateExisting?: boolean;
 }
 
-export async function runDev(options: DevOptions = {}): Promise<void> {
+export async function runDev(options: DevOptions = {}) {
   const target = options.target ?? "desktop";
   const config = await loadKirieConfig({
     command: "serve",

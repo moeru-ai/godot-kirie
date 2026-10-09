@@ -11,7 +11,7 @@ const cliTestFixturesDir = fileURLToPath(import.meta.resolve("../test-fixtures")
 const repositoryTmpDir = fileURLToPath(import.meta.resolve("../../../.tmp"));
 const ignoredExampleCopyRoots = [".godot", "addons/godot_cef", "node_modules", "src-web/dist"];
 
-export async function copyBasicKirieCliExample(prefix: string): Promise<string> {
+export async function copyBasicKirieCliExample(prefix: string) {
   await fs.mkdir(repositoryTmpDir, { recursive: true });
   const project = await fs.mkdtemp(path.join(repositoryTmpDir, prefix));
   await fs.cp(basicKirieCliExample, project, {
@@ -27,10 +27,7 @@ export async function copyBasicKirieCliExample(prefix: string): Promise<string> 
   return project;
 }
 
-export function createBasicKirieCliProjectTracker(prefix: string): {
-  cleanup: () => Promise<void>;
-  copy: () => Promise<string>;
-} {
+export function createBasicKirieCliProjectTracker(prefix: string) {
   const projects: string[] = [];
 
   return {
@@ -50,11 +47,11 @@ export function createBasicKirieCliProjectTracker(prefix: string): {
 export async function installKirieConfigFixture(
   project: string,
   fixtureName: string,
-): Promise<void> {
+) {
   await installProjectFixture(project, fixtureName, "kirie.config.ts");
 }
 
-export async function installGodotCefFixture(project: string): Promise<void> {
+export async function installGodotCefFixture(project: string) {
   const addonDir = path.join(project, "addons", "godot_cef");
   await fs.mkdir(addonDir, { recursive: true });
   await fs.writeFile(path.join(addonDir, "godot_cef.gdextension"), "[configuration]\n");
@@ -68,7 +65,7 @@ export async function installProjectFixture(
   project: string,
   fixtureName: string,
   outputName: string = fixtureName,
-): Promise<void> {
+) {
   await fs.copyFile(path.join(cliTestFixturesDir, fixtureName), path.join(project, outputName));
 }
 

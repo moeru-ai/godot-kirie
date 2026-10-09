@@ -1,4 +1,4 @@
-import { type CommandContext, type CommandDef, defineCommand, type ParsedArgs } from "citty";
+import { type CommandContext, defineCommand, type ParsedArgs } from "citty";
 
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
@@ -253,7 +253,7 @@ function parseDoctorTarget(
   throw new Error(`Unknown doctor target: ${rawTarget}`);
 }
 
-export const mainCommand: CommandDef = defineCommand({
+export const mainCommand = defineCommand({
   meta: {
     description: "Kirie development tools.",
     name: "kirie",

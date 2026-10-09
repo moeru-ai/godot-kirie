@@ -66,7 +66,7 @@ interface TemplatePathOptions {
   version: string;
 }
 
-export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
+export async function runDoctor(options: DoctorOptions = {}) {
   const config =
     options.config ??
     (await loadKirieConfig({

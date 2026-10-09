@@ -7,7 +7,7 @@ export interface BuildOptions {
   mode?: string;
 }
 
-export async function runBuild(options: BuildOptions = {}): Promise<void> {
+export async function runBuild(options: BuildOptions = {}) {
   const config = await loadKirieConfig({
     command: "build",
     cwd: options.cwd,
@@ -25,7 +25,7 @@ export async function runBuild(options: BuildOptions = {}): Promise<void> {
   });
 }
 
-export async function runBuildWeb(options: BuildOptions = {}): Promise<void> {
+export async function runBuildWeb(options: BuildOptions = {}) {
   const config = await loadKirieConfig({
     command: "build",
     cwd: options.cwd,
@@ -39,7 +39,7 @@ export async function runBuildWeb(options: BuildOptions = {}): Promise<void> {
   });
 }
 
-export async function runBuildDotnet(options: BuildOptions = {}): Promise<void> {
+export async function runBuildDotnet(options: BuildOptions = {}) {
   await buildDotnet({
     projectDir: options.cwd ?? process.cwd(),
   });

@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "isolatedDeclarations": true,
     "lib": ["DOM", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",

@@ -1,5 +1,4 @@
 import type { KirieEventaContext } from "@gd-kirie/ipc-eventa";
-import type { InboundEventa } from "@moeru/eventa";
 import { defineInboundEventa, defineInvokeEventa, defineInvokes } from "@moeru/eventa";
 
 export type ResizeEdge =
@@ -182,17 +181,17 @@ const events = {
  * Host-window visibility, focus, and minimized-state changes.
  * Subscribe with `context.on(hostWindowStateChanged, ({ body }) => ...)`.
  */
-export const hostWindowStateChanged: InboundEventa<HostWindowState> =
-  defineInboundEventa<HostWindowState>("kirie:platform:host-window:state-changed");
+export const hostWindowStateChanged = defineInboundEventa<HostWindowState>(
+  "kirie:platform:host-window:state-changed",
+);
 
 /**
  * Host-window-relative pointer position changes.
  * Subscribe first. Then call `getPointerPosition()` once to start host observation.
  */
-export const hostWindowPointerPositionChanged: InboundEventa<HostWindowPointerPosition> =
-  defineInboundEventa<HostWindowPointerPosition>(
-    "kirie:platform:host-window:pointer-position-changed",
-  );
+export const hostWindowPointerPositionChanged = defineInboundEventa<HostWindowPointerPosition>(
+  "kirie:platform:host-window:pointer-position-changed",
+);
 
 const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChanged>(
   "kirie:platform:global-shortcut:state-changed",
@@ -202,18 +201,19 @@ const globalShortcutStateChanged = defineInboundEventa<GlobalShortcutStateChange
  * Notification activations reported by the host.
  * Subscribe with `context.on(notificationActivated, ({ body }) => ...)`.
  */
-export const notificationActivated: InboundEventa<DesktopNotificationActivated> =
-  defineInboundEventa<DesktopNotificationActivated>("kirie:platform:notification:activated");
+export const notificationActivated = defineInboundEventa<DesktopNotificationActivated>(
+  "kirie:platform:notification:activated",
+);
 
 /**
  * System Back requests forwarded by the host.
  * Subscribe with `context.on(backRequested, () => ...)`.
  */
-export const backRequested: InboundEventa<EmptyPayload> = defineInboundEventa<EmptyPayload>(
+export const backRequested = defineInboundEventa<EmptyPayload>(
   "kirie:platform:back:requested",
 );
 
-export const trayMenuItemActivated: InboundEventa<{ id: string }> = defineInboundEventa(
+export const trayMenuItemActivated = defineInboundEventa<{ id: string }>(
   "kirie:platform:tray:menu-item-activated",
 );
 

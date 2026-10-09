@@ -22,7 +22,7 @@ const DEFAULT_PLATFORM_PRESETS: Record<ExportPlatform, string> = {
   ios: "iOS",
 };
 
-export async function runExport(options: ExportOptions = {}): Promise<void> {
+export async function runExport(options: ExportOptions = {}) {
   const config =
     options.config ??
     (await loadKirieConfig({

@@ -66,7 +66,7 @@ export type RunIosOptions = RunIosSimulatorOptions & RunIosDeviceOptions;
 const androidDeviceWaitTimeoutMs = 10_000;
 const simulatorLookupTimeoutMs = 30_000;
 
-export async function runDesktop(options: RunDesktopOptions = {}): Promise<void> {
+export async function runDesktop(options: RunDesktopOptions = {}) {
   const config = await loadKirieConfig({
     command: "build",
     cwd: options.cwd,
@@ -82,7 +82,7 @@ export async function runDesktop(options: RunDesktopOptions = {}): Promise<void>
   );
 }
 
-export async function runAndroid(options: RunAndroidOptions = {}): Promise<void> {
+export async function runAndroid(options: RunAndroidOptions = {}) {
   const config =
     options.config ??
     (await loadKirieConfig({
@@ -179,7 +179,7 @@ export async function runAndroid(options: RunAndroidOptions = {}): Promise<void>
   });
 }
 
-export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Promise<void> {
+export async function runIosSimulator(options: RunIosSimulatorOptions = {}) {
   const config =
     options.config ??
     (await loadKirieConfig({
@@ -270,7 +270,7 @@ export async function runIosSimulator(options: RunIosSimulatorOptions = {}): Pro
   }
 }
 
-export async function runIos(options: RunIosOptions = {}): Promise<void> {
+export async function runIos(options: RunIosOptions = {}) {
   if (!options.device || (await isIosSimulatorDevice(options.device, options.cwd))) {
     return runIosSimulator({
       appArgs: options.appArgs,
@@ -287,7 +287,7 @@ export async function runIos(options: RunIosOptions = {}): Promise<void> {
   return runIosDevice(options);
 }
 
-export async function runIosDevice(options: RunIosDeviceOptions = {}): Promise<void> {
+export async function runIosDevice(options: RunIosDeviceOptions = {}) {
   const config =
     options.config ??
     (await loadKirieConfig({

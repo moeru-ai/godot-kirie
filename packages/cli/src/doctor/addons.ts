@@ -93,7 +93,7 @@ export async function checkGodotCef(projectDir: string): Promise<AddonCheckResul
   };
 }
 
-export async function assertGodotCefInstalled(projectDir: string): Promise<void> {
+export async function assertGodotCefInstalled(projectDir: string) {
   const result = await checkGodotCef(projectDir);
   if (result.installed && result.valid) {
     return;
@@ -131,7 +131,7 @@ export async function checkKirieAddon(projectDir: string): Promise<AddonCheckRes
   };
 }
 
-export async function installGodotCef(options: InstallAddonOptions): Promise<void> {
+export async function installGodotCef(options: InstallAddonOptions) {
   await installAddon(options, {
     name: "Godot CEF",
     version: GODOT_CEF_VERSION,
@@ -145,7 +145,7 @@ export async function installGodotCef(options: InstallAddonOptions): Promise<voi
   });
 }
 
-export async function installKirieAddon(options: InstallAddonOptions): Promise<void> {
+export async function installKirieAddon(options: InstallAddonOptions) {
   await installAddon(options, {
     name: "Kirie addon",
     version: KIRIE_ADDON_VERSION,

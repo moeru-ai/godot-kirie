@@ -1,5 +1,3 @@
-import type { PoolRunnerInitializer } from "vitest/node";
-
 import { vidot } from "@vidot/vitest";
 
 export type KirieTestTarget = "android" | "desktop" | "ios";
@@ -9,7 +7,7 @@ export interface KirieTestOptions {
   target?: KirieTestTarget;
 }
 
-export function kirie(options: KirieTestOptions): PoolRunnerInitializer {
+export function kirie(options: KirieTestOptions) {
   return vidot({
     projectPath: options.projectPath,
     godotPath: "kirie-vitest",

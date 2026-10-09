@@ -1,4 +1,4 @@
-import type { ResolvedModel, RuleContext, RuleDefinition, SourceFile } from "@alint-js/core";
+import type { ResolvedModel, RuleContext, SourceFile } from "@alint-js/core";
 import type { GenerateTextResult } from "xsai";
 import { defineRule } from "@alint-js/core";
 import { generateText } from "xsai";
@@ -13,7 +13,7 @@ interface ReviewResponse {
   findings?: ErrorWrappingReviewFinding[];
 }
 
-export const noStringifiedRethrowRule: RuleDefinition = defineRule({
+export const noStringifiedRethrowRule = defineRule({
   create: (ctx) => ({
     async onTargetFile({ file }) {
       const model = await ctx.model();
