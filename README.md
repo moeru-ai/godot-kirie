@@ -53,7 +53,8 @@ export default defineKirieConfig({
 
 `kirie doctor plugin:core` checks one configured plugin, and
 `kirie doctor --fix plugin:core` installs or repairs its declared
-dependencies.
+dependencies. Core owns the Kirie and Godot CEF addons together with the
+`GdKirie.EventaAdapter` and `GdKirie.Platform` NuGet packages.
 
 ## Repository Development
 

@@ -7,6 +7,16 @@ const addonUrl = new URL("../../addon/kirie", import.meta.url).href;
 
 const corePlugin: KiriePlugin = {
   id: "core",
+  dotnetPackages: [
+    {
+      id: "GdKirie.EventaAdapter",
+      version: packageJson.version,
+    },
+    {
+      id: "GdKirie.Platform",
+      version: packageJson.version,
+    },
+  ],
   godotAddons: [
     {
       id: "kirie",

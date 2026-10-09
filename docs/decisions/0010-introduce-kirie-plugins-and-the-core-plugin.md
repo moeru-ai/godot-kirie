@@ -85,16 +85,22 @@ actually coexist.
 
 ### Core plugin dependencies
 
-The `core` plugin declares two Godot addon dependencies:
+The `core` plugin declares the built-in Kirie stack:
 
 - `addons/kirie`, required for the low-level WebView and IPC surface on every
   supported target;
 - `addons/godot_cef`, required by desktop WebView workflows and not by the
-  Android or iOS native WebView backends.
+  Android or iOS native WebView backends;
+- `GdKirie.EventaAdapter`, which connects the application-owned Eventa context
+  to the addon-provided `KirieClient`;
+- `GdKirie.Platform`, which provides the Godot host for the browser Platform
+  API.
 
-The core plugin coordinates installation only. It does not move the public
-addon out of `addons/kirie`, merge `@gd-kirie/ipc` into the CLI, or change the
-existing low-level transport boundary.
+The core plugin coordinates installation only. Owning these dependencies does
+not collapse their runtime layers: Platform continues to depend on the Eventa
+adapter, and both remain above the low-level addon and IPC packages. The plugin
+does not move the public addon out of `addons/kirie`, merge `@gd-kirie/ipc`
+into the CLI, or change the existing low-level transport boundary.
 
 Official templates configure `core` by default. A project may remove it
 explicitly, but commands that require the WebView stack must then report that

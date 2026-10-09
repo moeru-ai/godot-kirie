@@ -460,8 +460,9 @@ applies every supported automatic repair. System SDKs and tools remain
 user-managed.
 
 `kirie.config.ts` lists active plugin descriptors in its `plugins` array.
-The `kirie/plugin/core` descriptor declares the required Kirie addon and the
-optional desktop Godot CEF addon. The Kirie addon is bundled with the npm
+The `kirie/plugin/core` descriptor declares the required Kirie addon, the
+optional desktop Godot CEF addon, and the `GdKirie.EventaAdapter` and
+`GdKirie.Platform` NuGet packages. The Kirie addon is bundled with the npm
 package; Godot CEF remains a large external archive pinned by URL and SHA-256.
 `packages/cli/src/commands/doctor/addons.ts` validates either source before atomically
 replacing an installation.
