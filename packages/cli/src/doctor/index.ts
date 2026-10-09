@@ -80,7 +80,7 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
   }
 
   const checks = options.target ?
-      await checkPluginDependencies(config, plugins[0]!) :
+      await checkPlugins(config, plugins) :
       await runDoctorChecks({
         config,
         env: options.env,
@@ -130,10 +130,17 @@ export async function runDoctorChecks(options: {
     godotCommand.check,
     exportTemplates,
     await checkAndroidSdk(options.env),
-    ...(await Promise.all(
-      options.config.plugins.map((plugin) => checkPluginDependencies(options.config, plugin)),
-    )).flat(),
+    ...(await checkPlugins(options.config, options.config.plugins)),
   ];
+}
+
+async function checkPlugins(
+  config: ResolvedKirieConfig,
+  plugins: KiriePlugin[],
+): Promise<DoctorCheckResult[]> {
+  return (await Promise.all(
+    plugins.map((plugin) => checkPluginDependencies(config, plugin)),
+  )).flat();
 }
 
 async function checkPluginDependencies(

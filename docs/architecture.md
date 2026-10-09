@@ -476,7 +476,6 @@ The initial `kirie doctor` check matrix is:
 | Android SDK | Confirm Android export prerequisites can find an SDK. | Prefer `ANDROID_HOME`, accept compatible existing environments, and report whether the SDK directory exists. |
 | Android Java path | Confirm Godot's Android editor settings point at a usable Java/JDK. | Read Godot `EditorSettings`, check the Android Java SDK path, and report missing, invalid, or non-executable Java configuration. |
 | Android export preset | Confirm the project export preset contains required Android options for Kirie workflows. | Inspect `export_presets.cfg` through a structured parser and report missing presets or required option mismatches without rewriting the file. |
-| Godot CEF | Confirm the optional desktop backend addon came from the core plugin's release archive. | Warn when absent, fail when the installation does not match the configured checksum, and offer `kirie doctor --fix plugin:core` as the installation path. |
 
 Later doctor checks may cover the iOS toolchain and Godot C#/.NET setup. Add
 those checks only when the corresponding Kirie workflow is implemented enough
