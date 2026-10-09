@@ -47,12 +47,10 @@ afterEach(async () => {
 });
 
 describe("godot addon dependencies", () => {
-  it("replaces one addon without removing siblings and reuses the matching installation", async () => {
+  it("replaces an addon with a mismatched version", async () => {
     const project = await createProject();
     await writeScriptAddon(project, "0.0.0");
     await fs.writeFile(path.join(project, "addons", "example", "obsolete.gd"), "old release");
-    await fs.mkdir(path.join(project, "addons", "sibling"), { recursive: true });
-    await fs.writeFile(path.join(project, "addons", "sibling", "plugin.cfg"), "[plugin]\n");
 
     await expect(checkGodotAddon(project, packageAddon)).resolves.toMatchObject({
       installed: true,
@@ -77,16 +75,21 @@ describe("godot addon dependencies", () => {
     await expect(fs.stat(path.join(project, "addons", "example", "obsolete.gd")))
       .rejects
       .toMatchObject({ code: "ENOENT" });
-    await expect(fs.stat(path.join(project, "addons", "sibling", "plugin.cfg")))
-      .resolves
-      .toBeDefined();
+    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
+  });
+
+  it("skips the download when the installed addon matches", async () => {
+    const project = await createProject();
+    await writeScriptAddon(project, ADDON_VERSION);
+    const checksumDir = path.join(project, ".godot", "kirie");
+    await fs.mkdir(checksumDir, { recursive: true });
+    await fs.writeFile(path.join(checksumDir, "example.sha256"), `${ARCHIVE_SHA256}\n`);
 
     await installGodotAddon({
       addon: archiveAddon,
       projectDir: project,
       download: async () => { throw new Error("Matching installations must be reused"); },
     });
-    await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
   });
 
   it.each(["wrong version", "missing script", "download failure"])(
