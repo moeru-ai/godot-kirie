@@ -8,11 +8,10 @@ low-level Godot WebView plugin and IPC core.
 CLI-managed projects enable the WebView stack through the core plugin:
 
 ```sh
-pnpm add -D @gd-kirie/core
 pnpm kirie doctor --fix plugin:core
 ```
 
-Import `@gd-kirie/core` in `kirie.config.ts` and add it to the explicit
+Import `kirie/core` in `kirie.config.ts` and add it to the explicit
 `plugins` array before running doctor. The fix installs the bundled Kirie
 addon and downloads the desktop Godot CEF backend.
 After `kirie init`, run `pnpm install` and `pnpm kirie doctor --fix` in the
@@ -44,7 +43,7 @@ evaluated MSBuild items for checks and `dotnet package add` for fixes.
 Projects enable plugins explicitly:
 
 ```ts
-import core from "@gd-kirie/core";
+import core from "kirie/core";
 import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({
@@ -103,8 +102,6 @@ example, and regression-test areas:
 - [`@gd-kirie/platform`](packages/platform/README.md): browser-side desktop host
   capabilities
 - `packages/build`: public build and export automation API for scripts
-- [`@gd-kirie/core`](packages/core/README.md): default Kirie plugin descriptor
-  for the WebView and IPC stack
 - `packages/cli`: Kirie command-line tools for development sessions, export,
   install, and launch workflows
 - [`@gd-kirie/vitest`](packages/vitest/README.md): ViDot launch adapter for

@@ -38,12 +38,12 @@ dependencies would make the active capability set harder to inspect.
 Add a declarative Kirie plugin API and represent Kirie's WebView and IPC stack
 as the `core` plugin.
 
-The npm package `@gd-kirie/core` exports its plugin descriptor as the default
-export. Official project templates import it and include it in the explicit
-`plugins` array:
+The `kirie/core` entry point exports the built-in plugin descriptor as its
+default export. Official project templates import it and include it in the
+explicit `plugins` array:
 
 ```ts
-import core from "@gd-kirie/core";
+import core from "kirie/core";
 import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({
@@ -53,8 +53,9 @@ export default defineKirieConfig({
 });
 ```
 
-The template also declares `@gd-kirie/core` as a direct npm dependency. A
-package being present in `package.json` does not enable it by itself.
+The descriptor ships in the existing `kirie` package because it coordinates
+that package's own addon and desktop backend. Importing it does not enable it;
+the project must still include it in the `plugins` array.
 
 The `kirie` package provides `defineKiriePlugin` and its public descriptor
 types from a small, side-effect-free plugin API entry point. A plugin package

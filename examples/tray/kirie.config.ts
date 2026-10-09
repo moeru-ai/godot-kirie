@@ -1,6 +1,6 @@
-import core from "@gd-kirie/core";
 import Vue from "@vitejs/plugin-vue";
 import { defineKirieConfig } from "kirie";
+import core from "kirie/core";
 import UnoCSS from "unocss/vite";
 
 export default defineKirieConfig({

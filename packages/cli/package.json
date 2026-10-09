@@ -16,15 +16,19 @@
     ".": {
       "import": "./src/index.ts"
     },
+    "./core": {
+      "import": "./src/core.ts"
+    },
     "./plugin": {
       "import": "./src/plugin.ts"
     }
   },
   "files": [
+    "addon",
     "dist"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node scripts/package-addon.ts",
     "test:run": "vitest run --no-file-parallelism --test-timeout 30000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -37,6 +41,7 @@
     "vite": "catalog:"
   },
   "devDependencies": {
+    "@gd-kirie/kirie": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
@@ -49,6 +54,10 @@
       ".": {
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js"
+      },
+      "./core": {
+        "types": "./dist/core.d.ts",
+        "import": "./dist/core.js"
       },
       "./plugin": {
         "types": "./dist/plugin.d.ts",

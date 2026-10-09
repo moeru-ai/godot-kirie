@@ -6,6 +6,7 @@ export default defineConfig({
   },
   entry: {
     cli: "src/cli.ts",
+    core: "src/core.ts",
     index: "src/index.ts",
     plugin: "src/plugin.ts",
   },

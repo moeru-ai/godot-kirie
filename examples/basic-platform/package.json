@@ -16,7 +16,6 @@
     "vue": "3.5.41"
   },
   "devDependencies": {
-    "@gd-kirie/core": "workspace:*",
     "@proj-airi/unocss-preset-chromatic": "1.1.4",
     "@unocss/reset": "66.8.1",
     "@vitejs/plugin-vue": "6.0.8",

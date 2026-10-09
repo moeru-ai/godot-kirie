@@ -77,9 +77,6 @@ importers:
       '@gd-kirie/alint-config':
         specifier: workspace:*
         version: link:packages/alint-config
-      '@gd-kirie/core':
-        specifier: workspace:*
-        version: link:packages/core
       bumpp:
         specifier: 'catalog:'
         version: 11.0.1
@@ -152,9 +149,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ipc
     devDependencies:
-      '@gd-kirie/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0
@@ -189,9 +183,6 @@ importers:
         specifier: 3.5.41
         version: 3.5.41(typescript@6.0.3)
     devDependencies:
-      '@gd-kirie/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@proj-airi/unocss-preset-chromatic':
         specifier: 1.1.4
         version: 1.1.4
@@ -251,9 +242,6 @@ importers:
         specifier: 3.5.41
         version: 3.5.41(typescript@6.0.3)
     devDependencies:
-      '@gd-kirie/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@proj-airi/unocss-preset-chromatic':
         specifier: 1.1.4
         version: 1.1.4
@@ -344,25 +332,6 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
     devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.6.0
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.22.2(typescript@6.0.3)(unrun@0.2.37)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@types/node@25.6.0)(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
-
-  packages/core:
-    dependencies:
-      kirie:
-        specifier: workspace:*
-        version: link:../cli
-    devDependencies:
       '@gd-kirie/kirie':
         specifier: workspace:*
         version: link:../kirie
@@ -375,6 +344,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.6.0)(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
 
   packages/ipc:
     dependencies:

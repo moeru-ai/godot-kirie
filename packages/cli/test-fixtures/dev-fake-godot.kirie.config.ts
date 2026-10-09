@@ -1,4 +1,4 @@
-import core from "@gd-kirie/core";
+import core from "kirie/core";
 
 export default {
   godot: {

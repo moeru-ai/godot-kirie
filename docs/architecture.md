@@ -460,7 +460,7 @@ applies every supported automatic repair. System SDKs and tools remain
 user-managed.
 
 `kirie.config.ts` lists active plugin descriptors in its `plugins` array.
-The default `@gd-kirie/core` plugin declares the required Kirie addon and the
+The `kirie/core` descriptor declares the required Kirie addon and the
 optional desktop Godot CEF addon. The Kirie addon is bundled with the npm
 package; Godot CEF remains a large external archive pinned by URL and SHA-256.
 `packages/cli/src/doctor/addons.ts` validates either source before atomically
@@ -617,7 +617,7 @@ documents renderer-side IPC globals such as `window.sendIpcMessage`,
 platform-information object.
 
 Desktop Godot CEF binaries are external downloaded artifacts, not part of the
-core npm package. The core plugin descriptor owns the pinned Godot CEF version
+`kirie` npm package. The core plugin descriptor owns the pinned Godot CEF version
 and artifact checksum. `kirie doctor` reports
 a missing Godot CEF addon as an optional warning. Desktop run or export flows
 require it;

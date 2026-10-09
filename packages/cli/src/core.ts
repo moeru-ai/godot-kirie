@@ -1,7 +1,7 @@
 import { URL } from "node:url";
-import { defineKiriePlugin, type KiriePlugin } from "kirie/plugin";
 
 import packageJson from "../package.json" with { type: "json" };
+import { defineKiriePlugin, type KiriePlugin } from "./plugin.ts";
 
 const version = packageJson.version;
 const addonUrl = new URL("../addon/kirie", import.meta.url).href;

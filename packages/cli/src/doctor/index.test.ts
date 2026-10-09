@@ -5,7 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import corePackage from "../../../core/package.json" with { type: "json" };
+import cliPackage from "../../package.json" with { type: "json" };
 import { parseDoctorTarget } from "../commands.ts";
 import { type ResolvedKirieConfig, resolveKirieConfig } from "../config.ts";
 import {
@@ -22,7 +22,7 @@ import {
 
 const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
-const KIRIE_ADDON_VERSION = corePackage.version;
+const KIRIE_ADDON_VERSION = cliPackage.version;
 const GODOT_CEF_VERSION = "2.0.0";
 const GODOT_CEF_SHA256 = "51adbd1c4bae7dc53c6d64226ecce3cdefedf71a69f86ccb0f8f3db4d978c838";
 const kirieAddon: KirieGodotAddonDependency = {
