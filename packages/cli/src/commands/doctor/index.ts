@@ -166,7 +166,12 @@ async function checkPluginDependencies(
     }
   }
 
-  for (const dependency of plugin.dotnetPackages ?? []) {
+  const dotnetPackages = plugin.dotnetPackages ?? [];
+  if (dotnetPackages.length === 0 || !(await hasDotnetProject(config))) {
+    return checks;
+  }
+
+  for (const dependency of dotnetPackages) {
     try {
       const version = await getDotnetPackageVersion({
         csproj: config.godot.csproj,
@@ -197,7 +202,12 @@ async function fixPluginDependencies(
     await installGodotAddon({ addon, projectDir: config.godot.project });
   }
 
-  for (const dependency of plugin.dotnetPackages ?? []) {
+  const dotnetPackages = plugin.dotnetPackages ?? [];
+  if (dotnetPackages.length === 0 || !(await hasDotnetProject(config))) {
+    return;
+  }
+
+  for (const dependency of dotnetPackages) {
     const options = {
       csproj: config.godot.csproj,
       dependency,
@@ -208,6 +218,17 @@ async function fixPluginDependencies(
       await installDotnetPackage(options);
     }
   }
+}
+
+async function hasDotnetProject(config: ResolvedKirieConfig): Promise<boolean> {
+  if (config.godot.csproj) {
+    return true;
+  }
+
+  const entries = await fs.readdir(config.godot.project, { withFileTypes: true });
+  return entries.some(
+    (entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === ".csproj",
+  );
 }
 
 function failedCheck(name: string, error: unknown): DoctorCheckResult {

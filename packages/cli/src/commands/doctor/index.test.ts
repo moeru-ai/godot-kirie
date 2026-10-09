@@ -225,6 +225,7 @@ function createPluginConfig(project: string): ResolvedKirieConfig {
   return resolveKirieConfig(
     {
       plugins: [{
+        dotnetPackages: [{ id: "Example.Package", version: "1.0.0" }],
         godotAddons: [requiredAddon, optionalAddon],
         id: "example",
       }],

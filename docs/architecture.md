@@ -465,7 +465,8 @@ optional desktop Godot CEF addon, and the `GdKirie.EventaAdapter` and
 `GdKirie.Platform` NuGet packages. The Kirie addon is bundled with the npm
 package; Godot CEF remains a large external archive pinned by URL and SHA-256.
 `packages/cli/src/commands/doctor/addons.ts` validates either source before atomically
-replacing an installation.
+replacing an installation. Doctor skips plugin .NET dependencies when the
+Godot project has no `.csproj`.
 
 The initial `kirie doctor` check matrix is:
 

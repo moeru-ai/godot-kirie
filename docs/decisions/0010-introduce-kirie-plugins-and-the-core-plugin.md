@@ -140,7 +140,8 @@ dotnet msbuild <project.csproj> -getItem:PackageReference,PackageVersion
 
 The command returns structured JSON and evaluates imported MSBuild files, so
 Kirie does not parse or serialize project XML. A read-only doctor invocation
-does not restore packages or edit project files.
+does not restore packages or edit project files. Projects without a `.csproj`
+skip .NET dependency checks and fixes.
 
 When a reference is missing or incompatible, `doctor --fix` delegates the
 change and NuGet compatibility checks to the .NET 10 CLI:
