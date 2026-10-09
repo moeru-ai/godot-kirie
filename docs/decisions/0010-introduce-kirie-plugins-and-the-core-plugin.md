@@ -38,12 +38,12 @@ dependencies would make the active capability set harder to inspect.
 Add a declarative Kirie plugin API and represent Kirie's WebView and IPC stack
 as the `core` plugin.
 
-The `kirie/core` entry point exports the built-in plugin descriptor as its
+The `kirie/plugin/core` entry point exports the built-in plugin descriptor as its
 default export. Official project templates import it and include it in the
 explicit `plugins` array:
 
 ```ts
-import core from "kirie/core";
+import core from "kirie/plugin/core";
 import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({

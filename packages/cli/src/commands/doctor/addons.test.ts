@@ -1,4 +1,4 @@
-import type { KirieGodotAddonDependency } from "../plugin.ts";
+import type { KirieGodotAddonDependency } from "../../plugin/index.ts";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

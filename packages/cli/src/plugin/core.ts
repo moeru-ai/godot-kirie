@@ -1,9 +1,9 @@
-import type { KiriePlugin } from "./plugin.ts";
+import type { KiriePlugin } from "./index.ts";
 import { URL } from "node:url";
 
-import packageJson from "../package.json" with { type: "json" };
+import packageJson from "../../package.json" with { type: "json" };
 
-const addonUrl = new URL("../addon/kirie", import.meta.url).href;
+const addonUrl = new URL("../../addon/kirie", import.meta.url).href;
 
 const corePlugin: KiriePlugin = {
   id: "core",

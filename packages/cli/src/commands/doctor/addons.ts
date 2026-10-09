@@ -1,5 +1,5 @@
 import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
-import type { KirieGodotAddonDependency } from "../plugin.ts";
+import type { KirieGodotAddonDependency } from "../../plugin/index.ts";
 import { lstatSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";

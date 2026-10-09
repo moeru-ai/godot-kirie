@@ -199,7 +199,7 @@ async function ensureIosArm64SimulatorLibgodot(release: boolean): Promise<string
 }
 
 function resolveRepositoryGodotSourceRoot(): string {
-  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../godot");
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../godot");
 }
 
 function validateIosAppOutputPath(

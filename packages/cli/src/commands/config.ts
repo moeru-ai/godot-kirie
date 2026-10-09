@@ -1,4 +1,4 @@
-import type { KiriePlugin } from "./plugin.ts";
+import type { KiriePlugin } from "../plugin/index.ts";
 import fs from "node:fs";
 import path from "node:path";
 

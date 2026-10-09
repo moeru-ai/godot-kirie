@@ -11,7 +11,7 @@ CLI-managed projects enable the WebView stack through the core plugin:
 pnpm kirie doctor --fix plugin:core
 ```
 
-Import `kirie/core` in `kirie.config.ts` and add it to the explicit
+Import `kirie/plugin/core` in `kirie.config.ts` and add it to the explicit
 `plugins` array before running doctor. The fix installs the bundled Kirie
 addon and downloads the desktop Godot CEF backend.
 After `kirie init`, run `pnpm install` and `pnpm kirie doctor --fix` in the
@@ -43,7 +43,7 @@ evaluated MSBuild items for checks and `dotnet package add` for fixes.
 Projects enable plugins explicitly:
 
 ```ts
-import core from "kirie/core";
+import core from "kirie/plugin/core";
 import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({

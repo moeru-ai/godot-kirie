@@ -432,7 +432,7 @@ configuration.
 
 `kirie init <target> <template> [--overwrite]` initializes a new project from
 the named folder under `templates/` in the pinned `moeru-ai/kirie-templates`
-commit in `packages/cli/src/init.ts`. It sets `package.json.name` and the
+commit in `packages/cli/src/commands/init.ts`. It sets `package.json.name` and the
 `src-web/index.html` title, preserving template-owned Godot configuration.
 After initialization, run `pnpm install` and `pnpm kirie doctor --fix` to
 install addons. The command is non-interactive and does not migrate or repair
@@ -460,10 +460,10 @@ applies every supported automatic repair. System SDKs and tools remain
 user-managed.
 
 `kirie.config.ts` lists active plugin descriptors in its `plugins` array.
-The `kirie/core` descriptor declares the required Kirie addon and the
+The `kirie/plugin/core` descriptor declares the required Kirie addon and the
 optional desktop Godot CEF addon. The Kirie addon is bundled with the npm
 package; Godot CEF remains a large external archive pinned by URL and SHA-256.
-`packages/cli/src/doctor/addons.ts` validates either source before atomically
+`packages/cli/src/commands/doctor/addons.ts` validates either source before atomically
 replacing an installation.
 
 The initial `kirie doctor` check matrix is:

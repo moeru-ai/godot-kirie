@@ -1,12 +1,12 @@
-import type { KirieGodotAddonDependency } from "../plugin.ts";
+import type { KirieGodotAddonDependency } from "../../plugin/index.ts";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parseDoctorTarget } from "../commands.ts";
 import { type ResolvedKirieConfig, resolveKirieConfig } from "../config.ts";
+import { parseDoctorTarget } from "../index.ts";
 import { createBasicKirieCliProjectTracker } from "../test-project.ts";
 import {
   checkAndroidSdk,

@@ -1,7 +1,7 @@
 import path from "node:path";
 import process from "node:process";
 import { execa } from "execa";
-import { exportIosApp as exportCliIosApp } from "../packages/cli/src/ios.ts";
+import { exportIosApp as exportCliIosApp } from "../packages/cli/src/commands/ios.ts";
 
 export const rootDir = process.cwd();
 export const scriptsDir = path.join(rootDir, "scripts");

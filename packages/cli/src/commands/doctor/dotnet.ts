@@ -1,4 +1,4 @@
-import type { KirieDotnetPackageDependency } from "../plugin.ts";
+import type { KirieDotnetPackageDependency } from "../../plugin/index.ts";
 
 import { execa } from "execa";
 

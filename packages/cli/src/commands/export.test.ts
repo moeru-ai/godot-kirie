@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createBasicKirieCliProjectTracker, installProjectFixture } from "./test-project.ts";
 
 const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
-const cliPath = fileURLToPath(import.meta.resolve("./cli.ts"));
+const cliPath = fileURLToPath(import.meta.resolve("../cli.ts"));
 const projects = createBasicKirieCliProjectTracker("kirie-cli-export-");
 
 afterEach(async () => {

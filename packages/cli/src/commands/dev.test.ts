@@ -16,7 +16,7 @@ import {
 const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
 const FAKE_ADB_INVOCATIONS_FILE = "adb-invocations.json";
 const FAKE_XCRUN_INVOCATIONS_FILE = "xcrun-invocations.json";
-const cliPath = fileURLToPath(import.meta.resolve("./cli.ts"));
+const cliPath = fileURLToPath(import.meta.resolve("../cli.ts"));
 const projects = createBasicKirieCliProjectTracker("kirie-cli-dev-");
 
 interface AdbInvocation {

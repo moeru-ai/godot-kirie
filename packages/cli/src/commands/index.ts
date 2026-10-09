@@ -1,6 +1,6 @@
 import { type CommandContext, type CommandDef, defineCommand, type ParsedArgs } from "citty";
 
-import packageJson from "../package.json" with { type: "json" };
+import packageJson from "../../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
 import { type DoctorTarget, runDoctor } from "./doctor/index.ts";
