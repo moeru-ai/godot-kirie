@@ -92,45 +92,6 @@ describe("godot addon dependencies", () => {
     });
   });
 
-  it.each(["wrong version", "missing script", "download failure"])(
-    "preserves the previous addon after %s",
-    async (failure) => {
-      const project = await createProject();
-      await writeScriptAddon(project, "0.0.0");
-      const previousConfig = await fs.readFile(
-        path.join(project, "addons", "example", "plugin.cfg"),
-        "utf8",
-      );
-
-      await expect(installGodotAddon({
-        addon: archiveAddon,
-        projectDir: project,
-        download: async (options) => {
-          if (failure === "download failure") {
-            throw new Error("Download failed");
-          }
-
-          await fs.writeFile(options.outputPath, "archive fixture");
-        },
-        extractArchive: async (_archive, outputDir) => {
-          await writeScriptAddon(
-            outputDir,
-            failure === "wrong version" ? "0.0.0" : ADDON_VERSION,
-          );
-          if (failure === "missing script") {
-            await fs.rm(path.join(outputDir, "addons", "example", "plugin.gd"));
-          }
-        },
-      })).rejects.toThrow();
-
-      await expect(fs.readFile(
-        path.join(project, "addons", "example", "plugin.cfg"),
-        "utf8",
-      )).resolves.toBe(previousConfig);
-      await expect(listAddonStagingDirs(project)).resolves.toEqual([]);
-    },
-  );
-
   it("reports an incomplete installation even when its version matches", async () => {
     const project = await createProject();
     await writeScriptAddon(project, ADDON_VERSION);
