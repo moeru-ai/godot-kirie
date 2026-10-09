@@ -18,6 +18,7 @@
     "@alint-js/cli": "catalog:",
     "@antfu/eslint-config": "catalog:",
     "@gd-kirie/alint-config": "workspace:*",
+    "@gd-kirie/core": "workspace:*",
     "bumpp": "catalog:",
     "execa": "catalog:",
     "eslint": "catalog:",

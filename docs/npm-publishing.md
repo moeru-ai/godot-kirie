@@ -53,8 +53,8 @@ pnpm rewrites them to published version ranges when packing or publishing.
    mise run release
    ```
 
-   `bumpp` updates package versions and `KIRIE_ADDON_VERSION` in
-   `packages/cli/src/addon-versions.ts`, runs a package build and
+   `bumpp` updates package versions, including the version used by the
+   `@gd-kirie/core` descriptor, runs a package build and
    `pnpm publish -r --dry-run`, then creates a local release commit and
    `v<version>` tag.
 

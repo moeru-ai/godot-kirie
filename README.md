@@ -5,13 +5,16 @@ low-level Godot WebView plugin and IPC core.
 
 ## Installation
 
-For a CLI-managed Godot project, install the pinned Kirie addon with:
+CLI-managed projects enable the WebView stack through the core plugin:
 
 ```sh
-pnpm kirie doctor --fix kirie-addon
+pnpm add -D @gd-kirie/core
+pnpm kirie doctor --fix plugin:core
 ```
 
-Use `pnpm kirie doctor --fix` to include the desktop Godot CEF backend.
+Import `@gd-kirie/core` in `kirie.config.ts` and add it to the explicit
+`plugins` array before running doctor. The fix installs the bundled Kirie
+addon and downloads the desktop Godot CEF backend.
 After `kirie init`, run `pnpm install` and `pnpm kirie doctor --fix` in the
 generated project.
 
@@ -29,6 +32,29 @@ directory into the project root. Do not extract the zip inside the existing
 After copying the files, enable Kirie from Godot's Project Settings Plugins tab.
 This follows Godot's plugin installation flow. Release packaging details live in
 [docs/addon-release.md](docs/addon-release.md).
+
+## Kirie plugins
+
+A Kirie plugin is an npm package that exports a descriptor created with
+`defineKiriePlugin` from `kirie/plugin`. Descriptors declare an ID plus
+Godot addon and .NET package dependencies. Addons may be bundled with the npm
+package or downloaded from a SHA-256-pinned archive; .NET dependencies use
+evaluated MSBuild items for checks and `dotnet package add` for fixes.
+
+Projects enable plugins explicitly:
+
+```ts
+import core from "@gd-kirie/core";
+import { defineKirieConfig } from "kirie";
+
+export default defineKirieConfig({
+  plugins: [core],
+});
+```
+
+`kirie doctor plugin:core` checks one configured plugin, and
+`kirie doctor --fix plugin:core` installs or repairs its declared
+dependencies.
 
 ## Repository Development
 
@@ -77,6 +103,8 @@ example, and regression-test areas:
 - [`@gd-kirie/platform`](packages/platform/README.md): browser-side desktop host
   capabilities
 - `packages/build`: public build and export automation API for scripts
+- [`@gd-kirie/core`](packages/core/README.md): default Kirie plugin descriptor
+  for the WebView and IPC stack
 - `packages/cli`: Kirie command-line tools for development sessions, export,
   install, and launch workflows
 - [`@gd-kirie/vitest`](packages/vitest/README.md): ViDot launch adapter for

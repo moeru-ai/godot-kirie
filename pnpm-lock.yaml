@@ -77,6 +77,9 @@ importers:
       '@gd-kirie/alint-config':
         specifier: workspace:*
         version: link:packages/alint-config
+      '@gd-kirie/core':
+        specifier: workspace:*
+        version: link:packages/core
       bumpp:
         specifier: 'catalog:'
         version: 11.0.1
@@ -149,6 +152,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ipc
     devDependencies:
+      '@gd-kirie/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0
@@ -183,46 +189,9 @@ importers:
         specifier: 3.5.41
         version: 3.5.41(typescript@6.0.3)
     devDependencies:
-      '@proj-airi/unocss-preset-chromatic':
-        specifier: 1.1.4
-        version: 1.1.4
-      '@unocss/reset':
-        specifier: 66.8.1
-        version: 66.8.1
-      '@vitejs/plugin-vue':
-        specifier: 6.0.8
-        version: 6.0.8(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))(vue@3.5.41(typescript@6.0.3))
-      kirie:
+      '@gd-kirie/core':
         specifier: workspace:*
-        version: link:../../packages/cli
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      unocss:
-        specifier: 66.8.1
-        version: 66.8.1(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
-      vite:
-        specifier: 'catalog:'
-        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
-      vue-tsc:
-        specifier: 3.3.11
-        version: 3.3.11(typescript@6.0.3)
-
-  examples/tray:
-    dependencies:
-      '@gd-kirie/ipc-eventa':
-        specifier: workspace:*
-        version: link:../../packages/ipc-eventa
-      '@gd-kirie/platform':
-        specifier: workspace:*
-        version: link:../../packages/platform
-      '@proj-airi/ui':
-        specifier: 0.11.3
-        version: 0.11.3(typescript@6.0.3)
-      vue:
-        specifier: 3.5.41
-        version: 3.5.41(typescript@6.0.3)
-    devDependencies:
+        version: link:../../packages/core
       '@proj-airi/unocss-preset-chromatic':
         specifier: 1.1.4
         version: 1.1.4
@@ -266,6 +235,49 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
+
+  examples/tray:
+    dependencies:
+      '@gd-kirie/ipc-eventa':
+        specifier: workspace:*
+        version: link:../../packages/ipc-eventa
+      '@gd-kirie/platform':
+        specifier: workspace:*
+        version: link:../../packages/platform
+      '@proj-airi/ui':
+        specifier: 0.11.3
+        version: 0.11.3(typescript@6.0.3)
+      vue:
+        specifier: 3.5.41
+        version: 3.5.41(typescript@6.0.3)
+    devDependencies:
+      '@gd-kirie/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@proj-airi/unocss-preset-chromatic':
+        specifier: 1.1.4
+        version: 1.1.4
+      '@unocss/reset':
+        specifier: 66.8.1
+        version: 66.8.1
+      '@vitejs/plugin-vue':
+        specifier: 6.0.8
+        version: 6.0.8(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))(vue@3.5.41(typescript@6.0.3))
+      kirie:
+        specifier: workspace:*
+        version: link:../../packages/cli
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      unocss:
+        specifier: 66.8.1
+        version: 66.8.1(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
+      vue-tsc:
+        specifier: 3.3.11
+        version: 3.3.11(typescript@6.0.3)
 
   packages/alint-config:
     dependencies:
@@ -344,6 +356,25 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@25.6.0)(vite@8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3))
+
+  packages/core:
+    dependencies:
+      kirie:
+        specifier: workspace:*
+        version: link:../cli
+    devDependencies:
+      '@gd-kirie/kirie':
+        specifier: workspace:*
+        version: link:../kirie
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.0
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.2(typescript@6.0.3)(unrun@0.2.37)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/ipc:
     dependencies:

@@ -2,7 +2,7 @@ import { buildDotnet, readExportPresetValue } from "@gd-kirie/build";
 import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
-import { assertGodotCefInstalled } from "./doctor/addons.ts";
+import { assertGodotAddonInstalled } from "./doctor/addons.ts";
 import { runExport } from "./export.ts";
 import { exportIosApp } from "./ios.ts";
 import { createKirieDevLaunchOptions, isIosSimulatorDevice, runAndroid, runIos } from "./run.ts";
@@ -39,7 +39,13 @@ export async function runDev(options: DevOptions = {}): Promise<void> {
     assertIosDevExportProjectOnly(config);
   }
   if (target === "desktop") {
-    await assertGodotCefInstalled(config.godot.project);
+    const core = config.plugins.find((plugin) => plugin.id === "core");
+    const godotCef = core?.dependencies?.godotAddons?.find((addon) => addon.id === "godot-cef");
+    if (!core || !godotCef) {
+      throw new Error("kirie dev desktop requires the core plugin in kirie.config.ts.");
+    }
+
+    await assertGodotAddonInstalled(config.godot.project, core.id, godotCef);
   }
 
   const vite = await startViteDevServer(config, {

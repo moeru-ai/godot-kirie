@@ -262,7 +262,7 @@ describe("runDev", () => {
     await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
 
     await expect(runDev({ cwd: project })).rejects.toThrow(
-      "Run: pnpm kirie doctor --fix godot-cef",
+      "Run: pnpm kirie doctor --fix plugin:core",
     );
 
     await expect(fs.stat(path.join(project, FAKE_GODOT_INVOCATIONS_FILE))).rejects.toMatchObject({

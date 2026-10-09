@@ -1,3 +1,5 @@
+import core from "@gd-kirie/core";
+
 export default ({ command }) => {
   if (command === "build") {
     throw new Error("dev should reuse the serve config");
@@ -8,6 +10,7 @@ export default ({ command }) => {
       args: ["fake-godot.js"],
       command: process.execPath,
     },
+    plugins: [core],
     web: {
       vite: { logLevel: "silent" },
     },

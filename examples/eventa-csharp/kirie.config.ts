@@ -3,11 +3,4 @@ import { defineKirieConfig } from "kirie";
 
 export default defineKirieConfig({
   plugins: [core],
-  web: {
-    vite: {
-      build: {
-        sourcemap: true,
-      },
-    },
-  },
 });

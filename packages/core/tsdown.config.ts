@@ -1,14 +1,8 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  dts: {
-    sourcemap: true,
-  },
-  entry: {
-    cli: "src/cli.ts",
-    index: "src/index.ts",
-    plugin: "src/plugin.ts",
-  },
+  dts: { sourcemap: true },
+  entry: { index: "src/index.ts" },
   fixedExtension: false,
   format: "esm",
   platform: "node",

@@ -1,5 +1,5 @@
 ---
-status: "proposed"
+status: "accepted"
 date: 2026-10-08
 decision-makers: "LemonNeko"
 consulted: "Codex"
@@ -250,4 +250,3 @@ management semantics.
 - [Godot plugin installation](https://docs.godotengine.org/en/stable/tutorials/plugins/editor/installing_plugins.html)
 - [Evaluate MSBuild items and properties](https://learn.microsoft.com/en-us/visualstudio/msbuild/evaluate-items-and-properties)
 - [.NET `dotnet package add`](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-package-add)
-

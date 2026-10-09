@@ -1,19 +1,14 @@
 import type { DownloadListenerHandle, DownloadSnapshot } from "takanawa-node";
+import type { KirieGodotAddonDependency } from "../plugin.ts";
 import { lstatSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
+
 import { execa } from "execa";
 
-import { GODOT_CEF_SHA256, GODOT_CEF_VERSION, KIRIE_ADDON_VERSION } from "../addon-versions.ts";
-
-const KIRIE_ADDON_PATH = "addons/kirie";
-const KIRIE_ADDON_FILES = ["plugin.cfg", "plugin.gd", "kirie_node.gd", "gd_kirie.gd"];
-const KIRIE_RELEASES_URL = "https://github.com/moeru-ai/godot-kirie/releases/download";
-const GODOT_CEF_ADDON_PATH = "addons/godot_cef";
-const GODOT_CEF_CHECKSUM_PATH = ".godot/kirie/godot-cef.sha256";
-const GODOT_CEF_RELEASES_URL = "https://github.com/dsh0416/godot-cef/releases/download";
 const PROGRESS_BAR_WIDTH = 24;
 
 export interface AddonCheckResult {
@@ -29,6 +24,7 @@ export interface DownloadProgressOutput {
 }
 
 export interface InstallAddonOptions {
+  addon: KirieGodotAddonDependency;
   download?: (options: DownloadFileOptions) => Promise<void>;
   extractArchive?: (archivePath: string, outputDir: string) => Promise<void>;
   output?: DownloadProgressOutput;
@@ -42,41 +38,50 @@ interface DownloadFileOptions {
   url: string;
 }
 
-interface AddonArchive {
-  name: string;
-  version: string;
-  url: string;
-  addonPath: string;
-  archivePath: string;
-  expectedSha256?: string;
-  checksumPath?: string;
-  requiredFiles: string[];
-  check: (projectDir: string) => Promise<AddonCheckResult>;
-  validate?: (directory: string) => Promise<void>;
+export async function assertGodotAddonInstalled(
+  projectDir: string,
+  pluginId: string,
+  addon: KirieGodotAddonDependency,
+): Promise<void> {
+  const result = await checkGodotAddon(projectDir, addon);
+  if (result.installed && result.valid) {
+    return;
+  }
+
+  throw new Error(
+    `${addon.name} is required. ${result.message}. Run: pnpm kirie doctor --fix plugin:${pluginId}`,
+  );
 }
 
-export async function checkGodotCef(projectDir: string): Promise<AddonCheckResult> {
-  const installDir = path.resolve(projectDir, GODOT_CEF_ADDON_PATH);
-  const extensionPath = path.join(installDir, `${path.basename(installDir)}.gdextension`);
-
+export async function checkGodotAddon(
+  projectDir: string,
+  addon: KirieGodotAddonDependency,
+): Promise<AddonCheckResult> {
+  const installDir = resolveAddonInstallPath(projectDir, addon.path);
   if (!lstatSync(installDir, { throwIfNoEntry: false })) {
-    return {
-      installed: false,
-      message: "not installed; required for desktop development",
-      valid: true,
-    };
+    return { installed: false, message: "not installed", valid: false };
   }
 
   try {
-    const extensionStat = await fs.stat(extensionPath);
-    const installedSha256 = await fs.readFile(
-      path.join(projectDir, GODOT_CEF_CHECKSUM_PATH),
-      "utf8",
+    const files = await Promise.all(
+      addon.requiredFiles.map((file) => fs.stat(path.join(installDir, file))),
     );
-    if (extensionStat.isFile() && installedSha256.trim() === GODOT_CEF_SHA256) {
+    const installedVersion = addon.version && addon.requiredFiles.includes("plugin.cfg") ?
+        await readAddonVersion(installDir) :
+      addon.version;
+    const source = addon.source;
+    const checksumMatches =
+      source.type !== "archive" || !source.checksumPath ||
+      (await fs.readFile(resolveProjectPath(projectDir, source.checksumPath), "utf8")).trim() ===
+      source.sha256;
+    if (
+      files.every((file) => file.isFile()) &&
+      (!addon.version || installedVersion === addon.version) &&
+      checksumMatches
+    ) {
       return {
         installed: true,
-        message: `${GODOT_CEF_VERSION} at ${installDir}`,
+        message: `${addon.version ?? "installed"} at ${installDir}`,
         valid: true,
       };
     }
@@ -88,122 +93,48 @@ export async function checkGodotCef(projectDir: string): Promise<AddonCheckResul
 
   return {
     installed: true,
-    message: `installation at ${installDir} does not match ${GODOT_CEF_VERSION}`,
+    message: `installation at ${installDir} is incomplete or does not match ${addon.version ?? addon.id}`,
     valid: false,
   };
 }
 
-export async function assertGodotCefInstalled(projectDir: string): Promise<void> {
-  const result = await checkGodotCef(projectDir);
-  if (result.installed && result.valid) {
-    return;
-  }
-
-  throw new Error(
-    `kirie dev desktop requires Godot CEF for desktop. ${result.message}. Run: pnpm kirie doctor --fix godot-cef`,
-  );
-}
-
-export async function checkKirieAddon(projectDir: string): Promise<AddonCheckResult> {
-  const installDir = path.resolve(projectDir, KIRIE_ADDON_PATH);
-  if (!lstatSync(installDir, { throwIfNoEntry: false })) {
-    return { installed: false, message: "not installed", valid: false };
-  }
-
-  try {
-    const files = await Promise.all(
-      KIRIE_ADDON_FILES.map((file) => fs.stat(path.join(installDir, file))),
-    );
-    const version = await readKirieAddonVersion(installDir);
-    if (files.every((file) => file.isFile()) && version === KIRIE_ADDON_VERSION) {
-      return { installed: true, message: `${version} at ${installDir}`, valid: true };
-    }
-  } catch (error) {
-    if (!isNodeError(error) || (error.code !== "ENOENT" && error.code !== "ENOTDIR")) {
-      throw error;
-    }
-  }
-
-  return {
-    installed: true,
-    message: `installation at ${installDir} is incomplete or does not match ${KIRIE_ADDON_VERSION}`,
-    valid: false,
-  };
-}
-
-export async function installGodotCef(options: InstallAddonOptions): Promise<void> {
-  await installAddon(options, {
-    name: "Godot CEF",
-    version: GODOT_CEF_VERSION,
-    url: `${GODOT_CEF_RELEASES_URL}/v${GODOT_CEF_VERSION}/godot_cef-v${GODOT_CEF_VERSION}.zip`,
-    addonPath: GODOT_CEF_ADDON_PATH,
-    archivePath: `dist/${GODOT_CEF_ADDON_PATH}`,
-    expectedSha256: GODOT_CEF_SHA256,
-    checksumPath: GODOT_CEF_CHECKSUM_PATH,
-    requiredFiles: ["godot_cef.gdextension"],
-    check: checkGodotCef,
-  });
-}
-
-export async function installKirieAddon(options: InstallAddonOptions): Promise<void> {
-  await installAddon(options, {
-    name: "Kirie addon",
-    version: KIRIE_ADDON_VERSION,
-    url: `${KIRIE_RELEASES_URL}/v${KIRIE_ADDON_VERSION}/kirie-addon.zip`,
-    addonPath: KIRIE_ADDON_PATH,
-    archivePath: KIRIE_ADDON_PATH,
-    requiredFiles: KIRIE_ADDON_FILES,
-    check: checkKirieAddon,
-    validate: async (directory) => {
-      const version = await readKirieAddonVersion(directory);
-      if (version !== KIRIE_ADDON_VERSION) {
-        throw new Error(
-          `Kirie addon archive version ${version ?? "missing"} does not match ${KIRIE_ADDON_VERSION}`,
-        );
-      }
-    },
-  });
-}
-
-async function installAddon(options: InstallAddonOptions, addon: AddonArchive): Promise<void> {
+export async function installGodotAddon(options: InstallAddonOptions): Promise<void> {
+  const addon = options.addon;
   const projectDir = path.resolve(options.projectDir);
   assertGodotProject(projectDir);
 
-  const current = await addon.check(projectDir);
+  const current = await checkGodotAddon(projectDir, addon);
   if (current.installed && current.valid) {
     console.log(`${addon.name} is already installed: ${current.message}`);
     return;
   }
 
-  const installDir = path.join(projectDir, addon.addonPath);
+  const installDir = resolveAddonInstallPath(projectDir, addon.path);
   await fs.mkdir(path.dirname(installDir), { recursive: true });
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), "kirie-addon-"));
   const archivePath = path.join(temporaryRoot, "addon.zip");
   const extractDir = path.join(temporaryRoot, "extract");
-  const extractedAddon = path.join(extractDir, addon.archivePath);
+  let extractedAddon: string;
   let stagingRoot: string | undefined;
 
   try {
-    console.log(`Downloading ${addon.name} ${addon.version} from ${addon.url}`);
-    await (options.download ?? downloadFile)({
-      expectedSha256: addon.expectedSha256,
-      output: options.output ?? process.stderr,
-      outputPath: archivePath,
-      url: addon.url,
-    });
+    if (addon.source.type === "package") {
+      extractedAddon = fileURLToPath(addon.source.url);
+    } else {
+      console.log(`Downloading ${addon.name} ${addon.version ?? ""} from ${addon.source.url}`);
+      await (options.download ?? downloadFile)({
+        expectedSha256: addon.source.sha256,
+        output: options.output ?? process.stderr,
+        outputPath: archivePath,
+        url: addon.source.url,
+      });
 
-    await fs.mkdir(extractDir);
-    await (options.extractArchive ?? extractZip)(archivePath, extractDir);
-    for (const file of addon.requiredFiles) {
-      const filePath = path.join(extractedAddon, file);
-      const stat = await fs.stat(filePath);
-      if (!stat.isFile()) {
-        throw new Error(
-          `${addon.name} archive does not contain a file at ${addon.archivePath}/${file}`,
-        );
-      }
+      await fs.mkdir(extractDir);
+      await (options.extractArchive ?? extractZip)(archivePath, extractDir);
+      extractedAddon = resolveProjectPath(extractDir, addon.source.archivePath);
     }
-    await addon.validate?.(extractedAddon);
+
+    await validateAddon(addon, extractedAddon);
 
     stagingRoot = await fs.mkdtemp(path.join(path.dirname(projectDir), ".kirie-addon-stage-"));
     const stagedAddon = path.join(stagingRoot, "addon");
@@ -220,10 +151,10 @@ async function installAddon(options: InstallAddonOptions, addon: AddonArchive): 
       }
       throw error;
     }
-    if (addon.checksumPath) {
-      const checksumPath = path.join(projectDir, addon.checksumPath);
+    if (addon.source.type === "archive" && addon.source.checksumPath) {
+      const checksumPath = resolveProjectPath(projectDir, addon.source.checksumPath);
       await fs.mkdir(path.dirname(checksumPath), { recursive: true });
-      await fs.writeFile(checksumPath, `${addon.expectedSha256}\n`);
+      await fs.writeFile(checksumPath, `${addon.source.sha256}\n`);
     }
   } finally {
     await Promise.all([
@@ -232,12 +163,51 @@ async function installAddon(options: InstallAddonOptions, addon: AddonArchive): 
     ]);
   }
 
-  console.log(`Installed ${addon.name} ${addon.version} at ${installDir}`);
+  console.log(`Installed ${addon.name} ${addon.version ?? ""} at ${installDir}`);
 }
 
-async function readKirieAddonVersion(directory: string): Promise<string | undefined> {
+async function readAddonVersion(directory: string): Promise<string | undefined> {
   const plugin = await fs.readFile(path.join(directory, "plugin.cfg"), "utf8");
   return /^\s*version\s*=\s*"([^"]+)"\s*$/m.exec(plugin)?.[1];
+}
+
+async function validateAddon(
+  addon: KirieGodotAddonDependency,
+  directory: string,
+): Promise<void> {
+  for (const file of addon.requiredFiles) {
+    const stat = await fs.stat(path.join(directory, file));
+    if (!stat.isFile()) {
+      throw new Error(`${addon.name} does not contain ${file}`);
+    }
+  }
+
+  if (addon.version && addon.requiredFiles.includes("plugin.cfg")) {
+    const version = await readAddonVersion(directory);
+    if (version !== addon.version) {
+      throw new Error(`${addon.name} version ${version ?? "missing"} does not match ${addon.version}`);
+    }
+  }
+}
+
+function resolveProjectPath(root: string, relativePath: string): string {
+  const resolvedRoot = path.resolve(root);
+  const resolved = path.resolve(resolvedRoot, relativePath);
+  const relative = path.relative(resolvedRoot, resolved);
+  if (relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative))) {
+    return resolved;
+  }
+
+  throw new Error(`Path escapes its root: ${relativePath}`);
+}
+
+function resolveAddonInstallPath(projectDir: string, addonPath: string): string {
+  const resolved = resolveProjectPath(projectDir, addonPath);
+  if (resolved === path.resolve(projectDir)) {
+    throw new Error("An addon cannot replace the Godot project root");
+  }
+
+  return resolved;
 }
 
 function formatDownloadProgress(

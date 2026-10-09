@@ -53,7 +53,7 @@ Desktop runs use the pinned Godot CEF addon. Install it into this example before
 running on macOS, Windows, or Linux:
 
 ```sh
-mise x -- pnpm -C examples/basic-kirie-cli exec kirie doctor --fix godot-cef
+mise x -- pnpm -C examples/basic-kirie-cli exec kirie doctor --fix plugin:core
 ```
 
 For projects created with `kirie init`, run `pnpm install` and

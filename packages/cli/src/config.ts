@@ -1,5 +1,7 @@
+import type { KiriePlugin } from "./plugin.ts";
 import fs from "node:fs";
 import path from "node:path";
+
 import { loadConfigFromFile, type UserConfig } from "vite";
 
 export interface LoadKirieConfigOptions {
@@ -12,8 +14,10 @@ export interface KirieConfig extends Record<string, unknown> {
   godot?: {
     args?: string[];
     command?: string;
+    csproj?: string;
     project?: string;
   };
+  plugins?: KiriePlugin[];
   web?: {
     root?: string;
     vite?: UserConfig;
@@ -24,9 +28,11 @@ export interface ResolvedKirieConfig {
   configFile?: string;
   cwd: string;
   mode: string;
+  plugins: KiriePlugin[];
   godot: {
     args: string[];
     command: string;
+    csproj?: string;
     project: string;
   };
   web: {
@@ -82,14 +88,61 @@ export function resolveKirieConfig(
   const web = config.web ?? {};
   const project = path.resolve(context.cwd, godot.project ?? ".");
   const webRoot = path.resolve(project, web.root ?? "src-web");
+  const plugins = config.plugins ?? [];
+  const pluginIds = new Set<string>();
+  const addonDestinations = new Map<string, { pluginId: string; signature: string }>();
+  for (const plugin of plugins) {
+    if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(plugin.id)) {
+      throw new Error(`Invalid Kirie plugin ID: ${plugin.id}`);
+    }
+    if (pluginIds.has(plugin.id)) {
+      throw new Error(`Duplicate Kirie plugin ID: ${plugin.id}`);
+    }
+
+    pluginIds.add(plugin.id);
+
+    for (const addon of plugin.dependencies?.godotAddons ?? []) {
+      const destination = path.resolve(project, addon.path);
+      const relative = path.relative(project, destination);
+      if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
+        throw new Error(`Kirie plugin ${plugin.id} addon path escapes the Godot project: ${addon.path}`);
+      }
+
+      const source = addon.source.type === "package" ?
+          ["package", addon.source.url] :
+          [
+            "archive",
+            addon.source.url,
+            addon.source.sha256,
+            addon.source.archivePath,
+            addon.source.checksumPath,
+          ];
+      const signature = JSON.stringify([
+        addon.id,
+        addon.version,
+        addon.requiredFiles.toSorted(),
+        source,
+      ]);
+      const existing = addonDestinations.get(destination);
+      if (existing && existing.signature !== signature) {
+        throw new Error(
+          `Kirie plugins ${existing.pluginId} and ${plugin.id} declare incompatible addons at ${addon.path}`,
+        );
+      }
+
+      addonDestinations.set(destination, { pluginId: plugin.id, signature });
+    }
+  }
 
   return {
     configFile: context.configFile,
     cwd: context.cwd,
     mode: context.mode ?? "production",
+    plugins,
     godot: {
       args: godot.args ?? [],
       command: godot.command ?? "godot",
+      csproj: godot.csproj ? path.resolve(project, godot.csproj) : undefined,
       project,
     },
     web: {

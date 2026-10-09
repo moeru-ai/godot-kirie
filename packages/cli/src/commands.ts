@@ -3,7 +3,7 @@ import { type CommandContext, type CommandDef, defineCommand, type ParsedArgs } 
 import packageJson from "../package.json" with { type: "json" };
 import { runBuild, runBuildDotnet, runBuildWeb } from "./build.ts";
 import { type DevTarget, runDev } from "./dev.ts";
-import { DoctorTarget, runDoctor } from "./doctor/index.ts";
+import { type DoctorTarget, runDoctor } from "./doctor/index.ts";
 import { runExport } from "./export.ts";
 import { runInit } from "./init.ts";
 import { exportIosApp } from "./ios.ts";
@@ -24,7 +24,7 @@ const projectArgs = {
 const doctorArgs = {
   ...projectArgs,
   target: {
-    description: "Optional prerequisite to check or repair.",
+    description: "Optional configured plugin to check or repair (plugin:<id>).",
     required: false,
     type: "positional",
   },
@@ -237,7 +237,7 @@ function resolveClearScreen(args: DevCommandArgs): boolean | undefined {
   return undefined;
 }
 
-function parseDoctorTarget(
+export function parseDoctorTarget(
   rawTarget: string | undefined,
   positionals: string[],
 ): DoctorTarget | undefined {
@@ -247,8 +247,8 @@ function parseDoctorTarget(
   if (!rawTarget) {
     return undefined;
   }
-  if (rawTarget === DoctorTarget.GodotCef || rawTarget === DoctorTarget.KirieAddon) {
-    return rawTarget;
+  if (/^plugin:[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(rawTarget)) {
+    return rawTarget as DoctorTarget;
   }
   throw new Error(`Unknown doctor target: ${rawTarget}`);
 }

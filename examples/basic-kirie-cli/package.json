@@ -14,6 +14,7 @@
     "@gd-kirie/ipc": "workspace:*"
   },
   "devDependencies": {
+    "@gd-kirie/core": "workspace:*",
     "kirie": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
