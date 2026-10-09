@@ -66,10 +66,8 @@ import { defineKiriePlugin } from "kirie/plugin";
 
 export default defineKiriePlugin({
   id: "example",
-  dependencies: {
-    godotAddons: [],
-    dotnetPackages: [],
-  },
+  godotAddons: [],
+  dotnetPackages: [],
 });
 ```
 
@@ -107,8 +105,7 @@ using ordinary Godot addons without adopting the Kirie plugin API.
 
 A Godot addon dependency declares a stable dependency ID, its destination
 under the Godot project, the files needed to recognize a complete
-installation, any relevant version constraint, its target platforms, and one
-of two sources:
+installation, any relevant version constraint, and one of two sources:
 
 - `package`: the addon is bundled in the plugin's npm package. Its source is a
   package-local file URL, and `doctor --fix` copies it into the Godot project.

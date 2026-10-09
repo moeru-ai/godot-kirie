@@ -38,21 +38,6 @@ interface DownloadFileOptions {
   url: string;
 }
 
-export async function assertGodotAddonInstalled(
-  projectDir: string,
-  pluginId: string,
-  addon: KirieGodotAddonDependency,
-): Promise<void> {
-  const result = await checkGodotAddon(projectDir, addon);
-  if (result.installed && result.valid) {
-    return;
-  }
-
-  throw new Error(
-    `${addon.name} is required. ${result.message}. Run: pnpm kirie doctor --fix plugin:${pluginId}`,
-  );
-}
-
 export async function checkGodotAddon(
   projectDir: string,
   addon: KirieGodotAddonDependency,
@@ -71,8 +56,8 @@ export async function checkGodotAddon(
       addon.version;
     const source = addon.source;
     const checksumMatches =
-      source.type !== "archive" || !source.checksumPath ||
-      (await fs.readFile(resolveProjectPath(projectDir, source.checksumPath), "utf8")).trim() ===
+      source.type !== "archive" ||
+      (await fs.readFile(resolveAddonChecksumPath(projectDir, addon.id), "utf8")).trim() ===
       source.sha256;
     if (
       files.every((file) => file.isFile()) &&
@@ -105,7 +90,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
 
   const current = await checkGodotAddon(projectDir, addon);
   if (current.installed && current.valid) {
-    console.log(`${addon.name} is already installed: ${current.message}`);
+    console.log(`${addon.id} is already installed: ${current.message}`);
     return;
   }
 
@@ -121,7 +106,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
     if (addon.source.type === "package") {
       extractedAddon = fileURLToPath(addon.source.url);
     } else {
-      console.log(`Downloading ${addon.name} ${addon.version ?? ""} from ${addon.source.url}`);
+      console.log(`Downloading ${addon.id} ${addon.version ?? ""} from ${addon.source.url}`);
       await (options.download ?? downloadFile)({
         expectedSha256: addon.source.sha256,
         output: options.output ?? process.stderr,
@@ -151,8 +136,8 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
       }
       throw error;
     }
-    if (addon.source.type === "archive" && addon.source.checksumPath) {
-      const checksumPath = resolveProjectPath(projectDir, addon.source.checksumPath);
+    if (addon.source.type === "archive") {
+      const checksumPath = resolveAddonChecksumPath(projectDir, addon.id);
       await fs.mkdir(path.dirname(checksumPath), { recursive: true });
       await fs.writeFile(checksumPath, `${addon.source.sha256}\n`);
     }
@@ -163,7 +148,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
     ]);
   }
 
-  console.log(`Installed ${addon.name} ${addon.version ?? ""} at ${installDir}`);
+  console.log(`Installed ${addon.id} ${addon.version ?? ""} at ${installDir}`);
 }
 
 async function readAddonVersion(directory: string): Promise<string | undefined> {
@@ -178,16 +163,20 @@ async function validateAddon(
   for (const file of addon.requiredFiles) {
     const stat = await fs.stat(path.join(directory, file));
     if (!stat.isFile()) {
-      throw new Error(`${addon.name} does not contain ${file}`);
+      throw new Error(`${addon.id} does not contain ${file}`);
     }
   }
 
   if (addon.version && addon.requiredFiles.includes("plugin.cfg")) {
     const version = await readAddonVersion(directory);
     if (version !== addon.version) {
-      throw new Error(`${addon.name} version ${version ?? "missing"} does not match ${addon.version}`);
+      throw new Error(`${addon.id} version ${version ?? "missing"} does not match ${addon.version}`);
     }
   }
+}
+
+function resolveAddonChecksumPath(projectDir: string, addonId: string): string {
+  return path.join(projectDir, ".godot", "kirie", `${encodeURIComponent(addonId)}.sha256`);
 }
 
 function resolveProjectPath(root: string, relativePath: string): string {

@@ -22,10 +22,9 @@ export interface DotnetPackageOptions {
   runDotnet?: (args: string[], cwd: string) => Promise<string>;
 }
 
-export async function checkDotnetPackage(options: DotnetPackageOptions): Promise<{
-  installed: boolean;
-  version?: string;
-}> {
+export async function getDotnetPackageVersion(
+  options: DotnetPackageOptions,
+): Promise<string | undefined> {
   const args = [
     "msbuild",
     ...(options.csproj ? [options.csproj] : []),
@@ -37,16 +36,13 @@ export async function checkDotnetPackage(options: DotnetPackageOptions): Promise
     (item) => item.Identity.toLowerCase() === options.dependency.id.toLowerCase(),
   );
   if (!reference) {
-    return { installed: false };
+    return undefined;
   }
 
   const centralVersion = items.PackageVersion?.find(
     (item) => item.Identity.toLowerCase() === options.dependency.id.toLowerCase(),
   );
-  return {
-    installed: true,
-    version: reference.VersionOverride ?? reference.Version ?? centralVersion?.Version,
-  };
+  return reference.VersionOverride ?? reference.Version ?? centralVersion?.Version;
 }
 
 export async function installDotnetPackage(options: DotnetPackageOptions): Promise<void> {

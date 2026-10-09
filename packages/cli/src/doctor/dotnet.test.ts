@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { checkDotnetPackage, installDotnetPackage } from "./dotnet.ts";
+import { getDotnetPackageVersion, installDotnetPackage } from "./dotnet.ts";
 
 const dependency = { id: "Example.Package", version: "2.0.0" };
 
 describe("dotnet package doctor support", () => {
   it("reads a centrally managed package version from evaluated MSBuild items", async () => {
-    const result = await checkDotnetPackage({
+    const version = await getDotnetPackageVersion({
       dependency,
       projectDir: "/project",
       runDotnet: async (args, cwd) => {
@@ -26,7 +26,7 @@ describe("dotnet package doctor support", () => {
       csproj: "app.csproj",
     });
 
-    expect(result).toEqual({ installed: true, version: "2.0.0" });
+    expect(version).toBe("2.0.0");
   });
 
   it("delegates package updates to the dotnet CLI", async () => {

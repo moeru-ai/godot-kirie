@@ -6,7 +6,7 @@ import path from "node:path";
 import { execa } from "execa";
 import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
 import { checkGodotAddon, installGodotAddon } from "./addons.ts";
-import { checkDotnetPackage, installDotnetPackage } from "./dotnet.ts";
+import { getDotnetPackageVersion, installDotnetPackage } from "./dotnet.ts";
 
 export const DoctorCheckStatus = {
   Fail: "fail",
@@ -141,7 +141,7 @@ async function checkPluginDependencies(
   plugin: KiriePlugin,
 ): Promise<DoctorCheckResult[]> {
   const checks: DoctorCheckResult[] = [];
-  for (const addon of plugin.dependencies?.godotAddons ?? []) {
+  for (const addon of plugin.godotAddons ?? []) {
     try {
       const result = await checkGodotAddon(config.godot.project, addon);
       const missingOptional = addon.optional && !result.installed;
@@ -149,28 +149,28 @@ async function checkPluginDependencies(
         message: result.valid ?
           result.message :
           `${result.message} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
-        name: `${plugin.id} / ${addon.name}`,
+        name: `${plugin.id} / ${addon.id}`,
         status: result.valid ?
           DoctorCheckStatus.Ok :
           missingOptional ? DoctorCheckStatus.Warn : DoctorCheckStatus.Fail,
       });
     } catch (error) {
-      checks.push(failedCheck(`${plugin.id} / ${addon.name}`, error));
+      checks.push(failedCheck(`${plugin.id} / ${addon.id}`, error));
     }
   }
 
-  for (const dependency of plugin.dependencies?.dotnetPackages ?? []) {
+  for (const dependency of plugin.dotnetPackages ?? []) {
     try {
-      const result = await checkDotnetPackage({
+      const version = await getDotnetPackageVersion({
         csproj: config.godot.csproj,
         dependency,
         projectDir: config.godot.project,
       });
-      const valid = result.installed && result.version === dependency.version;
+      const valid = version === dependency.version;
       checks.push({
         message: valid ?
           `${dependency.version} in ${config.godot.csproj ?? config.godot.project}` :
-          `${result.version ?? "not installed"}; requires ${dependency.version} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
+          `${version ?? "not installed"}; requires ${dependency.version} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
         name: `${plugin.id} / ${dependency.id}`,
         status: valid ? DoctorCheckStatus.Ok : DoctorCheckStatus.Fail,
       });
@@ -186,18 +186,18 @@ async function fixPluginDependencies(
   config: ResolvedKirieConfig,
   plugin: KiriePlugin,
 ): Promise<void> {
-  for (const addon of plugin.dependencies?.godotAddons ?? []) {
+  for (const addon of plugin.godotAddons ?? []) {
     await installGodotAddon({ addon, projectDir: config.godot.project });
   }
 
-  for (const dependency of plugin.dependencies?.dotnetPackages ?? []) {
+  for (const dependency of plugin.dotnetPackages ?? []) {
     const options = {
       csproj: config.godot.csproj,
       dependency,
       projectDir: config.godot.project,
     };
-    const current = await checkDotnetPackage(options);
-    if (!current.installed || current.version !== dependency.version) {
+    const version = await getDotnetPackageVersion(options);
+    if (version !== dependency.version) {
       await installDotnetPackage(options);
     }
   }

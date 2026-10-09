@@ -247,7 +247,7 @@ export function parseDoctorTarget(
   if (!rawTarget) {
     return undefined;
   }
-  if (/^plugin:[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(rawTarget)) {
+  if (rawTarget.startsWith("plugin:") && rawTarget.length > "plugin:".length) {
     return rawTarget as DoctorTarget;
   }
   throw new Error(`Unknown doctor target: ${rawTarget}`);

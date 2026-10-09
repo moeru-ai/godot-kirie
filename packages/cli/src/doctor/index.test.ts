@@ -27,7 +27,6 @@ const GODOT_CEF_VERSION = "2.0.0";
 const GODOT_CEF_SHA256 = "51adbd1c4bae7dc53c6d64226ecce3cdefedf71a69f86ccb0f8f3db4d978c838";
 const kirieAddon: KirieGodotAddonDependency = {
   id: "kirie",
-  name: "Kirie addon",
   path: "addons/kirie",
   requiredFiles: ["plugin.cfg", "plugin.gd", "kirie_node.gd", "gd_kirie.gd"],
   source: { type: "package", url: pathToFileURL(path.join(os.tmpdir(), "unused")).href },
@@ -35,13 +34,11 @@ const kirieAddon: KirieGodotAddonDependency = {
 };
 const godotCefAddon: KirieGodotAddonDependency = {
   id: "godot-cef",
-  name: "Godot CEF",
   optional: true,
   path: "addons/godot_cef",
   requiredFiles: ["godot_cef.gdextension"],
   source: {
     archivePath: "dist/addons/godot_cef",
-    checksumPath: ".godot/kirie/godot-cef.sha256",
     sha256: GODOT_CEF_SHA256,
     type: "archive",
     url: `https://github.com/dsh0416/godot-cef/releases/download/v${GODOT_CEF_VERSION}/godot_cef-v${GODOT_CEF_VERSION}.zip`,
@@ -77,8 +74,8 @@ describe("doctor command", () => {
       target: "plugin:core",
     })).rejects.toThrow("kirie doctor found 1 problem(s)");
 
-    expect(loggedOutput(output)).toContain("fail core / Kirie addon: not installed");
-    expect(loggedOutput(output)).toContain("warn core / Godot CEF: not installed");
+    expect(loggedOutput(output)).toContain("fail core / kirie: not installed");
+    expect(loggedOutput(output)).toContain("warn core / godot-cef: not installed");
     expect(loggedOutput(output)).not.toContain("Godot command");
   });
 
@@ -110,9 +107,9 @@ describe("doctor command", () => {
       target: "plugin:core",
     });
 
-    expect(loggedOutput(output)).toContain("Kirie addon is already installed");
-    expect(loggedOutput(output)).toContain("Godot CEF is already installed");
-    expect(loggedOutput(output)).toContain("ok core / Kirie addon:");
+    expect(loggedOutput(output)).toContain("kirie is already installed");
+    expect(loggedOutput(output)).toContain("godot-cef is already installed");
+    expect(loggedOutput(output)).toContain("ok core / kirie:");
     expect(loggedOutput(output)).not.toContain("Godot command");
   });
 });
@@ -392,10 +389,8 @@ function createCoreConfig(project: string): ResolvedKirieConfig {
   return resolveKirieConfig(
     {
       plugins: [{
+        godotAddons: [kirieAddon, godotCefAddon],
         id: "core",
-        dependencies: {
-          godotAddons: [kirieAddon, godotCefAddon],
-        },
       }],
     },
     { cwd: project },

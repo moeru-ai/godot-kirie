@@ -45,28 +45,15 @@ export function defineKirieConfig(config: KirieConfig): KirieConfig {
   return config;
 }
 
-function validatePlugins(plugins: KiriePlugin[], project: string): void {
+function validatePlugins(plugins: KiriePlugin[]): void {
   const pluginIds = new Set<string>();
 
   for (const plugin of plugins) {
-    if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(plugin.id)) {
-      throw new Error(`Invalid Kirie plugin ID: ${plugin.id}`);
-    }
-
     if (pluginIds.has(plugin.id)) {
       throw new Error(`Duplicate Kirie plugin ID: ${plugin.id}`);
     }
 
     pluginIds.add(plugin.id);
-
-    for (const addon of plugin.dependencies?.godotAddons ?? []) {
-      const destination = path.resolve(project, addon.path);
-      const relative = path.relative(project, destination);
-
-      if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-        throw new Error(`Kirie plugin ${plugin.id} addon path escapes the Godot project: ${addon.path}`);
-      }
-    }
   }
 }
 
@@ -115,7 +102,7 @@ export function resolveKirieConfig(
   const webRoot = path.resolve(project, web.root ?? "src-web");
   const plugins = config.plugins ?? [];
 
-  validatePlugins(plugins, project);
+  validatePlugins(plugins);
 
   return {
     configFile: context.configFile,
