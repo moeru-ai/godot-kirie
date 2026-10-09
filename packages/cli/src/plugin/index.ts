@@ -1,16 +1,16 @@
-export interface PackageGodotAddonSource {
-  type: "package";
+export interface BundledGodotAddonSource {
+  type: "bundled";
   url: string;
 }
 
-export interface ArchiveGodotAddonSource {
+export interface RemoteGodotAddonSource {
   archivePath: string;
   sha256: string;
-  type: "archive";
+  type: "remote";
   url: string;
 }
 
-export type GodotAddonSource = ArchiveGodotAddonSource | PackageGodotAddonSource;
+export type GodotAddonSource = BundledGodotAddonSource | RemoteGodotAddonSource;
 
 export interface KirieGodotAddonDependency {
   id: string;

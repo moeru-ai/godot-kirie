@@ -17,17 +17,17 @@ import {
 
 const projects = createBasicKirieCliProjectTracker("kirie-cli-doctor-");
 const tempDirs: string[] = [];
-const packageUrl = pathToFileURL(os.tmpdir()).href;
+const bundledUrl = pathToFileURL(os.tmpdir()).href;
 const requiredAddon: KirieGodotAddonDependency = {
   id: "required-addon",
   path: "addons/required-addon",
-  source: { type: "package", url: packageUrl },
+  source: { type: "bundled", url: bundledUrl },
 };
 const optionalAddon: KirieGodotAddonDependency = {
   id: "optional-addon",
   optional: true,
   path: "addons/optional-addon",
-  source: { type: "package", url: packageUrl },
+  source: { type: "bundled", url: bundledUrl },
 };
 
 afterEach(async () => {

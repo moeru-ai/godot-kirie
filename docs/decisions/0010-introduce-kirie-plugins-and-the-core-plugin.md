@@ -113,9 +113,9 @@ A Godot addon dependency declares a stable dependency ID, its destination
 under the Godot project, any relevant version constraint, and one of two
 sources:
 
-- `package`: the addon is bundled in the plugin's npm package. Its source is a
+- `bundled`: the addon is bundled in the plugin's npm package. Its source is a
   package-local file URL, and `doctor --fix` copies it into the Godot project.
-- `archive`: the descriptor supplies a download URL, SHA-256 digest, and the
+- `remote`: the descriptor supplies a download URL, SHA-256 digest, and the
   path to the addon within the archive. `doctor --fix` downloads to a temporary
   directory, verifies the digest, extracts the addon, then atomically replaces
   the destination.

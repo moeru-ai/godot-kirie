@@ -11,18 +11,18 @@ const ADDON_VERSION = "1.0.0";
 const ARCHIVE_SHA256 = "fixture checksum";
 const NATIVE_SHA256 = "native checksum";
 const tempDirs: string[] = [];
-const packageAddon: KirieGodotAddonDependency = {
+const bundledAddon: KirieGodotAddonDependency = {
   id: "example",
   path: "addons/example",
-  source: { type: "package", url: pathToFileURL(path.join(os.tmpdir(), "unused")).href },
+  source: { type: "bundled", url: pathToFileURL(path.join(os.tmpdir(), "unused")).href },
   version: ADDON_VERSION,
 };
-const archiveAddon: KirieGodotAddonDependency = {
-  ...packageAddon,
+const remoteAddon: KirieGodotAddonDependency = {
+  ...bundledAddon,
   source: {
     archivePath: "addons/example",
     sha256: ARCHIVE_SHA256,
-    type: "archive",
+    type: "remote",
     url: "https://example.com/example-addon.zip",
   },
 };
@@ -32,7 +32,7 @@ const nativeAddon: KirieGodotAddonDependency = {
   source: {
     archivePath: "dist/addons/native",
     sha256: NATIVE_SHA256,
-    type: "archive",
+    type: "remote",
     url: "https://example.com/native-addon.zip",
   },
   version: "2.0.0",
@@ -50,14 +50,14 @@ describe("godot addon dependencies", () => {
     await writeVersionedAddon(project, "0.0.0");
     await fs.writeFile(path.join(project, "addons", "example", "obsolete.gd"), "old release");
 
-    await expect(checkGodotAddon(project, packageAddon)).resolves.toMatchObject({
+    await expect(checkGodotAddon(project, bundledAddon)).resolves.toMatchObject({
       installed: true,
       valid: false,
     });
 
     const archive = Buffer.from("addon archive fixture");
     await installGodotAddon({
-      addon: archiveAddon,
+      addon: remoteAddon,
       projectDir: project,
       download: async (options) => {
         expect(options.url).toBe("https://example.com/example-addon.zip");
@@ -69,7 +69,7 @@ describe("godot addon dependencies", () => {
       },
     });
 
-    await expect(checkGodotAddon(project, archiveAddon)).resolves.toMatchObject({ valid: true });
+    await expect(checkGodotAddon(project, remoteAddon)).resolves.toMatchObject({ valid: true });
     await expect(fs.stat(path.join(project, "addons", "example", "obsolete.gd")))
       .rejects
       .toMatchObject({ code: "ENOENT" });
@@ -84,7 +84,7 @@ describe("godot addon dependencies", () => {
     await fs.writeFile(path.join(checksumDir, "example.sha256"), `${ARCHIVE_SHA256}\n`);
 
     await installGodotAddon({
-      addon: archiveAddon,
+      addon: remoteAddon,
       projectDir: project,
       download: async () => { throw new Error("Matching installations must be reused"); },
     });
@@ -92,13 +92,13 @@ describe("godot addon dependencies", () => {
 
   it("copies an addon bundled in a plugin package", async () => {
     const project = await createProject();
-    const packageRoot = await createTempDir("kirie-package-addon-");
-    await writeVersionedAddon(packageRoot, ADDON_VERSION);
+    const bundleRoot = await createTempDir("kirie-bundled-addon-");
+    await writeVersionedAddon(bundleRoot, ADDON_VERSION);
     const addon = {
-      ...packageAddon,
+      ...bundledAddon,
       source: {
-        type: "package" as const,
-        url: pathToFileURL(path.join(packageRoot, "addons", "example")).href,
+        type: "bundled" as const,
+        url: pathToFileURL(path.join(bundleRoot, "addons", "example")).href,
       },
     };
 

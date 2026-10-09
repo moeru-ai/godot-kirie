@@ -51,10 +51,10 @@ export async function checkGodotAddon(
     const installation = await fs.stat(installDir);
     const source = addon.source;
     const versionMatches =
-      !addon.version || source.type === "archive" ||
+      !addon.version || source.type === "remote" ||
       await readAddonVersion(installDir) === addon.version;
     const checksumMatches =
-      source.type !== "archive" ||
+      source.type !== "remote" ||
       (await fs.readFile(resolveAddonChecksumPath(projectDir, addon.id), "utf8")).trim() ===
       source.sha256;
     if (
@@ -101,7 +101,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
   let stagingRoot: string | undefined;
 
   try {
-    if (addon.source.type === "package") {
+    if (addon.source.type === "bundled") {
       extractedAddon = fileURLToPath(addon.source.url);
     } else {
       console.log(`Downloading ${addon.id} ${addon.version ?? ""} from ${addon.source.url}`);
@@ -122,7 +122,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
       throw new Error(`${addon.id} source is not a directory`);
     }
 
-    if (addon.version && addon.source.type === "package") {
+    if (addon.version && addon.source.type === "bundled") {
       const version = await readAddonVersion(extractedAddon);
       if (version !== addon.version) {
         throw new Error(
@@ -146,7 +146,7 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
       }
       throw error;
     }
-    if (addon.source.type === "archive") {
+    if (addon.source.type === "remote") {
       const checksumPath = resolveAddonChecksumPath(projectDir, addon.id);
       await fs.mkdir(path.dirname(checksumPath), { recursive: true });
       await fs.writeFile(checksumPath, `${addon.source.sha256}\n`);
