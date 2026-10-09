@@ -121,10 +121,9 @@ Bundling is suitable for small redistributable addons. Archives keep large
 native artifacts out of npm package downloads and caches. Both forms are
 automatic doctor fixers; neither requires a package lifecycle script.
 
-Addon paths must stay under the configured Godot project. Two configured
-plugins that claim the same destination with incompatible requirements produce
-a diagnostic failure. Plugin authors remain responsible for having permission
-to redistribute files included in npm packages or referenced archives.
+Addon paths must stay under the configured Godot project. Plugin authors remain
+responsible for having permission to redistribute files included in npm
+packages or referenced archives.
 
 ### .NET package dependencies
 

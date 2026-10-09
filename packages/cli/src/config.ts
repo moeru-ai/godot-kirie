@@ -1,4 +1,4 @@
-import type { KirieGodotAddonDependency, KiriePlugin } from "./plugin.ts";
+import type { KiriePlugin } from "./plugin.ts";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -45,28 +45,8 @@ export function defineKirieConfig(config: KirieConfig): KirieConfig {
   return config;
 }
 
-function getAddonSignature(addon: KirieGodotAddonDependency): string {
-  const source = addon.source.type === "package" ?
-      ["package", addon.source.url] :
-      [
-        "archive",
-        addon.source.url,
-        addon.source.sha256,
-        addon.source.archivePath,
-        addon.source.checksumPath,
-      ];
-
-  return JSON.stringify([
-    addon.id,
-    addon.version,
-    addon.requiredFiles.toSorted(),
-    source,
-  ]);
-}
-
 function validatePlugins(plugins: KiriePlugin[], project: string): void {
   const pluginIds = new Set<string>();
-  const addonDestinations = new Map<string, { pluginId: string; signature: string }>();
 
   for (const plugin of plugins) {
     if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(plugin.id)) {
@@ -86,17 +66,6 @@ function validatePlugins(plugins: KiriePlugin[], project: string): void {
       if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
         throw new Error(`Kirie plugin ${plugin.id} addon path escapes the Godot project: ${addon.path}`);
       }
-
-      const signature = getAddonSignature(addon);
-      const existing = addonDestinations.get(destination);
-
-      if (existing && existing.signature !== signature) {
-        throw new Error(
-          `Kirie plugins ${existing.pluginId} and ${plugin.id} declare incompatible addons at ${addon.path}`,
-        );
-      }
-
-      addonDestinations.set(destination, { pluginId: plugin.id, signature });
     }
   }
 }
