@@ -48,20 +48,18 @@ export async function checkGodotAddon(
   }
 
   try {
-    const files = await Promise.all(
-      addon.requiredFiles.map((file) => fs.stat(path.join(installDir, file))),
-    );
-    const installedVersion = addon.version && addon.requiredFiles.includes("plugin.cfg") ?
-        await readAddonVersion(installDir) :
-      addon.version;
+    const installation = await fs.stat(installDir);
     const source = addon.source;
+    const versionMatches =
+      !addon.version || source.type === "archive" ||
+      await readAddonVersion(installDir) === addon.version;
     const checksumMatches =
       source.type !== "archive" ||
       (await fs.readFile(resolveAddonChecksumPath(projectDir, addon.id), "utf8")).trim() ===
       source.sha256;
     if (
-      files.every((file) => file.isFile()) &&
-      (!addon.version || installedVersion === addon.version) &&
+      installation.isDirectory() &&
+      versionMatches &&
       checksumMatches
     ) {
       return {
@@ -78,7 +76,7 @@ export async function checkGodotAddon(
 
   return {
     installed: true,
-    message: `installation at ${installDir} is incomplete or does not match ${addon.version ?? addon.id}`,
+    message: `installation at ${installDir} does not match ${addon.version ?? addon.id}`,
     valid: false,
   };
 }
@@ -119,7 +117,19 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
       extractedAddon = resolveProjectPath(extractDir, addon.source.archivePath);
     }
 
-    await validateAddon(addon, extractedAddon);
+    const installation = await fs.stat(extractedAddon);
+    if (!installation.isDirectory()) {
+      throw new Error(`${addon.id} source is not a directory`);
+    }
+
+    if (addon.version && addon.source.type === "package") {
+      const version = await readAddonVersion(extractedAddon);
+      if (version !== addon.version) {
+        throw new Error(
+          `${addon.id} version ${version ?? "missing"} does not match ${addon.version}`,
+        );
+      }
+    }
 
     stagingRoot = await fs.mkdtemp(path.join(path.dirname(projectDir), ".kirie-addon-stage-"));
     const stagedAddon = path.join(stagingRoot, "addon");
@@ -154,25 +164,6 @@ export async function installGodotAddon(options: InstallAddonOptions): Promise<v
 async function readAddonVersion(directory: string): Promise<string | undefined> {
   const plugin = await fs.readFile(path.join(directory, "plugin.cfg"), "utf8");
   return /^\s*version\s*=\s*"([^"]+)"\s*$/m.exec(plugin)?.[1];
-}
-
-async function validateAddon(
-  addon: KirieGodotAddonDependency,
-  directory: string,
-): Promise<void> {
-  for (const file of addon.requiredFiles) {
-    const stat = await fs.stat(path.join(directory, file));
-    if (!stat.isFile()) {
-      throw new Error(`${addon.id} does not contain ${file}`);
-    }
-  }
-
-  if (addon.version && addon.requiredFiles.includes("plugin.cfg")) {
-    const version = await readAddonVersion(directory);
-    if (version !== addon.version) {
-      throw new Error(`${addon.id} version ${version ?? "missing"} does not match ${addon.version}`);
-    }
-  }
 }
 
 function resolveAddonChecksumPath(projectDir: string, addonId: string): string {

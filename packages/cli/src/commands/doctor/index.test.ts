@@ -21,14 +21,12 @@ const packageUrl = pathToFileURL(os.tmpdir()).href;
 const requiredAddon: KirieGodotAddonDependency = {
   id: "required-addon",
   path: "addons/required-addon",
-  requiredFiles: ["plugin.cfg"],
   source: { type: "package", url: packageUrl },
 };
 const optionalAddon: KirieGodotAddonDependency = {
   id: "optional-addon",
   optional: true,
   path: "addons/optional-addon",
-  requiredFiles: ["plugin.cfg"],
   source: { type: "package", url: packageUrl },
 };
 

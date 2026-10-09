@@ -21,7 +21,6 @@ const corePlugin: KiriePlugin = {
     {
       id: "kirie",
       path: "addons/kirie",
-      requiredFiles: ["plugin.cfg", "plugin.gd", "kirie_node.gd", "gd_kirie.gd"],
       source: {
         type: "package",
         url: addonUrl,
@@ -32,7 +31,6 @@ const corePlugin: KiriePlugin = {
       id: "godot-cef",
       optional: true,
       path: "addons/godot_cef",
-      requiredFiles: ["godot_cef.gdextension"],
       source: {
         type: "archive",
         archivePath: "dist/addons/godot_cef",

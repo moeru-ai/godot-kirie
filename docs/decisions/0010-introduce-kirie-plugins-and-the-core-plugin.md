@@ -110,15 +110,15 @@ using ordinary Godot addons without adopting the Kirie plugin API.
 ### Godot addon dependencies
 
 A Godot addon dependency declares a stable dependency ID, its destination
-under the Godot project, the files needed to recognize a complete
-installation, any relevant version constraint, and one of two sources:
+under the Godot project, any relevant version constraint, and one of two
+sources:
 
 - `package`: the addon is bundled in the plugin's npm package. Its source is a
   package-local file URL, and `doctor --fix` copies it into the Godot project.
 - `archive`: the descriptor supplies a download URL, SHA-256 digest, and the
   path to the addon within the archive. `doctor --fix` downloads to a temporary
-  directory, verifies the digest, extracts and validates the addon, then
-  atomically replaces the destination.
+  directory, verifies the digest, extracts the addon, then atomically replaces
+  the destination.
 
 Bundling is suitable for small redistributable addons. Archives keep large
 native artifacts out of npm package downloads and caches. Both forms are
@@ -173,8 +173,8 @@ whose npm module cannot be loaded is a configuration error.
 
 The fixed `kirie-addon` and `godot-cef` doctor targets are replaced by the
 dependencies declared by `core`. Generic addon download, digest verification,
-archive extraction, validation, and atomic replacement remain CLI
-implementation facilities shared by every plugin.
+archive extraction, and atomic replacement remain CLI implementation
+facilities shared by every plugin.
 
 Kirie does not add a `kirie add` command. Installing a plugin follows the same
 explicit shape as installing a Vite plugin:

@@ -14,7 +14,6 @@ const tempDirs: string[] = [];
 const packageAddon: KirieGodotAddonDependency = {
   id: "example",
   path: "addons/example",
-  requiredFiles: ["plugin.cfg", "plugin.gd"],
   source: { type: "package", url: pathToFileURL(path.join(os.tmpdir(), "unused")).href },
   version: ADDON_VERSION,
 };
@@ -30,7 +29,6 @@ const archiveAddon: KirieGodotAddonDependency = {
 const nativeAddon: KirieGodotAddonDependency = {
   id: "native",
   path: "addons/native",
-  requiredFiles: ["native.gdextension"],
   source: {
     archivePath: "dist/addons/native",
     sha256: NATIVE_SHA256,
@@ -49,7 +47,7 @@ afterEach(async () => {
 describe("godot addon dependencies", () => {
   it("replaces an addon with a mismatched version", async () => {
     const project = await createProject();
-    await writeScriptAddon(project, "0.0.0");
+    await writeVersionedAddon(project, "0.0.0");
     await fs.writeFile(path.join(project, "addons", "example", "obsolete.gd"), "old release");
 
     await expect(checkGodotAddon(project, packageAddon)).resolves.toMatchObject({
@@ -67,7 +65,7 @@ describe("godot addon dependencies", () => {
       },
       extractArchive: async (archivePath, outputDir) => {
         await expect(fs.readFile(archivePath)).resolves.toEqual(archive);
-        await writeScriptAddon(outputDir, ADDON_VERSION);
+        await writeVersionedAddon(outputDir, ADDON_VERSION);
       },
     });
 
@@ -80,7 +78,7 @@ describe("godot addon dependencies", () => {
 
   it("skips the download when the installed addon matches", async () => {
     const project = await createProject();
-    await writeScriptAddon(project, ADDON_VERSION);
+    await writeVersionedAddon(project, ADDON_VERSION);
     const checksumDir = path.join(project, ".godot", "kirie");
     await fs.mkdir(checksumDir, { recursive: true });
     await fs.writeFile(path.join(checksumDir, "example.sha256"), `${ARCHIVE_SHA256}\n`);
@@ -92,18 +90,10 @@ describe("godot addon dependencies", () => {
     });
   });
 
-  it("reports an incomplete installation even when its version matches", async () => {
-    const project = await createProject();
-    await writeScriptAddon(project, ADDON_VERSION);
-    await fs.rm(path.join(project, "addons", "example", "plugin.gd"));
-
-    await expect(checkGodotAddon(project, packageAddon)).resolves.toMatchObject({ valid: false });
-  });
-
   it("copies an addon bundled in a plugin package", async () => {
     const project = await createProject();
     const packageRoot = await createTempDir("kirie-package-addon-");
-    await writeScriptAddon(packageRoot, ADDON_VERSION);
+    await writeVersionedAddon(packageRoot, ADDON_VERSION);
     const addon = {
       ...packageAddon,
       source: {
@@ -175,15 +165,14 @@ async function createTempDir(prefix: string): Promise<string> {
   return directory;
 }
 
-async function writeScriptAddon(root: string, version: string): Promise<void> {
+async function writeVersionedAddon(root: string, version: string): Promise<void> {
   const directory = path.join(root, "addons", "example");
   await fs.rm(directory, { force: true, recursive: true });
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(
     path.join(directory, "plugin.cfg"),
-    `[plugin]\nversion="${version}"\nscript="plugin.gd"\n`,
+    `[plugin]\nversion="${version}"\n`,
   );
-  await fs.writeFile(path.join(directory, "plugin.gd"), "extends RefCounted\n");
 }
 
 async function listAddonStagingDirs(project: string): Promise<string[]> {

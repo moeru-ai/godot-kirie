@@ -16,7 +16,6 @@ export interface KirieGodotAddonDependency {
   id: string;
   optional?: boolean;
   path: string;
-  requiredFiles: string[];
   source: GodotAddonSource;
   version?: string;
 }
