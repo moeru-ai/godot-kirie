@@ -1,2 +1,2 @@
-export type { KirieConfig } from "./config.ts";
-export { defineKirieConfig } from "./config.ts";
+export type { KirieConfig } from "./commands/config.ts";
+export { defineKirieConfig } from "./commands/config.ts";

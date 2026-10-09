@@ -208,6 +208,25 @@ importers:
         specifier: 3.3.11
         version: 3.3.11(typescript@6.0.3)
 
+  examples/eventa-csharp/src-web:
+    dependencies:
+      '@gd-kirie/ipc-eventa':
+        specifier: workspace:*
+        version: link:../../../packages/ipc-eventa
+      '@moeru/eventa':
+        specifier: 'catalog:'
+        version: 1.0.0(web-worker@1.5.0)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
+
   examples/tray:
     dependencies:
       '@gd-kirie/ipc-eventa':
@@ -247,25 +266,6 @@ importers:
       vue-tsc:
         specifier: 3.3.11
         version: 3.3.11(typescript@6.0.3)
-
-  examples/eventa-csharp/src-web:
-    dependencies:
-      '@gd-kirie/ipc-eventa':
-        specifier: workspace:*
-        version: link:../../../packages/ipc-eventa
-      '@moeru/eventa':
-        specifier: 'catalog:'
-        version: 1.0.0(web-worker@1.5.0)
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 25.6.0
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-      vite:
-        specifier: 'catalog:'
-        version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
 
   packages/alint-config:
     dependencies:
@@ -332,6 +332,9 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@25.6.0)(jiti@2.7.0)(yaml@2.8.3)
     devDependencies:
+      '@gd-kirie/kirie':
+        specifier: workspace:*
+        version: link:../kirie
       '@types/node':
         specifier: 'catalog:'
         version: 25.6.0

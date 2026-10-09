@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 
 import { loadKirieConfig, type ResolvedKirieConfig } from "./config.ts";
@@ -103,7 +102,7 @@ async function buildExportedIosApp(options: {
     }
 
     fs.copyFileSync(
-      await ensureIosArm64SimulatorLibgodot(options.release ?? false),
+      await ensureIosArm64SimulatorLibgodot(options.cwd, options.release ?? false),
       simulatorLibgodot,
     );
   }
@@ -169,10 +168,11 @@ function findSimulatorLibgodot(dirPath: string): string | undefined {
   return undefined;
 }
 
-async function ensureIosArm64SimulatorLibgodot(release: boolean): Promise<string> {
+async function ensureIosArm64SimulatorLibgodot(cwd: string, release: boolean): Promise<string> {
   const target = release ? "release" : "debug";
+  const godotSourceRoot = resolveRepositoryGodotSourceRoot(cwd);
   const arm64Source = path.join(
-    resolveRepositoryGodotSourceRoot(),
+    godotSourceRoot,
     `bin/libgodot.ios.template_${target}.arm64.simulator.a`,
   );
 
@@ -190,7 +190,7 @@ async function ensureIosArm64SimulatorLibgodot(release: boolean): Promise<string
       `-j${os.availableParallelism()}`,
     ],
     {
-      cwd: resolveRepositoryGodotSourceRoot(),
+      cwd: godotSourceRoot,
       stdio: "inherit",
     },
   );
@@ -198,8 +198,18 @@ async function ensureIosArm64SimulatorLibgodot(release: boolean): Promise<string
   return arm64Source;
 }
 
-function resolveRepositoryGodotSourceRoot(): string {
-  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../godot");
+function resolveRepositoryGodotSourceRoot(cwd: string): string {
+  let directory = path.resolve(cwd);
+
+  while (path.dirname(directory) !== directory) {
+    if (fs.existsSync(path.join(directory, "pnpm-workspace.yaml"))) {
+      return path.join(directory, "godot");
+    }
+
+    directory = path.dirname(directory);
+  }
+
+  throw new Error(`Could not locate the Kirie repository from ${cwd}`);
 }
 
 function validateIosAppOutputPath(

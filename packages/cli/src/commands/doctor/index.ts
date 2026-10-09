@@ -1,10 +1,12 @@
+import type { KiriePlugin } from "../../plugin/index.ts";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execa } from "execa";
 
+import { execa } from "execa";
 import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
-import { checkGodotCef, checkKirieAddon, installGodotCef, installKirieAddon } from "./addons.ts";
+import { checkGodotAddon, installGodotAddon } from "./addons.ts";
+import { getDotnetPackageVersion, installDotnetPackage } from "./dotnet.ts";
 
 export const DoctorCheckStatus = {
   Fail: "fail",
@@ -13,11 +15,7 @@ export const DoctorCheckStatus = {
 } as const;
 export type DoctorCheckStatus = (typeof DoctorCheckStatus)[keyof typeof DoctorCheckStatus];
 
-export const DoctorTarget = {
-  GodotCef: "godot-cef",
-  KirieAddon: "kirie-addon",
-} as const;
-export type DoctorTarget = (typeof DoctorTarget)[keyof typeof DoctorTarget];
+export type DoctorTarget = `plugin:${string}`;
 
 export interface DoctorCheckResult {
   error?: Error;
@@ -74,19 +72,15 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<void> {
       cwd: options.cwd,
     }));
 
+  const plugins = selectPlugins(config.plugins, options.target);
   if (options.fix) {
-    if (!options.target || options.target === DoctorTarget.KirieAddon) {
-      await installKirieAddon({ projectDir: config.godot.project });
-    }
-    if (!options.target || options.target === DoctorTarget.GodotCef) {
-      await installGodotCef({ projectDir: config.godot.project });
+    for (const plugin of plugins) {
+      await fixPluginDependencies(config, plugin);
     }
   }
 
   const checks = options.target ?
-      [await (options.target === DoctorTarget.KirieAddon ?
-          checkKirieAddonPrerequisite(config.godot.project) :
-          checkGodotCefPrerequisite(config.godot.project))] :
+      await checkPlugins(config, plugins) :
       await runDoctorChecks({
         config,
         env: options.env,
@@ -136,58 +130,129 @@ export async function runDoctorChecks(options: {
     godotCommand.check,
     exportTemplates,
     await checkAndroidSdk(options.env),
-    await checkKirieAddonPrerequisite(options.config.godot.project),
-    await checkGodotCefPrerequisite(options.config.godot.project),
+    ...(await checkPlugins(options.config, options.config.plugins)),
   ];
 }
 
-export async function checkKirieAddonPrerequisite(projectDir: string): Promise<DoctorCheckResult> {
-  try {
-    const result = await checkKirieAddon(projectDir);
-    return {
-      message: result.valid ?
-        result.message :
-        `${result.message} (run: pnpm kirie doctor --fix kirie-addon)`,
-      name: "Kirie addon",
-      status: result.valid ? DoctorCheckStatus.Ok : DoctorCheckStatus.Fail,
+async function checkPlugins(
+  config: ResolvedKirieConfig,
+  plugins: KiriePlugin[],
+): Promise<DoctorCheckResult[]> {
+  return (await Promise.all(
+    plugins.map((plugin) => checkPluginDependencies(config, plugin)),
+  )).flat();
+}
+
+async function checkPluginDependencies(
+  config: ResolvedKirieConfig,
+  plugin: KiriePlugin,
+): Promise<DoctorCheckResult[]> {
+  const checks: DoctorCheckResult[] = [];
+  for (const addon of plugin.godotAddons ?? []) {
+    try {
+      const result = await checkGodotAddon(config.godot.project, addon);
+      const missingOptional = addon.optional && !result.installed;
+      checks.push({
+        message: result.valid ?
+          result.message :
+          `${result.message} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
+        name: `${plugin.id} / ${addon.id}`,
+        status: result.valid ?
+          DoctorCheckStatus.Ok :
+          missingOptional ? DoctorCheckStatus.Warn : DoctorCheckStatus.Fail,
+      });
+    } catch (error) {
+      checks.push(failedCheck(`${plugin.id} / ${addon.id}`, error));
+    }
+  }
+
+  const dotnetPackages = plugin.dotnetPackages ?? [];
+  if (dotnetPackages.length === 0 || !(await hasDotnetProject(config))) {
+    return checks;
+  }
+
+  for (const dependency of dotnetPackages) {
+    try {
+      const version = await getDotnetPackageVersion({
+        csproj: config.godot.csproj,
+        dependency,
+        projectDir: config.godot.project,
+      });
+      const valid = version === dependency.version;
+      checks.push({
+        message: valid ?
+          `${dependency.version} in ${config.godot.csproj ?? config.godot.project}` :
+          `${version ?? "not installed"}; requires ${dependency.version} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
+        name: `${plugin.id} / ${dependency.id}`,
+        status: valid ? DoctorCheckStatus.Ok : DoctorCheckStatus.Fail,
+      });
+    } catch (error) {
+      checks.push(failedCheck(`${plugin.id} / ${dependency.id}`, error));
+    }
+  }
+
+  return checks;
+}
+
+async function fixPluginDependencies(
+  config: ResolvedKirieConfig,
+  plugin: KiriePlugin,
+): Promise<void> {
+  for (const addon of plugin.godotAddons ?? []) {
+    await installGodotAddon({ addon, projectDir: config.godot.project });
+  }
+
+  const dotnetPackages = plugin.dotnetPackages ?? [];
+  if (dotnetPackages.length === 0 || !(await hasDotnetProject(config))) {
+    return;
+  }
+
+  for (const dependency of dotnetPackages) {
+    const options = {
+      csproj: config.godot.csproj,
+      dependency,
+      projectDir: config.godot.project,
     };
-  } catch (error) {
-    const failure = error instanceof Error ? error : new Error(String(error), { cause: error });
-    return {
-      error: failure,
-      message: failure.message,
-      name: "Kirie addon",
-      status: DoctorCheckStatus.Fail,
-    };
+    const version = await getDotnetPackageVersion(options);
+    if (version !== dependency.version) {
+      await installDotnetPackage(options);
+    }
   }
 }
 
-export async function checkGodotCefPrerequisite(projectDir: string): Promise<DoctorCheckResult> {
-  try {
-    const result = await checkGodotCef(projectDir);
-    if (!result.valid) {
-      return {
-        message: result.message,
-        name: "Godot CEF",
-        status: DoctorCheckStatus.Fail,
-      };
-    }
-    return {
-      message: result.installed ?
-        result.message :
-        `${result.message} (run: pnpm kirie doctor --fix godot-cef)`,
-      name: "Godot CEF",
-      status: result.installed ? DoctorCheckStatus.Ok : DoctorCheckStatus.Warn,
-    };
-  } catch (error) {
-    const failure = error instanceof Error ? error : new Error(String(error), { cause: error });
-    return {
-      error: failure,
-      message: failure.message,
-      name: "Godot CEF",
-      status: DoctorCheckStatus.Fail,
-    };
+async function hasDotnetProject(config: ResolvedKirieConfig): Promise<boolean> {
+  if (config.godot.csproj) {
+    return true;
   }
+
+  const entries = await fs.readdir(config.godot.project, { withFileTypes: true });
+  return entries.some(
+    (entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === ".csproj",
+  );
+}
+
+function failedCheck(name: string, error: unknown): DoctorCheckResult {
+  const failure = error instanceof Error ? error : new Error(String(error), { cause: error });
+  return {
+    error: failure,
+    message: failure.message,
+    name,
+    status: DoctorCheckStatus.Fail,
+  };
+}
+
+function selectPlugins(plugins: KiriePlugin[], target?: DoctorTarget): KiriePlugin[] {
+  if (!target) {
+    return plugins;
+  }
+
+  const id = target.slice("plugin:".length);
+  const plugin = plugins.find((candidate) => candidate.id === id);
+  if (!plugin) {
+    throw new Error(`Kirie plugin is not configured: ${id}`);
+  }
+
+  return [plugin];
 }
 
 export async function checkGodotCommand(

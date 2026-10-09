@@ -432,7 +432,7 @@ configuration.
 
 `kirie init <target> <template> [--overwrite]` initializes a new project from
 the named folder under `templates/` in the pinned `moeru-ai/kirie-templates`
-commit in `packages/cli/src/init.ts`. It sets `package.json.name` and the
+commit in `packages/cli/src/commands/init.ts`. It sets `package.json.name` and the
 `src-web/index.html` title, preserving template-owned Godot configuration.
 After initialization, run `pnpm install` and `pnpm kirie doctor --fix` to
 install addons. The command is non-interactive and does not migrate or repair
@@ -454,29 +454,30 @@ avoid generic boolean helpers that collapse missing paths, wrong file types,
 permission failures, and command failures into the same result.
 
 Optional prerequisites are reported as warnings and do not make an unscoped
-`kirie doctor` invocation fail. `kirie doctor <target>` limits diagnosis to one
-supported prerequisite. `kirie doctor --fix <target>` repairs that prerequisite,
-while a bare `kirie doctor --fix` applies every supported automatic repair. This
-means every available fixer, not every environment problem reported by doctor;
-system SDKs and tools remain user-managed. The repair targets are `kirie-addon`
-and `godot-cef`. An unscoped repair installs Kirie first, then Godot CEF.
+`kirie doctor` invocation fail. `kirie doctor plugin:<id>` limits diagnosis to
+one explicitly configured Kirie plugin, while a bare `kirie doctor --fix`
+applies every supported automatic repair. System SDKs and tools remain
+user-managed.
 
-`packages/cli/src/doctor/addons.ts` shares download and installation logic for
-both addons. Pins live in `packages/cli/src/addon-versions.ts`. Archives are
-validated before replacing an installation: Kirie checks required files and
-the `plugin.cfg` version; CEF also verifies its pinned SHA-256 checksum.
+`kirie.config.ts` lists active plugin descriptors in its `plugins` array.
+The `kirie/plugin/core` descriptor declares the required Kirie addon, the
+optional desktop Godot CEF addon, and the `GdKirie.EventaAdapter` and
+`GdKirie.Platform` NuGet packages. The Kirie addon is bundled with the npm
+package; Godot CEF remains a large external archive pinned by URL and SHA-256.
+`packages/cli/src/commands/doctor/addons.ts` validates either source before atomically
+replacing an installation. Doctor skips plugin .NET dependencies when the
+Godot project has no `.csproj`.
 
 The initial `kirie doctor` check matrix is:
 
 | Check | Purpose | Required behavior |
 | --- | --- | --- |
-| Kirie addon | Confirm the required addon has its entry scripts and matches the pinned version. | Fail when missing, incomplete, or a different version, and offer `kirie doctor --fix kirie-addon`. |
+| Kirie plugin dependencies | Confirm configured Godot addons and .NET packages match their descriptors. | Fail when a required dependency is missing or incompatible, and offer `kirie doctor --fix plugin:<id>`. |
 | Godot command | Confirm the configured Godot executable can be launched and identify its version. | Run the configured command with a version probe and report the detected version or command failure. |
 | Godot export templates | Confirm export templates exist for the detected Godot version. | Check the template location matching Godot's version string and report missing or empty template directories without installing templates. |
 | Android SDK | Confirm Android export prerequisites can find an SDK. | Prefer `ANDROID_HOME`, accept compatible existing environments, and report whether the SDK directory exists. |
 | Android Java path | Confirm Godot's Android editor settings point at a usable Java/JDK. | Read Godot `EditorSettings`, check the Android Java SDK path, and report missing, invalid, or non-executable Java configuration. |
 | Android export preset | Confirm the project export preset contains required Android options for Kirie workflows. | Inspect `export_presets.cfg` through a structured parser and report missing presets or required option mismatches without rewriting the file. |
-| Godot CEF | Confirm the optional desktop backend addon came from the configured release archive. | Warn when absent, fail when the installation does not match the configured checksum, and offer `kirie doctor --fix godot-cef` as the installation path. |
 
 Later doctor checks may cover the iOS toolchain and Godot C#/.NET setup. Add
 those checks only when the corresponding Kirie workflow is implemented enough
@@ -617,12 +618,12 @@ documents renderer-side IPC globals such as `window.sendIpcMessage`,
 platform-information object.
 
 Desktop Godot CEF binaries are external downloaded artifacts, not part of the
-default `kirie-addon.zip`. Kirie's pinned Godot CEF version and artifact
-checksum live in `packages/cli/src/addon-versions.ts`. `kirie doctor` reports
+`kirie` npm package. The core plugin descriptor owns the pinned Godot CEF version
+and artifact checksum. `kirie doctor` reports
 a missing Godot CEF addon as an optional warning. Desktop run or export flows
 require it;
 if it is missing, fail before export or run and print
-`pnpm kirie doctor --fix godot-cef`. Android and iOS workflows must not require
+`pnpm kirie doctor --fix plugin:core`. Android and iOS workflows must not require
 a Godot CEF download.
 
 Downloaded Godot CEF addons should use the standard Godot addon layout:
@@ -641,7 +642,7 @@ in the CLI without another download. The fixer replaces the installation
 target when the checksum is missing or different. The public installer command is:
 
 ```sh
-pnpm kirie doctor --fix godot-cef
+pnpm kirie doctor --fix plugin:core
 ```
 
 The repository root declares `kirie` for examples and integration fixtures. Its

@@ -16,7 +16,7 @@ import {
 const FAKE_GODOT_INVOCATIONS_FILE = "godot-invocations.json";
 const FAKE_ADB_INVOCATIONS_FILE = "adb-invocations.json";
 const FAKE_XCRUN_INVOCATIONS_FILE = "xcrun-invocations.json";
-const cliPath = fileURLToPath(import.meta.resolve("./cli.ts"));
+const cliPath = fileURLToPath(import.meta.resolve("../cli.ts"));
 const projects = createBasicKirieCliProjectTracker("kirie-cli-dev-");
 
 interface AdbInvocation {
@@ -262,7 +262,7 @@ describe("runDev", () => {
     await installKirieConfigFixture(project, "dev-log-silent.kirie.config.ts");
 
     await expect(runDev({ cwd: project })).rejects.toThrow(
-      "Run: pnpm kirie doctor --fix godot-cef",
+      "Run: pnpm kirie doctor --fix plugin:core",
     );
 
     await expect(fs.stat(path.join(project, FAKE_GODOT_INVOCATIONS_FILE))).rejects.toMatchObject({

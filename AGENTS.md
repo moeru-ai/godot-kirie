@@ -216,5 +216,5 @@ Do not duplicate those documents here.
 On the first assistant reply of a new session and at least once every ten
 assistant replies thereafter, compare the default branch commit of
 `moeru-ai/kirie-templates` with `KIRIE_TEMPLATES_COMMIT` in
-`packages/cli/src/init.ts`. If they differ, report both SHAs; never update the
+`packages/cli/src/commands/init.ts`. If they differ, report both SHAs; never update the
 pin automatically.

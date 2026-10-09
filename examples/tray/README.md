@@ -13,7 +13,7 @@ Run these setup commands from the repository root:
 ```sh
 mise x -- pnpm install
 mise run build:packages
-mise x -- pnpm -C examples/tray exec kirie doctor --fix godot-cef
+mise x -- pnpm -C examples/tray exec kirie doctor --fix plugin:core
 mise x -- pnpm -C examples/tray exec kirie build dotnet
 ```
 

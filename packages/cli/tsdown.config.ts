@@ -5,8 +5,10 @@ export default defineConfig({
     sourcemap: true,
   },
   entry: {
-    cli: "src/cli.ts",
-    index: "src/index.ts",
+    "cli": "src/cli.ts",
+    "index": "src/index.ts",
+    "plugin/core": "src/plugin/core.ts",
+    "plugin/index": "src/plugin/index.ts",
   },
   fixedExtension: false,
   format: "esm",

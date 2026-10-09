@@ -65,13 +65,13 @@ export default antfu(
     },
   },
   {
-    files: ["packages/cli/src/doctor/index.ts"],
+    files: ["packages/cli/src/commands/doctor/index.ts"],
     rules: {
       "ts/no-redeclare": "off",
     },
   },
   {
-    files: ["packages/cli/src/doctor/index.test.ts"],
+    files: ["packages/cli/src/commands/doctor/index.test.ts"],
     rules: {
       "test/prefer-lowercase-title": "off",
     },

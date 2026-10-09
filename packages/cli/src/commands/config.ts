@@ -1,5 +1,7 @@
+import type { KiriePlugin } from "../plugin/index.ts";
 import fs from "node:fs";
 import path from "node:path";
+
 import { loadConfigFromFile, type UserConfig } from "vite";
 
 export interface LoadKirieConfigOptions {
@@ -12,8 +14,10 @@ export interface KirieConfig extends Record<string, unknown> {
   godot?: {
     args?: string[];
     command?: string;
+    csproj?: string;
     project?: string;
   };
+  plugins?: KiriePlugin[];
   web?: {
     root?: string;
     vite?: UserConfig;
@@ -24,9 +28,11 @@ export interface ResolvedKirieConfig {
   configFile?: string;
   cwd: string;
   mode: string;
+  plugins: KiriePlugin[];
   godot: {
     args: string[];
     command: string;
+    csproj?: string;
     project: string;
   };
   web: {
@@ -37,6 +43,18 @@ export interface ResolvedKirieConfig {
 
 export function defineKirieConfig(config: KirieConfig): KirieConfig {
   return config;
+}
+
+function validatePlugins(plugins: KiriePlugin[]): void {
+  const pluginIds = new Set<string>();
+
+  for (const plugin of plugins) {
+    if (pluginIds.has(plugin.id)) {
+      throw new Error(`Duplicate Kirie plugin ID: ${plugin.id}`);
+    }
+
+    pluginIds.add(plugin.id);
+  }
 }
 
 export async function loadKirieConfig(
@@ -82,14 +100,19 @@ export function resolveKirieConfig(
   const web = config.web ?? {};
   const project = path.resolve(context.cwd, godot.project ?? ".");
   const webRoot = path.resolve(project, web.root ?? "src-web");
+  const plugins = config.plugins ?? [];
+
+  validatePlugins(plugins);
 
   return {
     configFile: context.configFile,
     cwd: context.cwd,
     mode: context.mode ?? "production",
+    plugins,
     godot: {
       args: godot.args ?? [],
       command: godot.command ?? "godot",
+      csproj: godot.csproj ? path.resolve(project, godot.csproj) : undefined,
       project,
     },
     web: {
