@@ -91,7 +91,7 @@ public sealed class TrayController
         _window = window;
         if (OperatingSystem.IsMacOS())
         {
-            _macOsBackend = new MacOsTrayBackend(OnItemActivated);
+            _macOsBackend = new MacOsTrayBackend(id => ItemActivated?.Invoke(id));
         }
     }
 
@@ -301,8 +301,6 @@ public sealed class TrayController
         return GD.Load<Texture2D>(path)
             ?? throw new ArgumentException($"Tray texture '{path}' could not be loaded.");
     }
-
-    private void OnItemActivated(string id) => ItemActivated?.Invoke(id);
 
     private void EnsureMainThread()
     {

@@ -14,7 +14,6 @@ internal sealed partial class MacOsTrayBackend
     private const long ImageScaleProportionallyUpOrDown = 3;
     private static readonly Dictionary<nint, MacOsTrayBackend> CallbackTargets = [];
 
-    private readonly Action<string> _itemActivated;
     private readonly Dictionary<string, (Rid Menu, int Index)> _items = [];
     private readonly List<Rid> _menus = [];
     private readonly Callable _menuCallback;
@@ -26,8 +25,7 @@ internal sealed partial class MacOsTrayBackend
 
     public MacOsTrayBackend(Action<string> itemActivated)
     {
-        _itemActivated = itemActivated;
-        _menuCallback = Callable.From<Variant>(OnMenuItemActivated);
+        _menuCallback = Callable.From<Variant>(tag => itemActivated(tag.AsString()));
     }
 
     public void Configure(Texture2D icon, string tooltip, bool visible, bool iconAsTemplate)
@@ -151,8 +149,8 @@ internal sealed partial class MacOsTrayBackend
 
         SendVoidPointer(_button, Selectors.SetTarget, _callbackTarget);
         SendVoidPointer(_button, Selectors.SetAction, Selectors.StatusItemActivated);
-        SendVoidNInt(_button, Selectors.SetImagePosition, (nint)ImageOnly);
-        SendVoidNInt(_button, Selectors.SetImageScaling, (nint)ImageScaleProportionallyUpOrDown);
+        SendVoidPointer(_button, Selectors.SetImagePosition, (nint)ImageOnly);
+        SendVoidPointer(_button, Selectors.SetImageScaling, (nint)ImageScaleProportionallyUpOrDown);
         SendVoidBool(_statusItem, Selectors.SetVisible, 0);
     }
 
@@ -256,11 +254,6 @@ internal sealed partial class MacOsTrayBackend
         _menus.Clear();
         _items.Clear();
         _menu = default;
-    }
-
-    private void OnMenuItemActivated(Variant tag)
-    {
-        _itemActivated(tag.AsString());
     }
 
     private void ShowMenu()
@@ -439,6 +432,4 @@ internal sealed partial class MacOsTrayBackend
     [LibraryImport(ObjectiveCLibrary, EntryPoint = "objc_msgSend")]
     private static partial void SendVoidBool(nint receiver, nint selector, byte value);
 
-    [LibraryImport(ObjectiveCLibrary, EntryPoint = "objc_msgSend")]
-    private static partial void SendVoidNInt(nint receiver, nint selector, nint value);
 }

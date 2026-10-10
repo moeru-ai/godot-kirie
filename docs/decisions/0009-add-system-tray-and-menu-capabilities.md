@@ -8,10 +8,6 @@ informed: "Kirie contributors"
 
 # Add system tray and menu capabilities to the Platform layer
 
-Amended by [ADR-0011](0011-own-macos-status-items-for-template-icons.md), which
-replaces only the macOS indicator backend so it can support template icons.
-The shared Platform tray contract remains in use.
-
 ## Context
 
 Desktop Kirie applications need to create a system tray icon, attach native

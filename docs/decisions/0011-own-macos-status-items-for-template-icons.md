@@ -51,7 +51,7 @@ the public GDScript API, or Godot.
 - Kirie now owns the AppKit status-item lifetime and low-level Objective-C
   message signatures on macOS.
 - A future Godot API for template status images can replace the backend without
-  changing the Platform contract.
+  changing the Tray contract.
 
 ## Rejected Alternatives
 
@@ -64,14 +64,15 @@ the public GDScript API, or Godot.
 
 ## Implementation Plan
 
-- `packages/platform/src/index.ts` and `index.test.ts`: define and verify the
+- `packages/tray/src/index.ts` and `index.test.ts`: define and verify the
   optional wire field.
-- `packages/GdKirie.Platform/src/TrayController.cs`: retain existing public
+- `packages/GdKirie.Tray/src/TrayController.cs`: retain existing public
   signatures, select the macOS backend, and keep the Godot path inline.
-- `packages/GdKirie.Platform/src/Tray/MacOsTrayBackend.cs`: own the AppKit status
+- `packages/GdKirie.Tray/src/Tray/MacOsTrayBackend.cs`: own the AppKit status
   item, image conversion, callback target, and `NativeMenu` resources.
 - `examples/tray/`: use monochrome template artwork only on macOS.
-- Platform READMEs and architecture documents: describe the platform behavior.
+- Tray package READMEs and architecture documents: describe the platform
+  behavior.
 
 Do not introduce a general backend interface, a second AppKit menu model, a
 second Eventa owner, or access to Godot's private native state. No caller

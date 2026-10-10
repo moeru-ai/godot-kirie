@@ -486,9 +486,6 @@ package; Godot CEF remains a large external archive pinned by URL and SHA-256.
 replacing an installation. Doctor skips plugin .NET dependencies when the
 Godot project has no `.csproj`.
 
-The optional `@gd-kirie/tray/plugin` descriptor declares `GdKirie.Tray` and is
-configured explicitly beside `core` by applications that need a system tray.
-
 The initial `kirie doctor` check matrix is:
 
 | Check | Purpose | Required behavior |
