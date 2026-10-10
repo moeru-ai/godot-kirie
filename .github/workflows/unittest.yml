@@ -26,11 +26,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Node and pnpm
+      - name: Install Node, pnpm, and .NET
         uses: jdx/mise-action@v3
         with:
           install: true
-          install_args: --locked node pnpm
+          install_args: --locked node pnpm dotnet
           cache: true
 
       - name: Get pnpm store path
