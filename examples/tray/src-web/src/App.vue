@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { TrayMenuItem } from "@gd-kirie/platform";
+import type { TrayMenuItem } from "@gd-kirie/tray";
 import { createContext } from "@gd-kirie/ipc-eventa";
-import { createPlatformClient, trayMenuItemActivated } from "@gd-kirie/platform";
+import { createTrayClient, trayMenuItemActivated } from "@gd-kirie/tray";
 import Button from "@proj-airi/ui/src/components/misc/button.vue";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
@@ -18,7 +18,7 @@ interface TreeRow {
 }
 
 const eventa = window.kirie ? createContext() : undefined;
-const platform = eventa ? createPlatformClient(eventa.context) : undefined;
+const tray = eventa ? createTrayClient(eventa.context) : undefined;
 const menuItems = ref<MenuNode[]>([
   { id: "open", text: "Open Kirie", children: [] },
   {
@@ -33,7 +33,7 @@ const menuItems = ref<MenuNode[]>([
 ]);
 const lastClickedId = ref("");
 const trayReady = ref(false);
-const status = ref(platform ? "Connecting to host…" : "Browser preview");
+const status = ref(tray ? "Connecting to host…" : "Browser preview");
 let nextId = 1;
 let syncTimer: number | undefined;
 let stopTrayActivation: (() => void) | undefined;
@@ -124,10 +124,10 @@ function toTrayItem(node: MenuNode): TrayMenuItem {
 }
 
 async function syncTrayMenu(): Promise<void> {
-  if (!platform || !trayReady.value)
+  if (!tray || !trayReady.value)
     return;
 
-  await platform.tray.setMenu(menuItems.value.map(toTrayItem));
+  await tray.setMenu(menuItems.value.map(toTrayItem));
   status.value = "Tray menu synced";
 }
 
@@ -148,7 +148,7 @@ function scheduleTraySync(): void {
 watch(menuItems, scheduleTraySync, { deep: true });
 
 onMounted(async () => {
-  if (!eventa || !platform)
+  if (!eventa || !tray)
     return;
 
   stopTrayActivation = eventa.context.on(trayMenuItemActivated, ({ body }) => {
@@ -157,7 +157,6 @@ onMounted(async () => {
   });
 
   try {
-    await platform.tray.configure({ icon: "res://icon.svg", tooltip: "Kirie Tray Editor" });
     trayReady.value = true;
     await syncTrayMenu();
   } catch (error) {

@@ -97,7 +97,8 @@ runner and `--headless`.
 
 The headless suite cannot validate a visible system tray or native menu. Run
 the `tray` example on Windows or macOS for tray creation, updates, activation,
-and cleanup acceptance.
+and cleanup acceptance. On macOS, confirm that the template icon remains
+legible in light and dark menu-bar appearances and while its menu is open.
 
 ## Android
 

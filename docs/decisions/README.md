@@ -41,6 +41,10 @@ architecture documentation.
 - [ADR-0008: Run integration tests through ViDot and a unified Kirie launcher](0008-run-integration-tests-through-vidot-and-a-unified-kirie-launcher.md)
   — accepted, 2026-09-27
 - [ADR-0009: Add system tray and menu capabilities to the Platform layer](0009-add-system-tray-and-menu-capabilities.md)
-  — accepted, 2026-10-04
+  — superseded by ADR-0012, 2026-10-04
 - [ADR-0010: Introduce Kirie plugins and the core plugin](0010-introduce-kirie-plugins-and-the-core-plugin.md)
   — accepted, 2026-10-08
+- [ADR-0011: Use Kirie-owned macOS status items for template icons](0011-own-macos-status-items-for-template-icons.md)
+  — accepted, 2026-10-10
+- [ADR-0012: Extract the system tray into a Kirie plugin](0012-extract-system-tray-into-a-kirie-plugin.md)
+  — accepted, 2026-10-10

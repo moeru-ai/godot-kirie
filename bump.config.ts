@@ -27,6 +27,11 @@ export default defineConfig({
         replacement: `<Version>${operation.state.newVersion}</Version>`,
       },
       {
+        file: "packages/GdKirie.Tray/GdKirie.Tray.csproj",
+        pattern: /<Version>[^<]+<\/Version>/,
+        replacement: `<Version>${operation.state.newVersion}</Version>`,
+      },
+      {
         file: "packages/kirie/addon/addons/kirie/plugin.cfg",
         pattern: /version="[^"]+"/,
         replacement: `version="${operation.state.newVersion}"`,

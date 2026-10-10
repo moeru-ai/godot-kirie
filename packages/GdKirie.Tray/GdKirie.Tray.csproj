@@ -1,15 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Godot.NET.Sdk/4.7.2">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
-    <PackageId>GdKirie.EventaAdapter</PackageId>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>GdKirie.Tray</PackageId>
     <Version>0.10.0</Version>
     <Authors>Moeru AI</Authors>
-    <Description>Eventa adapter for Kirie C# projects over Kirie text IPC.</Description>
-    <PackageTags>godot;kirie;eventa;ipc;rpc;webview</PackageTags>
+    <Description>System tray integration for Godot applications using Kirie Eventa IPC.</Description>
+    <PackageTags>godot;kirie;eventa;tray;menu;status-item</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/moeru-ai/godot-kirie</PackageProjectUrl>
@@ -18,16 +19,15 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageOutputPath>bin/$(Configuration)</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eventa" Version="0.1.0-preview.3" />
+    <ProjectReference Include="../GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="contentFiles/**/*.cs" />
     <None Include="README.md" Pack="true" PackagePath="\" />
-    <None Include="contentFiles/cs/any/GdKirie.EventaAdapter/*.cs" Pack="true" PackagePath="contentFiles/cs/any/GdKirie.EventaAdapter" BuildAction="Compile" />
   </ItemGroup>
 
 </Project>

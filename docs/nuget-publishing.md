@@ -2,7 +2,8 @@
 
 This lane publishes
 [`GdKirie.EventaAdapter`](../packages/GdKirie.EventaAdapter/README.md) and
-[`GdKirie.Platform`](../packages/GdKirie.Platform/README.md). It is separate
+[`GdKirie.Platform`](../packages/GdKirie.Platform/README.md), and
+[`GdKirie.Tray`](../packages/GdKirie.Tray/README.md). It is separate
 from addon zip publishing and browser-side npm publishing.
 
 The package targets `net10.0` only because the upstream Eventa .NET package
@@ -21,6 +22,7 @@ mise x -- dotnet build GdKirie.slnx --configuration Release
 mise x -- dotnet test --solution GdKirie.slnx --configuration Release --no-build
 mise x -- dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release --no-build
 mise x -- dotnet pack packages/GdKirie.Platform/GdKirie.Platform.csproj --configuration Release --no-build
+mise x -- dotnet pack packages/GdKirie.Tray/GdKirie.Tray.csproj --configuration Release --no-build
 ```
 
 The Eventa adapter includes a NuGet `contentFiles` source bridge that connects the
@@ -33,13 +35,13 @@ Microsoft.Testing.Platform, which is required for this xUnit v3 test project on
 
 ## GitHub Actions Publishing
 
-The `Publish NuGet Packages` workflow publishes both packages for pushed `v*`
+The `Publish NuGet Packages` workflow publishes all three packages for pushed `v*`
 tags after verifying that the tagged commit is on `main`. It uses NuGet Trusted
 Publishing to exchange a GitHub Actions OIDC token for a short-lived NuGet API
 key; do not configure a long-lived NuGet API key for this workflow.
 
 Create a Trusted Publishing policy on NuGet.org for the user or organization
-that owns both packages. Configure the GitHub repository identity as:
+that owns all three packages. Configure the GitHub repository identity as:
 
 - Repository owner: `moeru-ai`
 - Repository: `godot-kirie`

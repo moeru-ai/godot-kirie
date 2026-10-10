@@ -21,7 +21,7 @@ catalog:
   "@alint-js/cli": ^0.0.38
   "@alint-js/core": ^0.0.38
   "@antfu/eslint-config": ^9.5.1
-  "@moeru/eventa": ^1.0.0
+  "@moeru/eventa": ^1.0.2
   "@types/ini": ^4.1.1
   "@types/node": ^25.6.0
   bumpp: ^11.0.1

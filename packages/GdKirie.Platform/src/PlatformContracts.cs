@@ -40,15 +40,12 @@ internal sealed record NotificationPayload(
 
 internal sealed record NotificationActivatedPayload(string Id);
 
-internal sealed record TrayMenuItemActivatedPayload(string Id);
-
 internal static class PlatformEvents
 {
     private const string HostWindowPrefix = "kirie:platform:host-window";
     private const string GlobalShortcutPrefix = "kirie:platform:global-shortcut";
     private const string NotificationPrefix = "kirie:platform:notification";
     private const string BackPrefix = "kirie:platform:back";
-    private const string TrayPrefix = "kirie:platform:tray";
 
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> BeginMove =
         new($"{HostWindowPrefix}:begin-move");
@@ -101,21 +98,6 @@ internal static class PlatformEvents
     public static readonly EventDefinition<EmptyPayload> BackRequested =
         new($"{BackPrefix}:requested");
 
-    public static readonly InvokeEventDefinition<EmptyPayload, TrayConfiguration> ConfigureTray =
-        new($"{TrayPrefix}:configure");
-
-    public static readonly InvokeEventDefinition<EmptyPayload, TrayMenuItem[]> SetTrayMenu =
-        new($"{TrayPrefix}:set-menu");
-
-    public static readonly InvokeEventDefinition<EmptyPayload, TrayMenuItemUpdate> UpdateTrayMenuItem =
-        new($"{TrayPrefix}:update-item");
-
-    public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> DestroyTray =
-        new($"{TrayPrefix}:destroy");
-
-    public static readonly EventDefinition<TrayMenuItemActivatedPayload> TrayMenuItemActivated =
-        new($"{TrayPrefix}:menu-item-activated");
-
     public static readonly InvokeEventDefinition<EmptyPayload, string> OpenExternalUrl =
         new("kirie:platform:open-external-url");
 
@@ -134,8 +116,4 @@ internal static class PlatformEvents
 [JsonSerializable(typeof(GlobalShortcutKeyEventPayload))]
 [JsonSerializable(typeof(NotificationPayload))]
 [JsonSerializable(typeof(NotificationActivatedPayload))]
-[JsonSerializable(typeof(TrayConfiguration))]
-[JsonSerializable(typeof(TrayMenuItem[]))]
-[JsonSerializable(typeof(TrayMenuItemUpdate))]
-[JsonSerializable(typeof(TrayMenuItemActivatedPayload))]
 internal sealed partial class PlatformJsonContext : JsonSerializerContext;

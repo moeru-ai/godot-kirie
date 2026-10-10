@@ -26,8 +26,11 @@ Do not duplicate those documents here.
 - Preserve the Platform dependency direction:
   `@gd-kirie/platform -> @gd-kirie/ipc-eventa -> @gd-kirie/ipc` and
   `GdKirie.Platform -> GdKirie.EventaAdapter`.
-- Platform packages must borrow the application's Eventa context. They must not
-  create a competing IPC or Eventa owner.
+- Preserve the Tray plugin dependency direction:
+  `@gd-kirie/tray -> @gd-kirie/ipc-eventa -> @gd-kirie/ipc` and
+  `GdKirie.Tray -> GdKirie.EventaAdapter`.
+- Platform and Tray packages must borrow the application's Eventa context. They
+  must not create a competing IPC or Eventa owner.
 - Keep Uninvoke-specific APIs, wire names, compatibility behavior, and errors in
   the Uninvoke adapter rather than the Kirie Platform contract.
 - Do not introduce a general `BrowserWindow` facade or add application

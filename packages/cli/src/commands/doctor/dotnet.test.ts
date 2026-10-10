@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { getDotnetPackageVersion, installDotnetPackage } from "./dotnet.ts";
+import { getDotnetDependencyReference, installDotnetPackage } from "./dotnet.ts";
 
 const dependency = { id: "Example.Package", version: "2.0.0" };
 
 describe("dotnet package doctor support", () => {
   it("reads a centrally managed package version from evaluated MSBuild items", async () => {
-    const version = await getDotnetPackageVersion({
+    const reference = await getDotnetDependencyReference({
       dependency,
       projectDir: "/project",
       runDotnet: async (args, cwd) => {
         expect(args).toEqual([
           "msbuild",
           "app.csproj",
-          "-getItem:PackageReference,PackageVersion",
+          "-getProperty:MSBuildProjectDirectory",
+          "-getItem:PackageReference,PackageVersion,ProjectReference",
         ]);
         expect(cwd).toBe("/project");
         return JSON.stringify({
@@ -26,7 +27,7 @@ describe("dotnet package doctor support", () => {
       csproj: "app.csproj",
     });
 
-    expect(version).toBe("2.0.0");
+    expect(reference).toEqual({ type: "package", version: "2.0.0" });
   });
 
   it("delegates package updates to the dotnet CLI", async () => {

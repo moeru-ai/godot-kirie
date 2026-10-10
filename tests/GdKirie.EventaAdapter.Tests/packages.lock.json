@@ -15,8 +15,8 @@
       },
       "Eventa": {
         "type": "Transitive",
-        "resolved": "0.1.0-preview.2",
-        "contentHash": "HFopj5tNADtLa0Nye098bZcGLFaBp/5wI5QV3+f4frSPbvMN7WhJBX7ZklYmMYd0UMaaXX9dEkY47l8UH8Dk4A==",
+        "resolved": "0.1.0-preview.3",
+        "contentHash": "rRmXhSrUBELzTqwiklUMBpx1CM7rmfgL4Y9XH887p7soRCR4D4Jbwe2VrLW1xVosZsgH8dXDCSbZB8IGKQ236g==",
         "dependencies": {
           "FSharp.Core": "11.0.100",
           "pblasucci.ananoid": "2.0.0"
@@ -137,7 +137,7 @@
       "gdkirie.eventaadapter": {
         "type": "Project",
         "dependencies": {
-          "Eventa": "[0.1.0-preview.2, )"
+          "Eventa": "[0.1.0-preview.3, )"
         }
       }
     }

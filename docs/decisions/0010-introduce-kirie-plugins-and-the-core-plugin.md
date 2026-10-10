@@ -131,17 +131,21 @@ packages or referenced archives.
 ### .NET package dependencies
 
 A .NET dependency declares a NuGet package ID and required version. Doctor
-uses the selected Godot `.csproj` and asks MSBuild for its evaluated
-`PackageReference` and `PackageVersion` items:
+uses the selected Godot `.csproj` and asks MSBuild for its evaluated package
+and project references:
 
 ```sh
-dotnet msbuild <project.csproj> -getItem:PackageReference,PackageVersion
+dotnet msbuild <project.csproj> \
+  -getItem:PackageReference,PackageVersion,ProjectReference
 ```
 
 The command returns structured JSON and evaluates imported MSBuild files, so
 Kirie does not parse or serialize project XML. A read-only doctor invocation
-does not restore packages or edit project files. Projects without a `.csproj`
-skip .NET dependency checks and fixes.
+does not restore packages or edit project files. A matching `PackageReference`
+must have the required version. A matching `ProjectReference`, verified by the
+referenced project's evaluated `PackageId`, supplies local source and does not
+need a NuGet package. Projects without a `.csproj` skip .NET dependency checks
+and fixes.
 
 When a reference is missing or incompatible, `doctor --fix` delegates the
 change and NuGet compatibility checks to the .NET 10 CLI:
@@ -151,8 +155,9 @@ dotnet package add <package-id> --version <version> --project <project.csproj>
 ```
 
 Kirie passes validated arguments directly without invoking a shell and runs
-the MSBuild item query again to verify the result. Plugin descriptors cannot
-provide extra command-line arguments.
+the MSBuild item query again to verify the result. It does not add or update a
+NuGet package when a matching local project reference exists. Plugin
+descriptors cannot provide extra command-line arguments.
 
 ### Doctor behavior
 

@@ -1,12 +1,12 @@
 using GdKirie.EventaAdapter;
-using GdKirie.Platform;
+using GdKirie.Tray;
 using Godot;
 
 public partial class Main : Node
 {
     private KirieClient? _kirie;
     private KirieEventaContextHandle? _eventa;
-    private GdKiriePlatformHost? _platform;
+    private GdKirieTrayHost? _tray;
 
     public override void _Ready()
     {
@@ -17,9 +17,16 @@ public partial class Main : Node
             return;
         }
 
-        var registry = GdKiriePlatform.Register(new KirieEventaJsonRegistry());
+        var registry = GdKirieTray.Register(new KirieEventaJsonRegistry());
         _eventa = _kirie.CreateEventaContext(registry);
-        _platform = GdKiriePlatform.Attach(_eventa.Context, GetWindow());
+        _tray = GdKirieTray.Attach(_eventa.Context, GetWindow());
+        var isMacOS = OS.GetName() == "macOS";
+        _tray.Tray.Configure(new TrayConfiguration(
+            isMacOS ? "res://tray-template.svg" : "res://icon.svg",
+            "Kirie Tray Editor")
+        {
+            IconAsTemplate = isMacOS,
+        });
         _kirie.IpcError += GD.PushError;
 
         var initialUrl = _kirie.GetLaunchOption("kirie-web-url").Trim();
@@ -28,7 +35,7 @@ public partial class Main : Node
 
     public override void _ExitTree()
     {
-        _platform?.Dispose();
+        _tray?.Dispose();
         _eventa?.Dispose();
         _kirie?.Dispose();
     }

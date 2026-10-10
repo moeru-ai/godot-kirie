@@ -53,6 +53,7 @@ jobs:
         run: |
           mise x -- dotnet pack packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj --configuration Release --no-build
           mise x -- dotnet pack packages/GdKirie.Platform/GdKirie.Platform.csproj --configuration Release --no-build
+          mise x -- dotnet pack packages/GdKirie.Tray/GdKirie.Tray.csproj --configuration Release --no-build
 
       - name: Validate Trusted Publishing configuration
         env:
@@ -78,6 +79,10 @@ jobs:
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
           mise x -- dotnet nuget push "packages/GdKirie.Platform/bin/Release/*.nupkg" \
+            --api-key "${NUGET_API_KEY}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+          mise x -- dotnet nuget push "packages/GdKirie.Tray/bin/Release/*.nupkg" \
             --api-key "${NUGET_API_KEY}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
