@@ -28,37 +28,6 @@ Request/response capabilities are methods on the returned client. Host-initiated
 events are exported `@moeru/eventa` contracts; subscribe to them on the same
 context and the returned function unsubscribes.
 
-## System tray
-
-The macOS and Windows hosts expose the same tray used by C#. Browser icons are
-imported Godot resources referenced by `res://` paths. Set `iconAsTemplate` on
-macOS to let the system tint a monochrome icon for the current menu-bar
-appearance:
-
-```ts
-await platform.tray.configure({
-  icon: "res://tray-template.svg",
-  iconAsTemplate: true,
-  tooltip: "Kirie",
-});
-await platform.tray.setMenu([
-  { id: "show", text: "Show Kirie" },
-  { id: "enabled", text: "Enabled", type: "check", checked: true },
-]);
-const stop = context.on(trayMenuItemActivated, ({ body }) => console.log(body?.id));
-await platform.tray.updateItem({ id: "enabled", checked: false });
-```
-
-Use black artwork with transparency for a template icon. The option affects
-only macOS; other platforms reject `iconAsTemplate: true` with a platform-not-supported
-error. See Apple's
-[`NSImage.isTemplate`](https://developer.apple.com/documentation/appkit/nsimage/istemplate)
-documentation for the native rendering behavior.
-
-Menu types are `item`, `check`, `radio`, `multistate`, `separator`, and
-`submenu`. Raw image data and web URLs are not accepted. The tray survives
-browser reloads and is destroyed explicitly or with the Platform host.
-
 ## External URLs
 
 Use `openExternalUrl()` to open an absolute HTTP or HTTPS URL with the system

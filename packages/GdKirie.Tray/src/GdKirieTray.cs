@@ -1,0 +1,54 @@
+using Eventa;
+using GdKirie.EventaAdapter;
+using Godot;
+
+namespace GdKirie.Tray;
+
+/// <summary>Registers and attaches the Kirie system tray plugin.</summary>
+public static class GdKirieTray
+{
+    /// <summary>Registers the Tray wire contracts in an application's Eventa JSON registry.</summary>
+    public static KirieEventaJsonRegistry Register(KirieEventaJsonRegistry registry)
+    {
+        ArgumentNullException.ThrowIfNull(registry);
+
+        return registry
+            .RegisterInvoke(
+                TrayEvents.Configure,
+                TrayJsonContext.Default.EmptyPayload,
+                TrayJsonContext.Default.TrayConfiguration)
+            .RegisterInvoke(
+                TrayEvents.SetMenu,
+                TrayJsonContext.Default.EmptyPayload,
+                TrayJsonContext.Default.TrayMenuItemArray)
+            .RegisterInvoke(
+                TrayEvents.UpdateItem,
+                TrayJsonContext.Default.EmptyPayload,
+                TrayJsonContext.Default.TrayMenuItemUpdate)
+            .RegisterInvoke(
+                TrayEvents.Destroy,
+                TrayJsonContext.Default.EmptyPayload,
+                TrayJsonContext.Default.EmptyPayload)
+            .RegisterEvent(
+                TrayEvents.MenuItemActivated,
+                TrayJsonContext.Default.TrayMenuItemActivatedPayload);
+    }
+
+    /// <summary>Attaches Tray handlers to an existing Eventa context and Godot window.</summary>
+    public static GdKirieTrayHost Attach(IEventContext context, Window hostWindow)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(hostWindow);
+        if (!GodotThread.IsMainThread())
+        {
+            throw new InvalidOperationException("GdKirieTray.Attach must run on Godot's main thread.");
+        }
+
+        if (!hostWindow.IsInsideTree())
+        {
+            throw new ArgumentException("The host window must be inside the scene tree.", nameof(hostWindow));
+        }
+
+        return new GdKirieTrayHost(context, hostWindow);
+    }
+}

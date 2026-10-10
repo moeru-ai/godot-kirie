@@ -57,6 +57,10 @@ dependencies. Core owns the Kirie and Godot CEF addons together with the
 `GdKirie.EventaAdapter` and `GdKirie.Platform` NuGet packages. Doctor skips
 NuGet checks and fixes when the Godot project has no `.csproj`.
 
+Capabilities such as the system tray are separate plugins. Import
+`@gd-kirie/tray/plugin`, add it beside `core`, and run
+`kirie doctor --fix plugin:tray` to install its `GdKirie.Tray` host.
+
 ## Repository Development
 
 Install the workspace tools and dependencies from the repository root:
@@ -103,6 +107,7 @@ example, and regression-test areas:
 - `packages/ipc-eventa`: browser-side Eventa adapter over Kirie text IPC
 - [`@gd-kirie/platform`](packages/platform/README.md): browser-side desktop host
   capabilities
+- [`@gd-kirie/tray`](packages/tray/README.md): browser-side system tray plugin
 - `packages/build`: public build and export automation API for scripts
 - `packages/cli`: Kirie command-line tools for development sessions, export,
   install, and launch workflows
@@ -111,6 +116,8 @@ example, and regression-test areas:
 - `packages/GdKirie.EventaAdapter`: .NET 10 Eventa adapter over Kirie text IPC
 - [`GdKirie.Platform`](packages/GdKirie.Platform/README.md): Godot host for the
   Platform Eventa contract
+- [`GdKirie.Tray`](packages/GdKirie.Tray/README.md): Godot host for the Tray
+  Eventa contract
 - `examples/basic-ipc`: beginner-friendly demo project for the raw IPC flow
 - `examples/basic-kirie-cli`: beginner-friendly demo project for the Kirie CLI workflow
 - `examples/basic-platform`: desktop window, shortcut, and notification capabilities

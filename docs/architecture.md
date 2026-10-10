@@ -88,8 +88,8 @@ unknown permission types and untrusted origins by denying them. This keeps the
 low-level API independent of Godot CEF while avoiding a global allow policy.
 
 Higher-level invocation APIs do not enter Kirie core. Confirmed application
-capabilities are implemented above it through `@gd-kirie/platform` and
-`GdKirie.Platform`.
+capabilities are implemented above it through packages such as Platform and
+Tray.
 
 For the current milestone, Kirie should treat `KirieNode` as the public
 scene-tree ownership unit for a platform WebView. A user may place a
@@ -129,7 +129,6 @@ The implemented Platform capabilities are:
 - centering on the current display
 - system-wide global shortcuts on macOS and Windows
 - desktop notifications with click activation on [macOS 11 or later](decisions/0004-add-macos-desktop-notifications.md) and [Windows 10 version 1607 or later](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md)
-- system trays and native popup menus on macOS and Windows
 - [Android system Back requests](decisions/0005-add-android-system-back-to-the-platform-layer.md)
 
 Global shortcuts use Godot logical keys and explicit register/unregister
@@ -156,18 +155,6 @@ Windows registration and its per-executable identity are recorded in
 [ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
 Linux notification backends remain pending work.
 
-System trays use platform-specific implementations behind one host-owned
-controller. On macOS, `GdKirie.Platform` owns an AppKit `NSStatusItem` so it can
-apply native template-image rendering when `iconAsTemplate` is enabled. Its
-menu is created and updated through Godot `NativeMenu`. Windows, and other
-platforms where Godot reports support, continue to use Godot
-`StatusIndicator` and `PopupMenu`. Requesting template rendering outside macOS
-is rejected instead of silently changing its meaning. C# and browser Eventa
-calls share the tray, and activations are reported through both C# events and
-exported Eventa contracts. Browser icons use `res://` resource references. The
-macOS backend choice is recorded in
-[ADR-0011](decisions/0011-own-macos-status-items-for-template-icons.md).
-
 Android system Back is forwarded from the bound window's
 `Window.GoBackRequested` signal. The browser subscribes to the exported
 `backRequested` contract and decides whether it changes the route or closes the
@@ -175,6 +162,30 @@ application. The application keeps Godot's `SceneTree.quit_on_go_back`
 disabled while it handles Back; the Platform host does not change that setting.
 The choice is recorded in
 [ADR-0005](decisions/0005-add-android-system-back-to-the-platform-layer.md).
+
+## Tray plugin
+
+System trays and native popup menus belong to the optional Tray plugin. Its
+dependency direction is:
+
+```text
+@gd-kirie/tray -> @gd-kirie/ipc-eventa -> @gd-kirie/ipc
+GdKirie.Tray -> GdKirie.EventaAdapter
+```
+
+`@gd-kirie/tray/plugin` declares the `GdKirie.Tray` NuGet dependency. The
+browser client and Godot host borrow the application's existing Eventa context;
+the descriptor does not provide runtime hooks.
+
+On macOS, `GdKirie.Tray` owns an AppKit `NSStatusItem` so it can apply native
+template-image rendering when `iconAsTemplate` is enabled. Its menu uses Godot
+`NativeMenu`. Windows, and other platforms where Godot reports support, use
+Godot `StatusIndicator` and `PopupMenu`. Requesting template rendering outside
+macOS is rejected. C# and browser calls share the tray through `kirie:tray:*`
+contracts, and browser icons use `res://` resource references. The package
+boundary and native implementation are recorded in
+[ADR-0012](decisions/0012-extract-system-tray-into-a-kirie-plugin.md) and
+[ADR-0011](decisions/0011-own-macos-status-items-for-template-icons.md).
 
 The public API is independent of Uninvoke. Any Uninvoke-specific names, event
 IDs, compatibility behavior, or unsupported-method policy belong in the
@@ -475,6 +486,9 @@ package; Godot CEF remains a large external archive pinned by URL and SHA-256.
 replacing an installation. Doctor skips plugin .NET dependencies when the
 Godot project has no `.csproj`.
 
+The optional `@gd-kirie/tray/plugin` descriptor declares `GdKirie.Tray` and is
+configured explicitly beside `core` by applications that need a system tray.
+
 The initial `kirie doctor` check matrix is:
 
 | Check | Purpose | Required behavior |
@@ -753,13 +767,13 @@ iOS plugin and Apple embedded platform export APIs.
 GitHub Release addon publishing is configured through the `Addon Release`
 workflow. Keep it separate from the npm publishing flow, which is only for
 browser-side workspace packages such as `@gd-kirie/ipc`,
-`@gd-kirie/ipc-eventa`, and `@gd-kirie/platform`.
+`@gd-kirie/ipc-eventa`, `@gd-kirie/platform`, and `@gd-kirie/tray`.
 
 The release artifact shape and workflow modes live in
 [Addon Release](./addon-release.md).
 
-The .NET Eventa adapter and Platform host use a separate NuGet release lane.
-Keep them separate from addon zip publishing and npm publishing.
+The .NET Eventa adapter, Platform host, and Tray host use a separate NuGet
+release lane. Keep them separate from addon zip publishing and npm publishing.
 
 ## IPC and adapter split
 

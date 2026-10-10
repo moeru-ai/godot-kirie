@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Godot;
 
-namespace GdKirie.Platform;
+namespace GdKirie.Tray;
 
 /// <summary>Serializable status-indicator configuration.</summary>
 /// <param name="Icon">Imported Godot texture resource path.</param>

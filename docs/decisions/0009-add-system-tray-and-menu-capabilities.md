@@ -1,5 +1,5 @@
 ---
-status: "accepted"
+status: "superseded by [ADR-0012](0012-extract-system-tray-into-a-kirie-plugin.md)"
 date: 2026-10-04
 decision-makers: "LemonNeko"
 consulted: "Codex, Lody"

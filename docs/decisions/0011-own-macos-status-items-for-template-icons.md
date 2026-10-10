@@ -94,3 +94,9 @@ distributed binary is required.
 - [Godot `NativeMenu` documentation](https://docs.godotengine.org/en/stable/classes/class_nativemenu.html)
 - [Godot `StatusIndicator` documentation](https://docs.godotengine.org/en/stable/classes/class_statusindicator.html)
 - [ADR-0009: Add system tray and menu capabilities](0009-add-system-tray-and-menu-capabilities.md)
+
+## More Information
+
+2026-10-10: [ADR-0012](0012-extract-system-tray-into-a-kirie-plugin.md)
+moved this implementation from Platform into the independent Tray plugin. The
+native ownership and template-image decision remains unchanged.

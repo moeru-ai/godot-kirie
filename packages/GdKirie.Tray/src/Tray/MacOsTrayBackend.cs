@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Godot;
 
-namespace GdKirie.Platform;
+namespace GdKirie.Tray;
 
 // ADR-0011: Kirie owns the macOS status item so it can set NSImage.isTemplate.
 // See docs/decisions/0011-own-macos-status-items-for-template-icons.md.

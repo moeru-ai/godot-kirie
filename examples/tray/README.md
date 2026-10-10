@@ -1,6 +1,6 @@
 # tray
 
-A compact tree editor for the Kirie Platform system tray API. Editing labels or
+A compact tree editor for the Kirie Tray plugin. Editing labels or
 changing the tree rebuilds the native menu. Activating a leaf in the system
 tray marks the matching editor row as the last clicked item.
 
@@ -17,7 +17,6 @@ Run these setup commands from the repository root:
 ```sh
 mise x -- pnpm install
 mise run build:packages
-mise x -- pnpm -C examples/tray exec kirie doctor --fix plugin:core
 mise x -- pnpm -C examples/tray exec kirie build dotnet
 ```
 

@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj" />
-    <ProjectReference Include="../../packages/GdKirie.Platform/GdKirie.Platform.csproj" />
+    <ProjectReference Include="../../packages/GdKirie.Tray/GdKirie.Tray.csproj" />
     <Compile Include="../../packages/GdKirie.EventaAdapter/contentFiles/cs/any/GdKirie.EventaAdapter/KirieClientEventaBridge.cs" Link="GdKirie.EventaAdapter/KirieClientEventaBridge.cs" />
   </ItemGroup>
 </Project>
