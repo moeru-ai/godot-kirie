@@ -1,19 +1,28 @@
 import type { KirieDotnetPackageDependency } from "../../plugin/index.ts";
+import path from "node:path";
 
 import { execa } from "execa";
 
 interface MsbuildItem {
+  FullPath?: string;
   Identity: string;
   Version?: string;
   VersionOverride?: string;
 }
 
-interface MsbuildItems {
+interface MsbuildEvaluation {
   Items?: {
     PackageReference?: MsbuildItem[];
     PackageVersion?: MsbuildItem[];
+    ProjectReference?: MsbuildItem[];
+  };
+  Properties?: {
+    MSBuildProjectDirectory?: string;
   };
 }
+
+export type DotnetDependencyReference = { type: "package"; version?: string } |
+  { path: string; type: "project" };
 
 export interface DotnetPackageOptions {
   csproj?: string;
@@ -22,27 +31,47 @@ export interface DotnetPackageOptions {
   runDotnet?: (args: string[], cwd: string) => Promise<string>;
 }
 
-export async function getDotnetPackageVersion(
+export async function getDotnetDependencyReference(
   options: DotnetPackageOptions,
-): Promise<string | undefined> {
+): Promise<DotnetDependencyReference | undefined> {
   const args = [
     "msbuild",
     ...(options.csproj ? [options.csproj] : []),
-    "-getItem:PackageReference,PackageVersion",
+    "-getProperty:MSBuildProjectDirectory",
+    "-getItem:PackageReference,PackageVersion,ProjectReference",
   ];
-  const output = await (options.runDotnet ?? runDotnet)(args, options.projectDir);
-  const items = (JSON.parse(output) as MsbuildItems).Items ?? {};
+  const run = options.runDotnet ?? runDotnet;
+  const output = await run(args, options.projectDir);
+  const evaluation = JSON.parse(output) as MsbuildEvaluation;
+  const items = evaluation.Items ?? {};
   const reference = items.PackageReference?.find(
     (item) => item.Identity.toLowerCase() === options.dependency.id.toLowerCase(),
   );
-  if (!reference) {
-    return undefined;
+  if (reference) {
+    const centralVersion = items.PackageVersion?.find(
+      (item) => item.Identity.toLowerCase() === options.dependency.id.toLowerCase(),
+    );
+    return {
+      type: "package",
+      version: reference.VersionOverride ?? reference.Version ?? centralVersion?.Version,
+    };
   }
 
-  const centralVersion = items.PackageVersion?.find(
-    (item) => item.Identity.toLowerCase() === options.dependency.id.toLowerCase(),
-  );
-  return reference.VersionOverride ?? reference.Version ?? centralVersion?.Version;
+  for (const projectReference of items.ProjectReference ?? []) {
+    const projectPath = projectReference.FullPath ?? path.resolve(
+      evaluation.Properties?.MSBuildProjectDirectory ?? options.projectDir,
+      projectReference.Identity,
+    );
+    const packageId = await run(
+      ["msbuild", projectPath, "-getProperty:PackageId"],
+      options.projectDir,
+    );
+    if (packageId.trim().toLowerCase() === options.dependency.id.toLowerCase()) {
+      return { path: projectReference.Identity, type: "project" };
+    }
+  }
+
+  return undefined;
 }
 
 export async function installDotnetPackage(options: DotnetPackageOptions): Promise<void> {

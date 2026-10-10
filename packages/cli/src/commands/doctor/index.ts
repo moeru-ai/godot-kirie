@@ -6,7 +6,7 @@ import path from "node:path";
 import { execa } from "execa";
 import { loadKirieConfig, type ResolvedKirieConfig } from "../config.ts";
 import { checkGodotAddon, installGodotAddon } from "./addons.ts";
-import { getDotnetPackageVersion, installDotnetPackage } from "./dotnet.ts";
+import { getDotnetDependencyReference, installDotnetPackage } from "./dotnet.ts";
 
 export const DoctorCheckStatus = {
   Fail: "fail",
@@ -173,16 +173,18 @@ async function checkPluginDependencies(
 
   for (const dependency of dotnetPackages) {
     try {
-      const version = await getDotnetPackageVersion({
+      const reference = await getDotnetDependencyReference({
         csproj: config.godot.csproj,
         dependency,
         projectDir: config.godot.project,
       });
-      const valid = version === dependency.version;
+      const valid = reference?.type === "project" || reference?.version === dependency.version;
       checks.push({
-        message: valid ?
-          `${dependency.version} in ${config.godot.csproj ?? config.godot.project}` :
-          `${version ?? "not installed"}; requires ${dependency.version} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
+        message: reference?.type === "project" ?
+          `local project reference ${reference.path}` :
+          valid ?
+            `${dependency.version} in ${config.godot.csproj ?? config.godot.project}` :
+            `${reference?.version ?? "not installed"}; requires ${dependency.version} (run: pnpm kirie doctor --fix plugin:${plugin.id})`,
         name: `${plugin.id} / ${dependency.id}`,
         status: valid ? DoctorCheckStatus.Ok : DoctorCheckStatus.Fail,
       });
@@ -213,8 +215,8 @@ async function fixPluginDependencies(
       dependency,
       projectDir: config.godot.project,
     };
-    const version = await getDotnetPackageVersion(options);
-    if (version !== dependency.version) {
+    const reference = await getDotnetDependencyReference(options);
+    if (reference?.type !== "project" && reference?.version !== dependency.version) {
       await installDotnetPackage(options);
     }
   }

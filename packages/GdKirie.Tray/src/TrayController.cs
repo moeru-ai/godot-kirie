@@ -102,6 +102,7 @@ public sealed class TrayController
     public void Configure(TrayConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
+        EnsureMainThread();
         Configure(
             LoadTexture(configuration.Icon),
             configuration.Tooltip,

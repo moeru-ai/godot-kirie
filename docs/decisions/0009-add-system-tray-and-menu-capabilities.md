@@ -1,5 +1,5 @@
 ---
-status: "superseded by [ADR-0012](0012-extract-system-tray-into-a-kirie-plugin.md)"
+status: "superseded"
 date: 2026-10-04
 decision-makers: "LemonNeko"
 consulted: "Codex, Lody"
@@ -7,6 +7,11 @@ informed: "Kirie contributors"
 ---
 
 # Add system tray and menu capabilities to the Platform layer
+
+Superseded by [ADR-0012](0012-extract-system-tray-into-a-kirie-plugin.md),
+which moves the capability from Platform into the Tray plugin. The macOS
+backend decision in [ADR-0011](0011-own-macos-status-items-for-template-icons.md)
+remains in effect.
 
 ## Context
 

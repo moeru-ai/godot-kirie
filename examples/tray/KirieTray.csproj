@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="node_modules/**/*.cs" />
     <ProjectReference Include="../../packages/GdKirie.EventaAdapter/GdKirie.EventaAdapter.csproj" />
     <ProjectReference Include="../../packages/GdKirie.Tray/GdKirie.Tray.csproj" />
     <Compile Include="../../packages/GdKirie.EventaAdapter/contentFiles/cs/any/GdKirie.EventaAdapter/KirieClientEventaBridge.cs" Link="GdKirie.EventaAdapter/KirieClientEventaBridge.cs" />

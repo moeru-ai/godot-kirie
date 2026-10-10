@@ -12,11 +12,18 @@ internal sealed partial class MacOsTrayBackend(Action<string> itemActivated)
     private const double SquareStatusItemLength = -2;
     private const long ImageOnly = 1;
     private const long ImageScaleProportionallyUpOrDown = 3;
+    private const ulong StatusItemMouseDownMask = (1UL << 1) | (1UL << 3) | (1UL << 25);
     private static readonly Dictionary<nint, MacOsTrayBackend> CallbackTargets = [];
 
     private readonly Dictionary<string, (Rid Menu, int Index)> _items = [];
     private readonly List<Rid> _menus = [];
-    private readonly Callable _menuCallback = Callable.From<Variant>(tag => itemActivated(tag.AsString()));
+    private readonly Callable _menuCallback = Callable.From<Variant>(tag =>
+    {
+        var id = tag.AsString();
+        // Let Godot run its deferred menu-close callback before handlers can free the menu RID.
+        // https://github.com/godotengine/godot/issues/123936
+        Callable.From(() => itemActivated(id)).CallDeferred();
+    });
     private nint _statusBar;
     private nint _statusItem;
     private nint _button;
@@ -144,6 +151,7 @@ internal sealed partial class MacOsTrayBackend(Action<string> itemActivated)
 
         SendVoidPointer(_button, Selectors.SetTarget, _callbackTarget);
         SendVoidPointer(_button, Selectors.SetAction, Selectors.StatusItemActivated);
+        SendIntegerUnsignedInteger(_button, Selectors.SendActionOn, (nuint)StatusItemMouseDownMask);
         SendVoidPointer(_button, Selectors.SetImagePosition, (nint)ImageOnly);
         SendVoidPointer(_button, Selectors.SetImageScaling, (nint)ImageScaleProportionallyUpOrDown);
         SendVoidBool(_statusItem, Selectors.SetVisible, 0);
@@ -366,6 +374,7 @@ internal sealed partial class MacOsTrayBackend(Action<string> itemActivated)
         internal static readonly nint Release = RegisterSelector("release");
         internal static readonly nint Retain = RegisterSelector("retain");
         internal static readonly nint RemoveStatusItem = RegisterSelector("removeStatusItem:");
+        internal static readonly nint SendActionOn = RegisterSelector("sendActionOn:");
         internal static readonly nint SetAction = RegisterSelector("setAction:");
         internal static readonly nint SetImage = RegisterSelector("setImage:");
         internal static readonly nint SetImagePosition = RegisterSelector("setImagePosition:");
@@ -417,6 +426,9 @@ internal sealed partial class MacOsTrayBackend(Action<string> itemActivated)
 
     [LibraryImport(ObjectiveCLibrary, EntryPoint = "objc_msgSend")]
     private static partial nint SendDouble(nint receiver, nint selector, double value);
+
+    [LibraryImport(ObjectiveCLibrary, EntryPoint = "objc_msgSend")]
+    private static partial nint SendIntegerUnsignedInteger(nint receiver, nint selector, nuint value);
 
     [LibraryImport(ObjectiveCLibrary, EntryPoint = "objc_msgSend")]
     private static partial void SendVoid(nint receiver, nint selector);
