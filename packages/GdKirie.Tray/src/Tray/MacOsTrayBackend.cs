@@ -6,7 +6,7 @@ namespace GdKirie.Tray;
 
 // ADR-0011: Kirie owns the macOS status item so it can set NSImage.isTemplate.
 // See docs/decisions/0011-own-macos-status-items-for-template-icons.md.
-internal sealed partial class MacOsTrayBackend
+internal sealed partial class MacOsTrayBackend(Action<string> itemActivated)
 {
     private const string ObjectiveCLibrary = "/usr/lib/libobjc.A.dylib";
     private const double SquareStatusItemLength = -2;
@@ -16,17 +16,12 @@ internal sealed partial class MacOsTrayBackend
 
     private readonly Dictionary<string, (Rid Menu, int Index)> _items = [];
     private readonly List<Rid> _menus = [];
-    private readonly Callable _menuCallback;
+    private readonly Callable _menuCallback = Callable.From<Variant>(tag => itemActivated(tag.AsString()));
     private nint _statusBar;
     private nint _statusItem;
     private nint _button;
     private nint _callbackTarget;
     private Rid _menu;
-
-    public MacOsTrayBackend(Action<string> itemActivated)
-    {
-        _menuCallback = Callable.From<Variant>(tag => itemActivated(tag.AsString()));
-    }
 
     public void Configure(Texture2D icon, string tooltip, bool visible, bool iconAsTemplate)
     {
