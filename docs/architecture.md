@@ -156,10 +156,17 @@ Windows registration and its per-executable identity are recorded in
 [ADR-0007](decisions/0007-use-winrt-toasts-for-windows-desktop-notifications.md).
 Linux notification backends remain pending work.
 
-System trays wrap Godot `StatusIndicator` and `PopupMenu`. C# and browser
-Eventa calls share the host-owned tray, and activations are reported through
-both C# events and exported Eventa contracts. Browser icons use `res://`
-resource references. Linux support follows Godot's status-indicator backend.
+System trays use platform-specific implementations behind one host-owned
+controller. On macOS, `GdKirie.Platform` owns an AppKit `NSStatusItem` so it can
+apply native template-image rendering when `iconAsTemplate` is enabled. Its
+menu is created and updated through Godot `NativeMenu`. Windows, and other
+platforms where Godot reports support, continue to use Godot
+`StatusIndicator` and `PopupMenu`. Requesting template rendering outside macOS
+is rejected instead of silently changing its meaning. C# and browser Eventa
+calls share the tray, and activations are reported through both C# events and
+exported Eventa contracts. Browser icons use `res://` resource references. The
+macOS backend choice is recorded in
+[ADR-0011](decisions/0011-own-macos-status-items-for-template-icons.md).
 
 Android system Back is forwarded from the bound window's
 `Window.GoBackRequested` signal. The browser subscribes to the exported

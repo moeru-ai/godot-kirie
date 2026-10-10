@@ -20,12 +20,19 @@ tree. The host disposes automatically when the bound window exits the tree.
 
 ## System tray
 
-On macOS and Windows, C# and Eventa calls update the same host-owned tray:
+On macOS and Windows, C# and Eventa calls update the same host-owned tray. Set
+`IconAsTemplate` on macOS to let AppKit tint monochrome artwork for the current
+menu-bar appearance:
 
 ```csharp
-platform.Tray.Configure(new TrayConfiguration("res://icon.svg", "AIRI"));
+platform.Tray.Configure(new TrayConfiguration(
+    "res://tray-template.svg",
+    "Kirie")
+{
+    IconAsTemplate = true,
+});
 platform.Tray.SetMenu([
-    new("show", "Show AIRI"),
+    new("show", "Show Kirie"),
     new("enabled", "Enabled", "check", Checked: true),
 ]);
 platform.Tray.ItemActivated += id => HandleTrayItem(id);
@@ -33,8 +40,12 @@ platform.Tray.ItemActivated += id => HandleTrayItem(id);
 
 IDs are unique across the menu tree. `SetMenu` replaces the tree and
 `UpdateItem` changes an item by ID. C# may pass a `Texture2D` directly or set
-`Texture` on a menu item. Disposing the host destroys the tray. Display servers
-without Godot's status-indicator feature fail with `PlatformNotSupportedException`.
+`Texture` on a menu item. Template artwork should use black and transparency as
+described by Apple [`NSImage.isTemplate`](https://developer.apple.com/documentation/appkit/nsimage/istemplate).
+Passing `IconAsTemplate: true` outside macOS fails with
+`PlatformNotSupportedException`. Disposing the host destroys the tray. On
+Windows and other Godot-backed platforms, display servers without the
+status-indicator feature also fail with `PlatformNotSupportedException`.
 
 `openExternalUrl()` accepts only absolute HTTP and HTTPS URLs. The host passes
 accepted URLs to

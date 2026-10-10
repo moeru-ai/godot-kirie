@@ -31,17 +31,29 @@ context and the returned function unsubscribes.
 ## System tray
 
 The macOS and Windows hosts expose the same tray used by C#. Browser icons are
-imported Godot resources referenced by `res://` paths:
+imported Godot resources referenced by `res://` paths. Set `iconAsTemplate` on
+macOS to let the system tint a monochrome icon for the current menu-bar
+appearance:
 
 ```ts
-await platform.tray.configure({ icon: "res://icon.svg", tooltip: "AIRI" });
+await platform.tray.configure({
+  icon: "res://tray-template.svg",
+  iconAsTemplate: true,
+  tooltip: "Kirie",
+});
 await platform.tray.setMenu([
-  { id: "show", text: "Show AIRI" },
+  { id: "show", text: "Show Kirie" },
   { id: "enabled", text: "Enabled", type: "check", checked: true },
 ]);
 const stop = context.on(trayMenuItemActivated, ({ body }) => console.log(body?.id));
 await platform.tray.updateItem({ id: "enabled", checked: false });
 ```
+
+Use black artwork with transparency for a template icon. The option affects
+only macOS; other platforms reject `iconAsTemplate: true` with a platform-not-supported
+error. See Apple's
+[`NSImage.isTemplate`](https://developer.apple.com/documentation/appkit/nsimage/istemplate)
+documentation for the native rendering behavior.
 
 Menu types are `item`, `check`, `radio`, `multistate`, `separator`, and
 `submenu`. Raw image data and web URLs are not accepted. The tray survives
@@ -133,7 +145,7 @@ const stop = context.on(notificationActivated, ({ body }) => {
 
 await platform.notifications.show({
   id: "assistant-answer-42",
-  title: "AIRI",
+  title: "Kirie",
   body: "The answer is ready.",
 });
 

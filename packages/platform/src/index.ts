@@ -82,6 +82,8 @@ export type TrayMenuItemType = "item" | "check" | "radio" | "multistate" | "sepa
 
 export interface TrayConfiguration {
   icon: string;
+  /** Render the icon as a macOS template image. Non-macOS hosts reject `true`. */
+  iconAsTemplate?: boolean;
   tooltip?: string;
   visible?: boolean;
 }

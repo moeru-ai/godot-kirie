@@ -92,7 +92,12 @@ describe("system tray", () => {
   it("configures the host tray through the Platform wire contract", async () => {
     const context = createContext() as KirieEventaContext;
     const platform = createPlatformClient(context);
-    const configuration = { icon: "res://icon.svg", tooltip: "AIRI", visible: true };
+    const configuration = {
+      icon: "res://tray-template.svg",
+      iconAsTemplate: true,
+      tooltip: "Kirie",
+      visible: true,
+    };
 
     context.on(
       defineEventa<{ content: TrayConfiguration; invokeId: string }>(

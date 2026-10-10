@@ -157,7 +157,14 @@ onMounted(async () => {
   });
 
   try {
-    await platform.tray.configure({ icon: "res://icon.svg", tooltip: "Kirie Tray Editor" });
+    const isMacOS = navigator.userAgent.includes("Macintosh");
+    const icon = isMacOS ? "res://tray-template.svg" : "res://icon.svg";
+
+    await platform.tray.configure({
+      icon,
+      iconAsTemplate: isMacOS,
+      tooltip: "Kirie Tray Editor",
+    });
     trayReady.value = true;
     await syncTrayMenu();
   } catch (error) {
