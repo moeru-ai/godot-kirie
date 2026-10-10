@@ -16,8 +16,8 @@ catalogs:
       specifier: ^9.5.1
       version: 9.5.1
     '@moeru/eventa':
-      specifier: ^1.0.0
-      version: 1.0.0
+      specifier: ^1.0.2
+      version: 1.0.2
     '@types/ini':
       specifier: ^4.1.1
       version: 4.1.1
@@ -115,7 +115,7 @@ importers:
         version: link:../../../packages/ipc-eventa
       '@moeru/eventa':
         specifier: 'catalog:'
-        version: 1.0.0(web-worker@1.5.0)
+        version: 1.0.2(web-worker@1.5.0)
     devDependencies:
       '@unocss/reset':
         specifier: 66.7.5
@@ -215,7 +215,7 @@ importers:
         version: link:../../../packages/ipc-eventa
       '@moeru/eventa':
         specifier: 'catalog:'
-        version: 1.0.0(web-worker@1.5.0)
+        version: 1.0.2(web-worker@1.5.0)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -371,7 +371,7 @@ importers:
         version: link:../ipc
       '@moeru/eventa':
         specifier: 'catalog:'
-        version: 1.0.0(web-worker@1.5.0)
+        version: 1.0.2(web-worker@1.5.0)
     devDependencies:
       tsdown:
         specifier: 'catalog:'
@@ -399,7 +399,7 @@ importers:
         version: link:../ipc-eventa
       '@moeru/eventa':
         specifier: 'catalog:'
-        version: 1.0.0(web-worker@1.5.0)
+        version: 1.0.2(web-worker@1.5.0)
     devDependencies:
       tsdown:
         specifier: 'catalog:'
@@ -831,8 +831,8 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@moeru/eventa@1.0.0':
-    resolution: {integrity: sha512-7Tz42aRNR5V3kzFuQb5evaAQ9szSxWq0sEBOQJ30KzR+0vCDd2d2XHh6oGQyQvF/HTQgk9w8JlgBti/xAeFG4A==}
+  '@moeru/eventa@1.0.2':
+    resolution: {integrity: sha512-GlgLTPxVN9A/1lxlAktB/zyjPZc4i6YFYbd6YHY+0dsoOPAjofzV+hzqtKCAzIEZ90waZ5OgiVFlkqcA0lzdkg==}
     peerDependencies:
       '@tauri-apps/api': '>=2'
       electron: '>=39'
@@ -4525,7 +4525,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@moeru/eventa@1.0.0(web-worker@1.5.0)':
+  '@moeru/eventa@1.0.2(web-worker@1.5.0)':
     dependencies:
       nanoid: 6.0.1
       picomatch: 4.0.4

@@ -65,7 +65,7 @@ public sealed class KirieEventaAdapter : IEventaAdapter
     }
 
     /// <inheritdoc />
-    public void OnReceived(string eventId, object? envelope)
+    public void OnReceived(string eventId, object? envelope, object? options = null)
     {
     }
 
